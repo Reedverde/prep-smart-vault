@@ -19,6 +19,15 @@ const sourceLabel: Record<string, string> = {
   newsapi: "NEWS",
 };
 
+const sourceAttribution: Record<string, string> = {
+  newsapi: "NewsAPI",
+  nws: "NWS",
+  usgs: "USGS",
+  cisa: "CISA",
+  reliefweb: "ReliefWeb",
+};
+const SOURCE_ORDER = ["newsapi", "nws", "usgs", "cisa", "reliefweb"] as const;
+
 const timeAgo = (iso: string) => {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
