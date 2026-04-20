@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { useUserSettings } from "@/hooks/useUserSettings";
+import { InstallAppButton } from "./InstallAppButton";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard" },
