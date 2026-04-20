@@ -8,9 +8,6 @@ export type UserSettings = {
   latitude: number;
   longitude: number;
   timezone: string;
-  airnow_api_key: string | null;
-  acled_email: string | null;
-  acled_api_key: string | null;
   ntfy_topic: string | null;
   alert_tier_1: boolean;
   alert_tier_2: boolean;

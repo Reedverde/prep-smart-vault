@@ -23,7 +23,7 @@ import {
 import { useUserSettings, UserSettings } from "@/hooks/useUserSettings";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Check, X, Loader2, MapPin, ExternalLink, LogOut } from "lucide-react";
+import { Loader2, MapPin, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -66,7 +66,6 @@ const Settings = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <LocationSection settings={settings} update={update} />
-        <ApiKeysSection settings={settings} update={update} />
         <AlertsSection settings={settings} update={update} />
         <AccountSection
           user={user}
@@ -187,142 +186,6 @@ const LocationSection = ({
               ))}
             </SelectContent>
           </Select>
-        </div>
-      </div>
-    </Panel>
-  );
-};
-
-// ============ API KEYS ============
-const ApiKeysSection = ({
-  settings,
-  update,
-}: {
-  settings: UserSettings;
-  update: (p: Partial<UserSettings>) => Promise<{ error: any }>;
-}) => {
-  const [airnow, setAirnow] = useState(settings.airnow_api_key || "");
-  const [acledEmail, setAcledEmail] = useState(settings.acled_email || "");
-  const [acledKey, setAcledKey] = useState(settings.acled_api_key || "");
-  const [airnowStatus, setAirnowStatus] = useState<"idle" | "testing" | "ok" | "fail">("idle");
-  const [acledStatus, setAcledStatus] = useState<"idle" | "testing" | "ok" | "fail">("idle");
-
-  const testAirnow = async () => {
-    setAirnowStatus("testing");
-    await update({ airnow_api_key: airnow || null });
-    try {
-      const url = `https://www.airnowapi.org/aq/observation/latLong/current/?format=application/json&latitude=${settings.latitude}&longitude=${settings.longitude}&distance=25&API_KEY=${encodeURIComponent(airnow)}`;
-      const res = await fetch(url);
-      if (res.ok) {
-        setAirnowStatus("ok");
-        toast.success("AirNow key works");
-      } else {
-        setAirnowStatus("fail");
-        toast.error("AirNow key rejected");
-      }
-    } catch {
-      setAirnowStatus("fail");
-      toast.error("Could not reach AirNow");
-    }
-  };
-
-  const testAcled = async () => {
-    setAcledStatus("testing");
-    await update({ acled_email: acledEmail || null, acled_api_key: acledKey || null });
-    try {
-      const url = `https://api.acleddata.com/acled/read?key=${encodeURIComponent(acledKey)}&email=${encodeURIComponent(acledEmail)}&limit=1`;
-      const res = await fetch(url);
-      const json = await res.json();
-      if (json.success) {
-        setAcledStatus("ok");
-        toast.success("ACLED key works");
-      } else {
-        setAcledStatus("fail");
-        toast.error("ACLED key rejected");
-      }
-    } catch {
-      setAcledStatus("fail");
-      toast.error("Could not reach ACLED");
-    }
-  };
-
-  const StatusIcon = ({ s }: { s: typeof airnowStatus }) => {
-    if (s === "testing") return <Loader2 className="h-3.5 w-3.5 animate-spin text-dim" />;
-    if (s === "ok") return <Check className="h-3.5 w-3.5 text-severity-low" />;
-    if (s === "fail") return <X className="h-3.5 w-3.5 text-severity-critical" />;
-    return null;
-  };
-
-  return (
-    <Panel title="API Keys (Optional)">
-      <div className="space-y-5">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label className="font-mono text-[10px] uppercase tracking-wider text-dim">
-              EPA AirNow
-            </Label>
-            <a
-              href="https://docs.airnowapi.org/account/request/"
-              target="_blank"
-              rel="noreferrer"
-              className="font-mono text-[10px] uppercase tracking-wider text-accent hover:underline inline-flex items-center gap-1"
-            >
-              Get key <ExternalLink className="h-2.5 w-2.5" />
-            </a>
-          </div>
-          <Input
-            type="password"
-            value={airnow}
-            onChange={(e) => setAirnow(e.target.value)}
-            placeholder="API key"
-            className="bg-inset font-mono text-sm"
-          />
-          <div className="flex items-center justify-between">
-            <Button size="sm" variant="outline" onClick={testAirnow} disabled={!airnow} className="font-mono text-xs">
-              Save & Test
-            </Button>
-            <StatusIcon s={airnowStatus} />
-          </div>
-        </div>
-
-        <div className="space-y-2 pt-2 border-t border-border">
-          <div className="flex items-center justify-between">
-            <Label className="font-mono text-[10px] uppercase tracking-wider text-dim">ACLED</Label>
-            <a
-              href="https://developer.acleddata.com/"
-              target="_blank"
-              rel="noreferrer"
-              className="font-mono text-[10px] uppercase tracking-wider text-accent hover:underline inline-flex items-center gap-1"
-            >
-              Get key <ExternalLink className="h-2.5 w-2.5" />
-            </a>
-          </div>
-          <Input
-            type="email"
-            value={acledEmail}
-            onChange={(e) => setAcledEmail(e.target.value)}
-            placeholder="Email"
-            className="bg-inset font-mono text-sm"
-          />
-          <Input
-            type="password"
-            value={acledKey}
-            onChange={(e) => setAcledKey(e.target.value)}
-            placeholder="API key"
-            className="bg-inset font-mono text-sm"
-          />
-          <div className="flex items-center justify-between">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={testAcled}
-              disabled={!acledKey || !acledEmail}
-              className="font-mono text-xs"
-            >
-              Save & Test
-            </Button>
-            <StatusIcon s={acledStatus} />
-          </div>
         </div>
       </div>
     </Panel>
