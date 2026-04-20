@@ -2,95 +2,88 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* PrepPi — Dark Terminal Design System
+   All colors HSL. Ops-console aesthetic.
 */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Page & surfaces */
+    --background: 215 28% 6%;           /* #0a0e14 */
+    --foreground: 213 14% 83%;          /* #c9d1d9 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 215 21% 9%;                 /* #161b22 panels */
+    --card-foreground: 213 14% 83%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 215 21% 9%;
+    --popover-foreground: 213 14% 83%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --inset: 215 28% 7%;                /* #0d1117 darker insets */
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Accents */
+    --primary: 134 61% 73%;             /* #7ee787 terminal green */
+    --primary-foreground: 215 28% 6%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --secondary: 215 21% 14%;
+    --secondary-foreground: 213 14% 83%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --muted: 215 21% 12%;
+    --muted-foreground: 215 8% 47%;     /* #6e7681 */
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --accent: 212 100% 67%;             /* #58a6ff blue */
+    --accent-foreground: 215 28% 6%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --dim: 215 11% 58%;                 /* #8b949e */
+
+    /* Severity scale */
+    --severity-low: 134 61% 60%;        /* green */
+    --severity-moderate: 48 96% 60%;    /* yellow */
+    --severity-severe: 25 95% 58%;      /* orange */
+    --severity-critical: 0 75% 60%;     /* red */
+
+    --destructive: 0 75% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 215 14% 18%;
+    --input: 215 14% 18%;
+    --ring: 212 100% 67%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar (unused but kept for shadcn compat) */
+    --sidebar-background: 215 21% 9%;
+    --sidebar-foreground: 213 14% 83%;
+    --sidebar-primary: 134 61% 73%;
+    --sidebar-primary-foreground: 215 28% 6%;
+    --sidebar-accent: 215 21% 14%;
+    --sidebar-accent-foreground: 213 14% 83%;
+    --sidebar-border: 215 14% 18%;
+    --sidebar-ring: 212 100% 67%;
   }
 
+  /* Force dark — PrepPi has no light mode */
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --background: 215 28% 6%;
+    --foreground: 213 14% 83%;
+    --card: 215 21% 9%;
+    --card-foreground: 213 14% 83%;
+    --popover: 215 21% 9%;
+    --popover-foreground: 213 14% 83%;
+    --inset: 215 28% 7%;
+    --primary: 134 61% 73%;
+    --primary-foreground: 215 28% 6%;
+    --secondary: 215 21% 14%;
+    --secondary-foreground: 213 14% 83%;
+    --muted: 215 21% 12%;
+    --muted-foreground: 215 8% 47%;
+    --accent: 212 100% 67%;
+    --accent-foreground: 215 28% 6%;
+    --dim: 215 11% 58%;
+    --destructive: 0 75% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 215 14% 18%;
+    --input: 215 14% 18%;
+    --ring: 212 100% 67%;
   }
 }
 
@@ -99,7 +92,40 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    @apply dark;
+    color-scheme: dark;
+  }
+
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  /* Ops-console feel for headings */
+  .font-mono {
+    font-feature-settings: "ss01";
+  }
+}
+
+@layer utilities {
+  .panel-title {
+    @apply font-mono uppercase tracking-wider text-xs text-primary;
+  }
+
+  .text-dim {
+    color: hsl(var(--dim));
+  }
+
+  .live-dot {
+    @apply inline-block h-2 w-2 rounded-full bg-primary;
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.7);
+    animation: live-pulse 2s infinite;
+  }
+
+  @keyframes live-pulse {
+    0% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.7); }
+    70% { box-shadow: 0 0 0 6px hsl(var(--primary) / 0); }
+    100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0); }
   }
 }
