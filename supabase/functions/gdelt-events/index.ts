@@ -3,9 +3,23 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// In-memory cache to respect GDELT's 1-request-per-5-seconds rate limit.
+// GDELT data updates every 15 min; 5-min cache is plenty fresh and prevents
+// 429s from concurrent clients / dashboard auto-refreshes hitting the function.
+const CACHE_TTL_MS = 5 * 60 * 1000;
+let cached: { at: number; payload: unknown } | null = null;
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
+  }
+
+  // Serve from cache if fresh
+  if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
+    return new Response(JSON.stringify(cached.payload), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'HIT' },
+    });
   }
 
   try {
@@ -19,6 +33,13 @@ Deno.serve(async (req) => {
     });
     if (!res.ok) {
       const body = await res.text().catch(() => '');
+      // If we have stale cache and upstream failed (e.g. 429), serve stale.
+      if (cached) {
+        return new Response(JSON.stringify(cached.payload), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'STALE' },
+        });
+      }
       return new Response(
         JSON.stringify({
           error: 'upstream_failed',
