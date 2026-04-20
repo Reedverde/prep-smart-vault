@@ -21,7 +21,7 @@ Rendered in `src/pages/Dashboard.tsx`. All third-party API keys live as Cloud Se
 | Grid Status | `GridStatusPanel` | EIA PJM demand + fuel mix + 24h trend | `eia-grid` proxy (EIA_APP_KEY) |
 | National | `NationalPanel` | RSS aggregation | Direct |
 | News | `NewsPanel` | NewsAPI + NWS/USGS/CISA/ReliefWeb RSS, state-filtered | `news-feed` proxy (NEWS_API) |
-| Global | `GlobalPanel` | GDACS direct + ACLED 7d conflict aggregation | GDACS direct; `acled-events` OAuth proxy (ACLED_EMAIL/PASSWORD) |
+| Global | `GlobalPanel` | GDACS direct + GDELT 7d conflict/protest aggregation | GDACS direct; `gdelt-events` keyless proxy |
 | System Health | `SystemHealthPanel` | Internal (refresh interval, source status) | Internal |
 
 ## Layout (default — Global wide)
@@ -36,6 +36,10 @@ Mobile single-column order: Alerts → Weather → Earthquakes → Space Wx → 
 
 State code for News filter: parsed from `user_settings.location_name` via `resolveStateCode()` — trailing `, XX` regex first, then full-name map fallback, then `null` (national-only feed).
 
+## GDELT thresholds (PROVISIONAL)
+
+`GlobalPanel` Conflict Index thresholds are guessed values (>200 HIGH, >100 ELEVATED). Revisit after observing real GDELT volume for ~1 week.
+
 ## Graceful degradation
 
-Every proxied panel returns `{ notConfigured: true }` when its secret is missing and renders a "Not configured — contact administrator" message instead of an error.
+Proxied panels with API keys (NASA, AirNow, EIA, News) return `{ notConfigured: true }` when their secret is missing and render a "Not configured — contact administrator" message instead of an error. GDELT and GDACS are keyless and have no notConfigured path.
