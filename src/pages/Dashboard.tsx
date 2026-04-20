@@ -58,7 +58,7 @@ const Dashboard = () => {
           <AlertsPanel lat={lat} lng={lng} refreshMs={refreshMs} />
         </div>
         <div className="order-2 xl:order-3">
-          <EarthquakesPanel refreshMs={refreshMs} />
+          <EarthquakesPanel refreshMs={refreshMs} lat={lat} lng={lng} />
         </div>
 
         {/* Row 2 */}
