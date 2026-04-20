@@ -1,3 +1,5 @@
+// DEPRECATED: replaced by gdelt-headlines edge function as of 2026-04-20.
+// Safe to delete once Global Headlines panel is verified in production.
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
