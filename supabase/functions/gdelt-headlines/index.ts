@@ -60,17 +60,21 @@ Deno.serve(async (req) => {
       headers: { 'User-Agent': 'PrepPi/1.0 (situational-awareness)' },
     });
     if (!res.ok) {
-      const body = await res.text().catch(() => '');
       if (cached) {
         return new Response(JSON.stringify(cached.payload), {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'STALE' },
         });
       }
-      return new Response(
-        JSON.stringify({ error: 'upstream_failed', status: res.status, upstream: body.slice(0, 200) }),
-        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      );
+      // No cache yet (cold start) and upstream throttled/failed.
+      // Return empty payload with a short cache so the panel renders cleanly
+      // and we back off from GDELT for at least 30s.
+      const emptyPayload = { items: [], fetchedAt: new Date().toISOString() };
+      cached = { at: Date.now() - (CACHE_TTL_MS - 30_000), payload: emptyPayload };
+      return new Response(JSON.stringify(emptyPayload), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'EMPTY' },
+      });
     }
 
     const text = await res.text();
