@@ -57,21 +57,28 @@ export const GlobalPanel = ({ refreshMs }: { refreshMs: number }) => {
         <PanelSkeleton rows={4} />
       ) : (
         <div className="space-y-3">
-          <Row
-            label="Conflict Index"
-            value={hasGdelt ? conflictLabel(conflictCount) : "—"}
-            subtle={!hasGdelt}
-            tone={
-              !hasGdelt
-                ? "muted"
-                : // PROVISIONAL thresholds — revisit after observing baseline
-                  conflictCount && conflictCount > 200
-                  ? "critical"
-                  : conflictCount && conflictCount > 100
-                    ? "warning"
-                    : "ok"
-            }
-          />
+          <div>
+            <Row
+              label="Conflict Index"
+              value={currentLabel}
+              subtle={!hasGdelt}
+              tone={
+                !hasGdelt
+                  ? "muted"
+                  : // PROVISIONAL thresholds — revisit after observing baseline
+                    conflictCount && conflictCount > 200
+                    ? "critical"
+                    : conflictCount && conflictCount > 100
+                      ? "warning"
+                      : "ok"
+              }
+            />
+            {currentExplanation && (
+              <div className="font-mono text-[10px] text-dim leading-snug pt-1">
+                {currentExplanation}
+              </div>
+            )}
+          </div>
           <Row
             label="Conflict articles (7d)"
             value={hasGdelt ? (conflictCount?.toLocaleString() ?? "—") : "—"}
