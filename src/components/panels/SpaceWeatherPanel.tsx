@@ -58,6 +58,22 @@ export const SpaceWeatherPanel = ({ refreshMs }: { refreshMs: number }) => {
         <PanelError message="Could not load SWPC data" onRetry={() => refetch()} />
       ) : (
         <div className="space-y-4">
+          {!sunFailed && (
+            <div className="flex flex-col items-center gap-1.5">
+              <img
+                src={sunSrc}
+                alt="Live image of the Sun, NASA SDO 193 Ångström channel"
+                width={120}
+                height={120}
+                onError={() => setSunFailed(true)}
+                className="rounded-full border border-border/60 bg-inset"
+                style={{ width: 120, height: 120, objectFit: "cover" }}
+              />
+              <div className="font-mono text-[10px] uppercase tracking-wider text-dim">
+                Sun now · 193Å · NASA SDO
+              </div>
+            </div>
+          )}
           <div className="flex flex-col items-center">
             <SemiGauge value={current} min={0} max={9} zones={zones} />
             <div className="flex items-baseline gap-2 -mt-1">
