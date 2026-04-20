@@ -115,7 +115,7 @@ export const EarthquakesPanel = ({ refreshMs, lat, lng }: { refreshMs: number; l
                           href={e.properties.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-blue-600 underline"
+                          style={{ color: "hsl(var(--accent))", textDecoration: "underline" }}
                         >
                           USGS detail ↗
                         </a>
