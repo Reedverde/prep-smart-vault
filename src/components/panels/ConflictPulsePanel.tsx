@@ -84,9 +84,29 @@ export const ConflictPulsePanel = ({ refreshMs }: { refreshMs: number }) => {
             <Row label={`Top theme · ${topType[0]}`} value={topType[1].toLocaleString()} />
           )}
 
-          <ContextBox>
-            GDELT scans worldwide news every 15 minutes, classifying coverage of conflict, protest, and violence. Index reflects 7-day article volume.
-          </ContextBox>
+          <div className="rounded-md bg-inset border border-border/60 p-3 max-h-[180px] overflow-y-auto scroll-thin">
+            <div className="font-mono text-[10px] uppercase tracking-wider text-foreground mb-2">About the Conflict Index</div>
+            <div className="font-mono text-xs text-dim leading-relaxed space-y-2">
+              <p>
+                <span className="text-foreground">GDELT</span> (Global Database of Events, Language, and Tone) monitors broadcast, print, and web news in 100+ languages every 15 minutes, tagging articles by theme, location, and tone.
+              </p>
+              <p>
+                The <span className="text-foreground">Conflict Index</span> here is the 7-day worldwide article count tagged with conflict, protest, or violence themes (CAMEO codes 14–20).
+              </p>
+              <p>
+                <span className="text-foreground">Thresholds:</span><br />
+                <span className="text-severity-low">NORMAL</span> ≤ 100 — typical baseline noise.<br />
+                <span className="text-severity-moderate">ELEVATED</span> 100–200 — coverage above norm.<br />
+                <span className="text-severity-critical">HIGH</span> &gt; 200 — sustained global attention spike.
+              </p>
+              <p>
+                <span className="text-foreground">Top region / Top theme</span> show where coverage is concentrated and what kind (e.g. ARMED CONFLICT, PROTEST, TERROR).
+              </p>
+              <p className="text-[11px] italic">
+                Caveat: this measures news <span className="text-foreground">coverage</span>, not ground-truth severity. A media frenzy can spike the index even without proportional escalation.
+              </p>
+            </div>
+          </div>
           <UpdatedAgo date={dataUpdatedAt ? new Date(dataUpdatedAt) : undefined} />
         </div>
       )}
