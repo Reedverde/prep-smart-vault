@@ -7,7 +7,8 @@ import { EarthquakesPanel } from "@/components/panels/EarthquakesPanel";
 import { SpaceWeatherPanel } from "@/components/panels/SpaceWeatherPanel";
 import { AirQualityPanel } from "@/components/panels/AirQualityPanel";
 import { NationalPanel } from "@/components/panels/NationalPanel";
-import { GlobalPanel } from "@/components/panels/GlobalPanel";
+import { ConflictPulsePanel } from "@/components/panels/ConflictPulsePanel";
+import { ActiveDisastersPanel } from "@/components/panels/ActiveDisastersPanel";
 import { SystemHealthPanel } from "@/components/panels/SystemHealthPanel";
 import { NasaPanel } from "@/components/panels/NasaPanel";
 import { GridStatusPanel } from "@/components/panels/GridStatusPanel";
@@ -29,6 +30,19 @@ const Dashboard = () => {
   const refreshMs = (settings.refresh_interval_min || 10) * 60 * 1000;
   const { latitude: lat, longitude: lng } = settings;
 
+  /*
+    CSS-columns masonry, column-major flow.
+    Mobile (1 col): Alerts, Weather, Earthquakes, ConflictPulse,
+                    SpaceWeather, AirQuality, National, ActiveDisasters,
+                    GridStatus, NASA, GlobalHeadlines, SystemHealth
+    md (2 col): col-major fill across 2 columns
+    xl (3 col): col-major fill across 3 columns:
+      Col 1: Alerts, Weather, Earthquakes, ConflictPulse
+      Col 2: SpaceWeather, AirQuality, National, ActiveDisasters
+      Col 3: GridStatus, NASA, GlobalHeadlines, SystemHealth
+  */
+  const wrap = "break-inside-avoid mb-4";
+
   return (
     <PageContainer>
       <div className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs">
@@ -40,56 +54,24 @@ const Dashboard = () => {
         </span>
       </div>
 
-      {/*
-        Mobile order: Alerts → Weather → Earthquakes → Space Wx → NASA → Air Quality
-                    → Grid Status → National → News → Global → System Health
-        xl (3-col):
-          Row 1: Weather       Alerts        Earthquakes
-          Row 2: Space Wx      NASA          Air Quality
-          Row 3: Grid Status   National      News
-          Row 4: Global (col-span-2)         System Health
-      */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 auto-rows-min">
-        {/* Row 1 */}
-        <div className="order-1 xl:order-1">
-          <WeatherPanel lat={lat} lng={lng} refreshMs={refreshMs} />
-        </div>
-        <div className="order-0 xl:order-2">
-          <AlertsPanel lat={lat} lng={lng} refreshMs={refreshMs} />
-        </div>
-        <div className="order-2 xl:order-3">
-          <EarthquakesPanel refreshMs={refreshMs} lat={lat} lng={lng} />
-        </div>
+      <div className="columns-1 md:columns-2 xl:columns-3 gap-4">
+        {/* Col 1 */}
+        <div className={wrap}><AlertsPanel lat={lat} lng={lng} refreshMs={refreshMs} /></div>
+        <div className={wrap}><WeatherPanel lat={lat} lng={lng} refreshMs={refreshMs} /></div>
+        <div className={wrap}><EarthquakesPanel refreshMs={refreshMs} lat={lat} lng={lng} /></div>
+        <div className={wrap}><ConflictPulsePanel refreshMs={refreshMs} /></div>
 
-        {/* Row 2 */}
-        <div className="order-3 xl:order-4">
-          <SpaceWeatherPanel refreshMs={refreshMs} />
-        </div>
-        <div className="order-4 xl:order-5">
-          <NasaPanel refreshMs={refreshMs} />
-        </div>
-        <div className="order-5 xl:order-6">
-          <AirQualityPanel lat={lat} lng={lng} refreshMs={refreshMs} />
-        </div>
+        {/* Col 2 */}
+        <div className={wrap}><SpaceWeatherPanel refreshMs={refreshMs} /></div>
+        <div className={wrap}><AirQualityPanel lat={lat} lng={lng} refreshMs={refreshMs} /></div>
+        <div className={wrap}><NationalPanel refreshMs={refreshMs} /></div>
+        <div className={wrap}><ActiveDisastersPanel refreshMs={refreshMs} /></div>
 
-        {/* Row 3 */}
-        <div className="order-6 xl:order-7">
-          <GridStatusPanel refreshMs={refreshMs} />
-        </div>
-        <div className="order-7 xl:order-8">
-          <NationalPanel refreshMs={refreshMs} />
-        </div>
-        <div className="order-8 xl:order-9">
-          <GlobalHeadlinesPanel refreshMs={refreshMs} />
-        </div>
-
-        {/* Row 4 */}
-        <div className="order-9 md:col-span-2 xl:order-10 xl:col-span-2">
-          <GlobalPanel refreshMs={refreshMs} />
-        </div>
-        <div className="order-10 xl:order-11">
-          <SystemHealthPanel refreshMin={settings.refresh_interval_min} />
-        </div>
+        {/* Col 3 */}
+        <div className={wrap}><GridStatusPanel refreshMs={refreshMs} /></div>
+        <div className={wrap}><NasaPanel refreshMs={refreshMs} /></div>
+        <div className={wrap}><GlobalHeadlinesPanel refreshMs={refreshMs} /></div>
+        <div className={wrap}><SystemHealthPanel refreshMin={settings.refresh_interval_min} /></div>
       </div>
     </PageContainer>
   );

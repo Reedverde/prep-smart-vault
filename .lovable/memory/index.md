@@ -1,3 +1,6 @@
+# Memory: index.md
+Updated: now
+
 # Project Memory
 
 ## Core
@@ -6,7 +9,7 @@ Tech Stack: Lovable, Supabase, React. Designed for zero-rebuild migration to sel
 Storage: Dual-write to Google Drive and local Pi. Pi hosts DB/search at http://10.10.10.10 for offline use.
 Aesthetic: Dark Terminal/Ops Console. Deep black (#0a0e14), panels (#161b22). SF Mono for headers/logos.
 Security: Third-party API keys as Cloud Secrets, proxied via Supabase Edge Functions. No browser exposure.
-Visuals: Recharts for panels. LogoMark (mascot) for Login/404, LogoWordmark (SVG) for nav.
+Visuals: Recharts for panels, Leaflet for maps. LogoMark (mascot) for Login/404, LogoWordmark (SVG) for nav.
 
 ## Memories
 - [Project Overview](mem://project/overview) — PrepPi concept and high-level goals
@@ -15,5 +18,5 @@ Visuals: Recharts for panels. LogoMark (mascot) for Login/404, LogoWordmark (SVG
 - [Dual-Write Sync](mem://architecture/dual-write-sync) — Dual-write storage architecture for Google Drive and local Pi
 - [Deployment Strategy](mem://architecture/deployment-strategy) — Supabase V1 to self-hosted Raspberry Pi migration path
 - [API Security](mem://architecture/api-security-model) — Management and proxying of third-party API keys via Edge Functions
-- [Dashboard Panels](mem://features/dashboard-panels) — Specs for 11 live dashboard panels, data sources, and layout
-- [Stage 5 Drive (parked)](mem://features/stage-5-drive-plan) — Full Drive integration plan, on hold until Stages 3 & 4 ship
+- [Dashboard Panels](mem://features/dashboard-panels) — Specifications for the 12 live dashboard panels (CSS-columns masonry layout)
+- [Future Enhancements](mem://future-enhancements) — Specced but not-yet-built features (grid BA map, Kp 3-day trend)
