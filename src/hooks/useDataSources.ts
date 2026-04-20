@@ -79,11 +79,15 @@ export const useKpIndex = (refreshMs: number) =>
         "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json",
       );
       if (!res.ok) throw new Error("SWPC failed");
-      const json = (await res.json()) as Array<Array<string>>;
-      const rows = json.slice(1).map((r) => ({
-        time: r[0],
-        kp: parseFloat(r[1]),
-      }));
+      const json = (await res.json()) as Array<Array<any>>;
+      const rows = json
+        .slice(1)
+        .filter((r) => r && r[1] !== null && r[1] !== undefined && r[1] !== "")
+        .map((r) => ({
+          time: r[0] as string,
+          kp: Number(r[1]),
+        }))
+        .filter((r) => Number.isFinite(r.kp));
       return rows;
     },
     refetchInterval: refreshMs,
