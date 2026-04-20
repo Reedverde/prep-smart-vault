@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import { Panel, ContextBox } from "@/components/Panel";
 import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo, SemiGauge } from "@/components/PanelKit";
 import { useKpIndex } from "@/hooks/useDataSources";
@@ -26,6 +27,7 @@ const zones = [
 
 export const SpaceWeatherPanel = ({ refreshMs }: { refreshMs: number }) => {
   const { data, isLoading, error, refetch, isFetching, dataUpdatedAt } = useKpIndex(refreshMs);
+  const [sunFailed, setSunFailed] = useState(false);
 
   const hasData = Array.isArray(data) && data.length > 0;
   const latest = hasData ? data[data.length - 1].kp : null;
@@ -33,6 +35,10 @@ export const SpaceWeatherPanel = ({ refreshMs }: { refreshMs: number }) => {
   const status = kpStatus(current);
   const impl = implications(current);
   const trend = (data || []).slice(-24).map((r) => ({ kp: r.kp }));
+
+  // Cache-buster: change every 10 minutes (SDO updates ~12 min)
+  const sunBucket = useMemo(() => Math.floor(Date.now() / (10 * 60 * 1000)), [dataUpdatedAt]);
+  const sunSrc = `https://sdo.gsfc.nasa.gov/assets/img/latest/latest_512_0193.jpg?b=${sunBucket}`;
 
   return (
     <Panel
