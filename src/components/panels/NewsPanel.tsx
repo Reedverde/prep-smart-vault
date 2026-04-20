@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Panel, ContextBox } from "@/components/Panel";
 import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo } from "@/components/PanelKit";
 import { useNewsFeed } from "@/hooks/useDataSources";
@@ -18,6 +19,15 @@ const sourceLabel: Record<string, string> = {
   newsapi: "NEWS",
 };
 
+const sourceAttribution: Record<string, string> = {
+  newsapi: "NewsAPI",
+  nws: "NWS",
+  usgs: "USGS",
+  cisa: "CISA",
+  reliefweb: "ReliefWeb",
+};
+const SOURCE_ORDER = ["newsapi", "nws", "usgs", "cisa", "reliefweb"] as const;
+
 const timeAgo = (iso: string) => {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
@@ -32,11 +42,32 @@ export const NewsPanel = ({ state, refreshMs }: { state: string | null; refreshM
   const { data, isLoading, error, refetch, isFetching, dataUpdatedAt } = useNewsFeed(state, refreshMs);
   const notConfigured = data && (data as any).notConfigured;
   const items = !notConfigured && data?.items ? data.items : [];
+  const sourceCounts: Record<string, number> | undefined = (data as any)?.sourceCounts;
+  const sourceErrors: Record<string, string> | undefined = (data as any)?.sourceErrors;
+
+  const warnedRef = useRef(false);
+  useEffect(() => {
+    if (!sourceCounts || warnedRef.current) return;
+    const dead = SOURCE_ORDER.filter((k) => (sourceCounts[k] ?? 0) === 0);
+    if (dead.length) {
+      console.warn(
+        "[NewsPanel] sources returning 0 items:",
+        dead.map((k) => `${k}${sourceErrors?.[k] ? ` (${sourceErrors[k]})` : ""}`).join(", "),
+      );
+      warnedRef.current = true;
+    }
+  }, [sourceCounts, sourceErrors]);
+
+  const liveAttribution = sourceCounts
+    ? SOURCE_ORDER.filter((k) => (sourceCounts[k] ?? 0) > 0)
+        .map((k) => sourceAttribution[k])
+        .join(" · ") || "No sources reporting"
+    : "NewsAPI · NWS · USGS · CISA · ReliefWeb";
 
   return (
     <Panel
       title="News & Advisories"
-      source="NewsAPI · NWS · USGS · CISA · ReliefWeb"
+      source={liveAttribution}
       action={
         <>
           <InfoTip>Top US headlines combined with NWS state alerts, USGS M4.5+ quakes, CISA advisories, and ReliefWeb disasters.</InfoTip>
