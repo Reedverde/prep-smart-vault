@@ -18,23 +18,23 @@ export const LogoWordmark = ({ className, size = "md" }: LogoWordmarkProps) => {
   };
   return (
     <span className={cn("inline-flex flex-col items-center leading-none", className)}>
-      {/* Two simple leaves on top */}
+      {/* Two green leaves above the "Prep" */}
       <svg
         viewBox="0 0 40 18"
-        className={cn("text-accent-foreground -mb-1", leafSizes[size])}
-        fill="currentColor"
+        className={cn("-mb-0.5 -ml-6", leafSizes[size])}
+        fill="hsl(var(--primary))"
         aria-hidden="true"
       >
         {/* Left leaf, tilted left */}
         <path d="M18 16 C 8 16, 2 10, 4 2 C 14 2, 20 8, 18 16 Z" />
         {/* Right leaf, tilted right */}
         <path d="M22 16 C 32 16, 38 10, 36 2 C 26 2, 20 8, 22 16 Z" />
-        {/* Tiny stem gap */}
-        <rect x="19.4" y="13" width="1.2" height="4" rx="0.6" />
+        {/* Tiny stem */}
+        <rect x="19.4" y="13" width="1.2" height="4" rx="0.6" fill="hsl(var(--primary))" />
       </svg>
       <span
         className={cn(
-          "font-brand font-bold tracking-tight text-accent-foreground",
+          "font-brand font-bold tracking-tight text-accent",
           sizes[size],
         )}
       >
