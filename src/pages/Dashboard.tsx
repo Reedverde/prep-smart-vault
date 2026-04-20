@@ -53,22 +53,13 @@ const Dashboard = () => {
           <SpaceWeatherPanel refreshMs={refreshMs} />
         </div>
         <div className="order-4 md:order-5 xl:order-5">
-          <AirQualityPanel
-            lat={lat}
-            lng={lng}
-            apiKey={settings.airnow_api_key}
-            refreshMs={refreshMs}
-          />
+          <AirQualityPanel lat={lat} lng={lng} refreshMs={refreshMs} />
         </div>
         <div className="order-5 md:order-6 xl:order-6">
           <NationalPanel refreshMs={refreshMs} />
         </div>
         <div className="order-6 md:order-7 xl:order-7 md:col-span-2 xl:col-span-2">
-          <GlobalPanel
-            acledEmail={settings.acled_email}
-            acledKey={settings.acled_api_key}
-            refreshMs={refreshMs}
-          />
+          <GlobalPanel refreshMs={refreshMs} />
         </div>
         <div className="order-7 md:order-8 xl:order-8">
           <SystemHealthPanel refreshMin={settings.refresh_interval_min} />

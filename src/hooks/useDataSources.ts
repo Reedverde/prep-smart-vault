@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 
 const UA = "PrepPi (situational-awareness-app)";
 const nwsHeaders = { "User-Agent": UA, Accept: "application/geo+json" };
@@ -100,14 +99,6 @@ export const useAirQuality = (
   useQuery({
     queryKey: ["airnow", lat, lng],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("airnow-observations", {
-        method: "GET",
-        // Pass coords via query string (Supabase SDK forwards these)
-        headers: { "Content-Type": "application/json" },
-        body: undefined,
-        // @ts-ignore - supabase-js supports query param via URL but we use a different approach below
-      });
-      // Fallback: use direct fetch with constructed URL to pass query params reliably
       const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
       const url = `https://${projectId}.supabase.co/functions/v1/airnow-observations?lat=${lat}&lng=${lng}&distance=25`;
       const res = await fetch(url, {
