@@ -83,19 +83,19 @@ Deno.serve(async (req) => {
     const weekAgo = new Date(today.getTime() - 7 * 86400000);
     const fmt = (d: Date) => d.toISOString().slice(0, 10);
 
-    return new Response(
-      JSON.stringify({
-        count: articles.length,
-        byRegion,
-        byType,
-        from: fmt(weekAgo),
-        to: fmt(today),
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
-    );
+    const payload = {
+      count: articles.length,
+      byRegion,
+      byType,
+      from: fmt(weekAgo),
+      to: fmt(today),
+    };
+    cached = { at: Date.now(), payload };
+
+    return new Response(JSON.stringify(payload), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'MISS' },
+    });
   } catch (err) {
     return new Response(
       JSON.stringify({ error: 'internal_error', message: String(err) }),
