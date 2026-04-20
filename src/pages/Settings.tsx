@@ -23,7 +23,7 @@ import {
 import { useUserSettings, UserSettings } from "@/hooks/useUserSettings";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Check, X, Loader2, MapPin, ExternalLink, LogOut } from "lucide-react";
+import { Loader2, MapPin, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
