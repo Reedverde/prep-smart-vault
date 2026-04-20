@@ -1,76 +1,69 @@
 
 
-# Update Logos: Favicon, Login Image, and Installable Manifest
+# Swap ACLED → GDELT (Final)
 
-Two uploaded mascots get wired in:
-- `lcon.jpg` (light-green background, square) → favicon + PWA install icon
-- `PrepPi_1-2.png` (transparent background) → Login page mascot, 404 page, replaces the current `src/assets/preppi-logo.png` used by `LogoMark`
+Approved with two refinements:
+- Threshold constants get a `// PROVISIONAL` comment — revisit after observing real baseline
+- Drop the `notConfigured` guard entirely — GDELT is keyless, dead code
 
-## Asset placement
+## Edge function: `gdelt-events` (new, keyless)
 
-Copy uploads into the project:
-- `user-uploads://lcon.jpg` → `public/favicon.png` (also used as PWA icon at 512×512)
-- `user-uploads://lcon.jpg` → `public/icon-192.png` (same file, browsers will scale)
-- `user-uploads://PrepPi_1-2.png` → `src/assets/preppi-mascot.png` (transparent, for in-app use)
+`supabase/functions/gdelt-events/index.ts`:
+1. Fetch `https://api.gdeltproject.org/api/v2/doc/doc?query=(conflict OR protest OR violence OR unrest)&mode=artlist&maxrecords=250&timespan=7d&format=json`
+2. Parse `articles[]`, aggregate:
+   - `byRegion`: count by `sourcecountry`
+   - `byType`: keyword scan over `title` for "protest" / "conflict" / "violence" / "unrest" → bucket; else "Other"
+3. Return `{ count, byRegion, byType, from, to }` (same shape `GlobalPanel` already consumes)
+4. Standard CORS, 502 on upstream failure, 500 on internal error. No 503/notConfigured path.
 
-Delete the old `public/favicon.ico` so browsers don't fall back to it.
+## Delete `acled-events`
 
-Keep `src/assets/preppi-logo.png` in place but stop referencing it (LogoMark switches to the new transparent mascot).
+Remove `supabase/functions/acled-events/index.ts`. ACLED secrets stay in the secret store (harmless).
 
-## Code changes
+## Frontend
 
-**`index.html`**
-- Add `<link rel="icon" href="/favicon.png" type="image/png">`
-- Add `<link rel="apple-touch-icon" href="/favicon.png">`
-- Add `<link rel="manifest" href="/manifest.webmanifest">`
+**`src/hooks/useDataSources.ts`** — replace `useAcled` with `useGdelt`:
+- Endpoint: `gdelt-events`
+- Query key: `["gdelt"]`
+- Drop the `503 → notConfigured` branch
+- Return type: same shape
 
-**`public/manifest.webmanifest`** (new file — installable, no service worker)
-```json
-{
-  "name": "PrepPi",
-  "short_name": "PrepPi",
-  "description": "Situational Awareness Console",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#0a0e14",
-  "theme_color": "#0a0e14",
-  "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/favicon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/favicon.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
-  ]
-}
-```
+**`src/components/panels/GlobalPanel.tsx`**:
+- Import `useGdelt` instead of `useAcled`
+- Remove `gdeltNotConfigured` / "Contact admin" / "Not configured" branches — collapse to simple `hasGdelt = !!gdeltData` (true once loaded)
+- `source="GDELT · GDACS"`, `sourceUrl="https://www.gdeltproject.org/"`
+- `ContextBox` copy: "GDELT tracks global news coverage of conflict, protest, and violence. GDACS tracks active major natural disasters. 7-day totals."
+- Rescale `conflictLabel` thresholds with provisional comment:
+  ```ts
+  // PROVISIONAL thresholds — guessed from initial GDELT volume.
+  // Revisit after observing real baseline for ~1 week.
+  if (n > 200) return "HIGH";
+  if (n > 100) return "ELEVATED";
+  ```
+- Same provisional thresholds applied inline in the JSX `tone=` ternary
 
-No `vite-plugin-pwa`, no service worker — per project guidance, this gives "Add to Home Screen" installability without breaking the Lovable preview.
+**`src/components/panels/SystemHealthPanel.tsx`**:
+- Replace `{ key: "acled", label: "ACLED" }` row with `{ key: "gdelt", label: "GDELT" }`
 
-**`src/components/LogoMark.tsx`**
-- Swap import from `@/assets/preppi-logo.png` → `@/assets/preppi-mascot.png`
-- Remove the `rounded-2xl` class (the new mascot is transparent; rounded corners on transparent PNG do nothing useful and may clip leaf tips)
+## Memory update
 
-This automatically updates everywhere `LogoMark` is rendered:
-- `Login.tsx` (via `<Logo size="lg" />`)
-- `NotFound.tsx` (via `<Logo size="lg" />`)
-
-No changes needed to `Login.tsx` or `NotFound.tsx` themselves — they already render the mascot at `size="lg"`.
-
-## Why no full PWA / service worker
-
-Per project guidance, service workers break Lovable's iframe preview (stale caches, navigation interference). A plain `manifest.webmanifest` gives users the install prompt and home-screen icon without the downsides. Offline support isn't in scope here (Stage 5 territory if ever needed).
+Rewrite `mem://features/dashboard-panels` Global row:
+- `Global | GlobalPanel | GDACS direct + GDELT 7d conflict/protest aggregation | GDACS direct; gdelt-events keyless proxy`
+- Remove ACLED from graceful-degradation list (GDELT has no key path)
 
 ## Files touched
 
-- `index.html` — icon links + manifest link
-- `public/favicon.png` (new, from `lcon.jpg`)
-- `public/icon-192.png` (new, from `lcon.jpg`)
-- `public/manifest.webmanifest` (new)
-- `public/favicon.ico` (deleted)
-- `src/assets/preppi-mascot.png` (new, from `PrepPi_1-2.png`)
-- `src/components/LogoMark.tsx` — swap image source, drop `rounded-2xl`
+- `supabase/functions/gdelt-events/index.ts` (new)
+- `supabase/functions/acled-events/index.ts` (deleted)
+- `src/hooks/useDataSources.ts` — swap hook
+- `src/components/panels/GlobalPanel.tsx` — swap hook, drop notConfigured branches, provisional thresholds + comment
+- `src/components/panels/SystemHealthPanel.tsx` — swap source row
+- `.lovable/memory/features/dashboard-panels.md` — GDELT instead of ACLED
 
 ## Out of scope
 
-- Service worker / offline caching
-- Wordmark (`LogoWordmark`) changes — the magenta-Pi text logo in the top-nav stays as-is
-- Settings/Snapshots/Library page logo changes (they use the wordmark, not the mascot)
+- Tuning thresholds (you'll revisit post-launch)
+- Removing ACLED secrets (manual, optional)
+- EIA (key already swapped)
+- Stage 3 / Stage 4
 
