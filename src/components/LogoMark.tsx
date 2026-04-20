@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import logoSrc from "@/assets/preppi-logo.png";
+import logoSrc from "@/assets/preppi-mascot.png";
 
 interface LogoMarkProps {
   className?: string;
@@ -16,7 +16,7 @@ export const LogoMark = ({ className, size = "lg" }: LogoMarkProps) => {
     <img
       src={logoSrc}
       alt="PrepPi"
-      className={cn("object-contain rounded-2xl", sizes[size], className)}
+      className={cn("object-contain", sizes[size], className)}
     />
   );
 };
