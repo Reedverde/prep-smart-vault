@@ -1,4 +1,5 @@
-import { cn } from "@/lib/utils";
+import { LogoMark } from "./LogoMark";
+import { LogoWordmark } from "./LogoWordmark";
 
 interface LogoProps {
   className?: string;
@@ -6,15 +7,8 @@ interface LogoProps {
 }
 
 export const Logo = ({ className, size = "md" }: LogoProps) => {
-  const sizes = {
-    sm: "text-lg",
-    md: "text-2xl",
-    lg: "text-5xl",
-  };
-  return (
-    <span className={cn("font-mono font-bold tracking-tight", sizes[size], className)}>
-      <span className="text-accent">PREP</span>
-      <span className="text-primary">PI</span>
-    </span>
-  );
+  if (size === "lg") {
+    return <LogoMark className={className} size="lg" />;
+  }
+  return <LogoWordmark className={className} size={size} />;
 };

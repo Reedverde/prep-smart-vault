@@ -15,6 +15,7 @@ export default {
     extend: {
       fontFamily: {
         mono: ['"SF Mono"', '"JetBrains Mono"', 'Menlo', 'Consolas', 'monospace'],
+        brand: ['Quicksand', 'Nunito', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
