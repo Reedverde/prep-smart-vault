@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Panel, ContextBox } from "@/components/Panel";
 import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo } from "@/components/PanelKit";
 import { useNewsFeed } from "@/hooks/useDataSources";
