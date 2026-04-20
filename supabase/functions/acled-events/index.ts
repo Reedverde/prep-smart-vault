@@ -69,10 +69,22 @@ Deno.serve(async (req) => {
       res = await fetchAcled(token, from, to);
     }
     if (!res.ok) {
-      return new Response(JSON.stringify({ error: 'upstream_failed', status: res.status }), {
-        status: 502,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      const body = await res.text().catch(() => '');
+      return new Response(
+        JSON.stringify({
+          error: 'upstream_failed',
+          status: res.status,
+          hint:
+            res.status === 403
+              ? 'ACLED account lacks API data access. Verify the account at https://acleddata.com/register-for-access has API access enabled.'
+              : undefined,
+          upstream: body.slice(0, 200),
+        }),
+        {
+          status: 502,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
     }
     const json = await res.json();
     const events: any[] = Array.isArray(json?.data) ? json.data : [];

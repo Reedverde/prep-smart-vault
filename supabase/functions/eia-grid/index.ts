@@ -41,10 +41,24 @@ Deno.serve(async (req) => {
     ]);
 
     if (!demandRes.ok || !mixRes.ok) {
-      return new Response(JSON.stringify({ error: 'upstream_failed', demand: demandRes.status, mix: mixRes.status }), {
-        status: 502,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      const demandBody = !demandRes.ok ? await demandRes.text().catch(() => '') : '';
+      const mixBody = !mixRes.ok ? await mixRes.text().catch(() => '') : '';
+      const isInvalidKey =
+        demandBody.includes('API_KEY_INVALID') || mixBody.includes('API_KEY_INVALID');
+      return new Response(
+        JSON.stringify({
+          error: isInvalidKey ? 'invalid_api_key' : 'upstream_failed',
+          demand: demandRes.status,
+          mix: mixRes.status,
+          hint: isInvalidKey
+            ? 'EIA_APP_KEY is invalid. Get a new key at https://www.eia.gov/opendata/register.php'
+            : undefined,
+        }),
+        {
+          status: 502,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
     }
 
     const demandJson = await demandRes.json();
