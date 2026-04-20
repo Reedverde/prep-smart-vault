@@ -38,7 +38,7 @@ export const LogoWordmark = ({ className, size = "md" }: LogoWordmarkProps) => {
           sizes[size],
         )}
       >
-        PrepPi
+        Prep<span style={{ color: "#bf1d49" }}>Pi</span>
       </span>
     </span>
   );
