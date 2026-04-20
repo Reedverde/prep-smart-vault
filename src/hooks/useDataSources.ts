@@ -220,7 +220,43 @@ export const useEiaGrid = (refreshMs: number) =>
     retry: 1,
   });
 
+// ============ GDELT Headlines (via edge proxy, keyless) ============
+// 15-min refresh floor — GDELT updates every 15 min and we want to be polite.
+export const useGdeltHeadlines = (refreshMs: number) => {
+  const interval = Math.max(refreshMs, 15 * 60 * 1000);
+  return useQuery({
+    queryKey: ["gdelt-headlines"],
+    queryFn: async () => {
+      const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
+      const url = `https://${projectId}.supabase.co/functions/v1/gdelt-headlines`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${(import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+      });
+      if (!res.ok) throw new Error("GDELT headlines proxy failed");
+      return await res.json() as {
+        items: Array<{
+          tag: string;
+          title: string;
+          url: string;
+          country: string;
+          domain: string;
+          seendate: string;
+        }>;
+        fetchedAt: string;
+      };
+    },
+    refetchInterval: interval,
+    staleTime: interval * 0.8,
+    retry: 1,
+  });
+};
+
 // ============ News Feed (via edge proxy) ============
+// DEPRECATED: replaced by useGdeltHeadlines as of 2026-04-20.
+// Kept temporarily; remove in follow-up after Global Headlines verifies.
 export const useNewsFeed = (state: string | null, refreshMs: number) =>
   useQuery({
     queryKey: ["news-feed", state],
