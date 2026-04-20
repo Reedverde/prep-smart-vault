@@ -1,130 +1,79 @@
 
 
-# Single Commit — Priority-Ordered Grid + Active Alerts History
+# Plan — Panel polish: heights + context
 
-## Part 1 — Layout: Four stacked grids
+Single small commit. Five panel tweaks. No new data sources, no layout changes.
 
-Replace masonry in `src/pages/Dashboard.tsx` with **four separate CSS Grid containers** stacked vertically. Each row independently sizes to its tallest panel.
+## Part 1 — Global Headlines: cap height + scroll
 
-```tsx
-const rowGrid = "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-4 auto-rows-fr";
+`src/components/panels/GlobalHeadlinesPanel.tsx`
 
-<RowLabel>LOCAL</RowLabel> {/* hidden unless ?debug=rows */}
-<div className={rowGrid}>
-  <WeatherPanel .../>
-  <AlertsPanel .../>
-  <AirQualityPanel .../>
-</div>
+The panel currently uses `flex-1 overflow-y-auto`, so it stretches to whatever its grid row dictates (right now Grid Status is making Row 2 short). Cap the scroll area to match the reference screenshot (~640px content area, same as Active Alerts for consistency across the dashboard).
 
-<RowLabel>NEWS + NATIONAL</RowLabel>
-<div className={rowGrid}>
-  <GlobalHeadlinesPanel .../>
-  <NationalPanel .../>
-  <GridStatusPanel .../>
-</div>
+- Change the inner scroller from `flex-1 overflow-y-auto pr-1 scroll-thin` to `max-h-[640px] overflow-y-auto pr-1 scroll-thin -mr-1`
+- Outer wrapper drops `flex-1 flex flex-col` → just `space-y-2`
+- Result: panel renders all ~25 headlines, scrollable inside a fixed 640px window, matches the visual density in the screenshot
 
-<RowLabel>WORLD</RowLabel>
-<div className={rowGrid}>
-  <EarthquakesPanel .../>
-  <ActiveDisastersPanel .../>
-  <ConflictPulsePanel .../>
-</div>
+## Part 2 — Active Disasters: scrollable explainer section
 
-<RowLabel>SPACE + SYSTEM</RowLabel>
-<div className={rowGrid}>
-  <SpaceWeatherPanel .../>
-  <NasaPanel .../>
-  <SystemHealthPanel .../>
-</div>
-```
+`src/components/panels/ActiveDisastersPanel.tsx`
 
-**Equal heights within a row:** `auto-rows-fr` makes the single grid row track expand to the tallest panel; all children stretch to fill via the existing `Panel` component (already `flex flex-col` with `flex-1` body).
+Currently shows count + top 5 + one-line ContextBox. Add a scrollable "About GDACS" section below the event list with real explanatory content the user can read.
 
-**Tablet (md, 2 cols):** each row wraps; first two side-by-side, third on a new line spanning one column.
+- Replace the single `ContextBox` with a `max-h-[180px] overflow-y-auto scroll-thin` block titled "About GDACS"
+- Content covers: what GDACS is, what each alert color means (Green/Orange/Red), event type abbreviations (EQ=earthquake, TC=tropical cyclone, FL=flood, VO=volcano, DR=drought, WF=wildfire), how soon alerts appear after an event, and that Green minor events are filtered out
 
-**Mobile (<md, 1 col):** stacked in spec order: Weather → Alerts → AQ → Headlines → National → Grid → Quakes → Disasters → Conflict → Space Wx → NASA → System Health.
+## Part 3 — Conflict Pulse: scrollable explainer section
 
-**Debug row labels:** `?debug=rows` query param shows uppercase row headers (`text-[10px] tracking-[0.2em] text-dim mb-1`). Off by default.
+`src/components/panels/ConflictPulsePanel.tsx`
 
-## Part 2 — Active Alerts history + expired cap
+Same treatment. Replace the one-line ContextBox with a scrollable explainer.
 
-**`src/hooks/useDataSources.ts`:**
-- Add `useLocalAlerts(lat, lng, refreshMs)` (replacing the old one) hitting `https://api.weather.gov/alerts?point={lat},{lng}&start={now-7d ISO}` (non-`/active` endpoint includes expired). Returns `{ active: Feature[], expired: Feature[], expiredTotal: number }` split client-side:
-  - `active`: features where `ends` is missing or in the future
-  - All expired sorted by `ends` desc
-  - `expiredTotal = allExpired.length`
-  - `expired = allExpired.slice(0, 10)` — **capped at 10**
-- **Delete the old `useLocalAlerts`** and write the new one in its place (same export name). Only `AlertsPanel.tsx` uses it — no other callers exist, confirmed by grep. No rename needed; the old hook is replaced in-place.
+- "About the Conflict Index" — what GDELT scans, how the index is computed (7-day article volume on conflict/protest/violence themes), what HIGH/ELEVATED/NORMAL thresholds mean, what "Top region" and "Top theme" represent, caveats (volume reflects news *coverage*, not necessarily ground-truth event severity)
+- `max-h-[180px] overflow-y-auto scroll-thin`
 
-**`src/components/panels/AlertsPanel.tsx`:**
-- Destructure `{ active, expired, expiredTotal }` from the updated `useLocalAlerts`.
-- **Top section:** existing rendering driven by `active` — unchanged interaction, severity border, expand/collapse.
-- **Separator + Recent header:** rendered only when `expired.length > 0`. Header: `<div className="font-mono text-[10px] uppercase tracking-[0.15em] text-dim mt-3 mb-2 pt-3 border-t border-border/60">Recent · past 7 days</div>`.
-- **Expired rows:** same card markup wrapped in `<div className="opacity-60">`, severity pill rendered with `level="low"` regardless of true severity (greyed look) but original severity text preserved. Timestamp reads `Ended {formatDistanceToNow(ends, { addSuffix: true })}`. Border-left uses neutral `border-l-border` instead of severity color. Click still expands.
-- **Overflow line:** if `expiredTotal > expired.length`, render at the bottom of the Recent section:
-  ```tsx
-  <div className="text-[10px] text-dim font-mono mt-2">
-    + {expiredTotal - expired.length} more this week
-  </div>
-  ```
-- **Empty state** (no active AND no expired): existing "No active alerts" check icon — unchanged.
-- **Active-empty + expired-present:** show the check icon block for active, then the Recent section below it.
-- Wrap the active + recent body in `flex-1 overflow-y-auto scroll-thin -mr-1 pr-1` for internal scrolling within the grid row.
+## Part 4 — Space Weather: rich explainer section
 
-## Part 3 — SpaceWeatherPanel sun + gauge side-by-side
+`src/components/panels/SpaceWeatherPanel.tsx`
 
-**`src/components/panels/SpaceWeatherPanel.tsx`:**
+Replace single-line ContextBox with a scrollable "About Space Weather" block.
 
-Replace the current vertically-stacked sun image and gauge with a flex row layout:
+- What the Kp index measures (planetary geomagnetic disturbance, 0–9 scale, updated every 3h by NOAA SWPC)
+- What the sun image shows (193Å EUV channel from NASA SDO, ~1 million °C corona, dark patches = coronal holes, bright regions = active flare sites)
+- Why it matters: each row (Aurora, HF Radio, GPS, Power Grid) explained — what's affected and at what Kp level
+- `max-h-[200px] overflow-y-auto scroll-thin`
 
-```tsx
-<div className="flex flex-col sm:flex-row items-center justify-around gap-4">
-  <div className="flex flex-col items-center gap-1.5">
-    {/* existing sun image (120×120 rounded) */}
-    {/* existing "Sun now · 193Å · NASA SDO" caption */}
-  </div>
-  <div className="flex flex-col items-center">
-    {/* existing SemiGauge */}
-    {/* existing "Kp X.X QUIET" readout */}
-  </div>
-</div>
-```
+## Part 5 — NASA Space: rich explainer section
 
-- Desktop/tablet: sun left, gauge right, centered vertically
-- Mobile (<640px `sm:`): stacks vertically (sun on top, gauge below) via `flex-col`
-- Support rows (Aurora / HF Radio / GPS / Power Grid), sparkline, and ContextBox remain full-width below — unchanged
+`src/components/panels/NasaPanel.tsx`
 
-## Part 4 — Row-height polish
+Replace single-line ContextBox with scrollable "About NASA DONKI + NEO" block.
 
-- **Row 2:** `GlobalHeadlinesPanel` currently has `max-h-[500px]` on its scroll container — change to `flex-1 overflow-y-auto scroll-thin` so it fills the row track instead of capping at 500px.
-- **Row 3:** Earthquakes (with map) sets the height. Disasters/Conflict fill naturally — whitespace at bottom is fine.
-- **Row 4:** Space Weather sets the height. NASA/System Health fill via grid cell stretch.
+- DONKI = Database of Notifications, Knowledge, Information (NASA's space weather event log)
+- Solar flare classes: A < B < C < M < X (logarithmic, X is most powerful, can disrupt radio/GPS)
+- CMEs (Coronal Mass Ejections): billions of tons of plasma; if Earth-directed, can drive geomagnetic storms 1–3 days later (links to Kp on the Space Weather panel)
+- NEO = Near-Earth Object. LD = Lunar Distance (≈384,400 km). "Close" flag = within 1 LD. Context: anything outside 1 LD has zero impact risk for that pass
+- `max-h-[200px] overflow-y-auto scroll-thin`
 
 ## Files touched
 
-- `src/pages/Dashboard.tsx` — replace masonry with 4 stacked grids + optional row labels
-- `src/hooks/useDataSources.ts` — replace old `useLocalAlerts` with new version (history + expired cap + expiredTotal)
-- `src/components/panels/AlertsPanel.tsx` — history section, overflow line, scrollable body
-- `src/components/panels/SpaceWeatherPanel.tsx` — sun + gauge side-by-side flex row
-- `src/components/panels/GlobalHeadlinesPanel.tsx` — swap `max-h-[500px]` for `flex-1`
-- `.lovable/memory/features/dashboard-panels.md` — new row order + alerts history + sun layout
+- `src/components/panels/GlobalHeadlinesPanel.tsx` — cap scroll height at 640px
+- `src/components/panels/ActiveDisastersPanel.tsx` — replace ContextBox with scrollable explainer
+- `src/components/panels/ConflictPulsePanel.tsx` — replace ContextBox with scrollable explainer
+- `src/components/panels/SpaceWeatherPanel.tsx` — replace ContextBox with scrollable explainer
+- `src/components/panels/NasaPanel.tsx` — replace ContextBox with scrollable explainer
 
-## Acceptance (self-check before reporting)
+## Acceptance
 
-- [ ] 4 rows x 3 panels in spec order
-- [ ] Within each row, all 3 panels render at the same height (CSS Grid `auto-rows-fr`)
-- [ ] Rows differ in height as content dictates
-- [ ] Active Alerts shows expired alerts from past 7 days, dimmed, below current, capped at 10
-- [ ] "+ N more this week" line renders when expiredTotal > 10
-- [ ] "Recent" section hidden when zero expired
-- [ ] Sun image and Kp gauge are side-by-side on desktop, stacked on mobile
-- [ ] Mobile order: Weather first, System Health last
-- [ ] Sun image, earthquake map, headline scroll, info tips, refresh buttons all still work
-- [ ] Old `useLocalAlerts` hook deleted, no dead code remaining
+- [ ] Global Headlines renders at ~640px tall on desktop, scrolls internally, matches screenshot density
+- [ ] Active Disasters has a readable scrollable "About" section explaining alert colors and event types
+- [ ] Conflict Pulse has a readable scrollable explainer covering methodology and caveats
+- [ ] Space Weather explainer covers Kp scale, sun image, and what each impact row means
+- [ ] NASA Space explainer covers flare classes, CMEs, and LD/NEO terminology
+- [ ] Row 2 and Row 4 row-height equalization still works (panels stretch to tallest in row; new explainers fit comfortably in existing space)
 - [ ] No console errors
-- [ ] `?debug=rows` shows row labels; default URL doesn't
 
 ## Out of scope
 
-Commit 4 (grid regions map) · Kp trend · design tokens · Stage 3/4/5 · removing deprecated `news-feed`/`useNewsFeed`.
+Layout changes · new data sources · Commit 4 (grid regions map) · design tokens
 
