@@ -1,24 +1,15 @@
 import { Panel, ContextBox } from "@/components/Panel";
 import { InfoTip, PanelSkeleton, RefreshButton, UpdatedAgo } from "@/components/PanelKit";
 import { useGdacs, useAcled } from "@/hooks/useDataSources";
-import { Link } from "react-router-dom";
-import { Settings as SettingsIcon } from "lucide-react";
 
-export const GlobalPanel = ({
-  acledEmail,
-  acledKey,
-  refreshMs,
-}: {
-  acledEmail: string | null;
-  acledKey: string | null;
-  refreshMs: number;
-}) => {
+export const GlobalPanel = ({ refreshMs }: { refreshMs: number }) => {
   const gdacs = useGdacs(refreshMs);
-  const acled = useAcled(acledEmail, acledKey, refreshMs);
+  const acled = useAcled(refreshMs);
 
   const disastersActive = gdacs.data?.length ?? null;
-  const conflictCount = acled.data?.count ?? null;
-  const hasAcled = !!acledKey && !!acledEmail;
+  const acledNotConfigured = acled.data && typeof acled.data === "object" && (acled.data as any).notConfigured;
+  const conflictCount = acledNotConfigured ? null : (acled.data?.count ?? null);
+  const hasAcled = !acledNotConfigured;
 
   const conflictLabel = (n: number | null) => {
     if (n === null) return "—";
@@ -51,7 +42,7 @@ export const GlobalPanel = ({
         <div className="space-y-3">
           <Row
             label="Conflict Index"
-            value={hasAcled ? conflictLabel(conflictCount) : "Add key"}
+            value={hasAcled ? conflictLabel(conflictCount) : "Not configured"}
             subtle={!hasAcled}
             tone={
               !hasAcled
@@ -65,9 +56,8 @@ export const GlobalPanel = ({
           />
           <Row
             label="Conflict events (7d)"
-            value={hasAcled ? (conflictCount?.toLocaleString() ?? "—") : "Add key in Settings"}
+            value={hasAcled ? (conflictCount?.toLocaleString() ?? "—") : "Contact admin"}
             subtle={!hasAcled}
-            link={!hasAcled ? "/settings" : undefined}
           />
           <Row
             label="Major disasters active"
@@ -91,13 +81,11 @@ const Row = ({
   value,
   subtle,
   tone,
-  link,
 }: {
   label: string;
   value: string;
   subtle?: boolean;
   tone?: "ok" | "warning" | "critical" | "muted";
-  link?: string;
 }) => {
   const toneClass = {
     ok: "text-foreground",
@@ -109,17 +97,7 @@ const Row = ({
   return (
     <div className="flex items-center justify-between py-1.5 border-b border-border/40 last:border-0">
       <span className="font-mono text-[10px] uppercase tracking-wider text-dim">{label}</span>
-      {link ? (
-        <Link
-          to={link}
-          className="font-mono text-xs text-accent hover:underline inline-flex items-center gap-1"
-        >
-          <SettingsIcon className="h-3 w-3" />
-          {value}
-        </Link>
-      ) : (
-        <span className={`font-mono text-sm font-semibold ${subtle ? "text-dim" : toneClass}`}>{value}</span>
-      )}
+      <span className={`font-mono text-sm font-semibold ${subtle ? "text-dim" : toneClass}`}>{value}</span>
     </div>
   );
 };
