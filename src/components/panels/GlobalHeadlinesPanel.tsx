@@ -60,9 +60,16 @@ const timeAgo = (iso: string): string => {
   return `${Math.floor(h / 24)}d`;
 };
 
+const isLikelyEnglish = (title: string): boolean => {
+  if (!title) return false;
+  const nonAscii = title.replace(/[\x00-\x7F]/g, "").length;
+  return nonAscii / title.length <= 0.3;
+};
+
 export const GlobalHeadlinesPanel = ({ refreshMs }: { refreshMs: number }) => {
   const { data, isLoading, error, refetch, isFetching, dataUpdatedAt } = useGdeltHeadlines(refreshMs);
   const items: Headline[] = (data as any)?.items || [];
+  const visible = items.filter((h) => isLikelyEnglish(h.title));
 
   return (
     <Panel
@@ -72,7 +79,7 @@ export const GlobalHeadlinesPanel = ({ refreshMs }: { refreshMs: number }) => {
       action={
         <>
           <InfoTip>
-            Top global headlines from GDELT covering unrest, conflict, cyberattacks, coups, invasions, and major escalations. Last 6 hours, deduplicated across outlets.
+            Top global headlines from GDELT covering unrest, conflict, cyberattacks, coups, invasions, and major escalations. Last 6 hours, English only, deduplicated across outlets.
           </InfoTip>
           <RefreshButton onClick={() => refetch()} loading={isFetching} />
         </>
@@ -82,40 +89,42 @@ export const GlobalHeadlinesPanel = ({ refreshMs }: { refreshMs: number }) => {
         <PanelSkeleton rows={6} />
       ) : error ? (
         <PanelError message="Could not load global headlines" onRetry={() => refetch()} />
-      ) : items.length === 0 ? (
+      ) : visible.length === 0 ? (
         <div className="font-mono text-xs text-dim py-4 text-center">No recent headlines</div>
       ) : (
         <div className="space-y-2">
-          {items.map((item, i) => {
-            const flag = flagEmoji(item.country);
-            return (
-              <a
-                key={`${item.domain}-${i}`}
-                href={item.url}
-                target="_blank"
-                rel="noreferrer"
-                className="block py-1.5 border-b border-border/40 last:border-0 hover:bg-inset/50 transition-colors rounded px-1 -mx-1"
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <span
-                    className={`shrink-0 font-mono text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded border ${tagStyle[item.tag]}`}
-                  >
-                    {item.tag}
-                  </span>
-                  <span className="font-mono text-[10px] text-dim truncate flex-1">
-                    {flag && <span className="mr-1">{flag}</span>}
-                    {item.country || item.domain}
-                  </span>
-                  <span className="shrink-0 font-mono text-[10px] text-dim tabular-nums">
-                    {timeAgo(item.seendate)}
-                  </span>
-                </div>
-                <div className="font-mono text-xs text-foreground leading-snug line-clamp-2">
-                  {item.title}
-                </div>
-              </a>
-            );
-          })}
+          <div className="max-h-[500px] overflow-y-auto pr-1 scroll-thin space-y-2">
+            {visible.map((item, i) => {
+              const flag = flagEmoji(item.country);
+              return (
+                <a
+                  key={`${item.domain}-${i}`}
+                  href={item.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block py-1.5 border-b border-border/40 last:border-0 hover:bg-inset/50 transition-colors rounded px-1 -mx-1"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span
+                      className={`shrink-0 font-mono text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded border ${tagStyle[item.tag]}`}
+                    >
+                      {item.tag}
+                    </span>
+                    <span className="font-mono text-[10px] text-dim truncate flex-1">
+                      {flag && <span className="mr-1">{flag}</span>}
+                      {item.country || item.domain}
+                    </span>
+                    <span className="shrink-0 font-mono text-[10px] text-dim tabular-nums">
+                      {timeAgo(item.seendate)}
+                    </span>
+                  </div>
+                  <div className="font-mono text-xs text-foreground leading-snug line-clamp-2">
+                    {item.title}
+                  </div>
+                </a>
+              );
+            })}
+          </div>
           <ContextBox>
             Aggregated from GDELT global news monitoring. Click any headline to open the original report.
           </ContextBox>

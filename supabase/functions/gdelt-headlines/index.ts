@@ -53,8 +53,8 @@ Deno.serve(async (req) => {
   try {
     const url =
       'https://api.gdeltproject.org/api/v2/doc/doc?query=' +
-      encodeURIComponent('(protest OR conflict OR violence OR unrest OR cyberattack OR coup OR invasion OR strike OR blockade)') +
-      '&mode=artlist&maxrecords=50&timespan=6h&format=json&sort=DateDesc';
+      encodeURIComponent('(protest OR conflict OR violence OR unrest OR cyberattack OR coup OR invasion OR strike OR blockade) sourcelang:english') +
+      '&mode=artlist&maxrecords=75&timespan=6h&format=json&sort=DateDesc';
 
     const res = await fetch(url, {
       headers: { 'User-Agent': 'PrepPi/1.0 (situational-awareness)' },
@@ -117,7 +117,13 @@ Deno.serve(async (req) => {
     }
 
     items.sort((a, b) => new Date(b.seendate).getTime() - new Date(a.seendate).getTime());
-    const top = items.slice(0, 10);
+    const top = items.slice(0, 25);
+
+    const tagCounts = top.reduce((acc, item) => {
+      acc[item.tag] = (acc[item.tag] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    console.log('gdelt-headlines tag distribution:', tagCounts, 'total:', top.length);
 
     const payload = { items: top, fetchedAt: new Date().toISOString() };
     cached = { at: Date.now(), payload };
