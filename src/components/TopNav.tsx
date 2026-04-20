@@ -75,6 +75,7 @@ export const TopNav = () => {
             <LiveIndicator />
             <span className="font-mono text-xs text-dim tabular-nums">{time}</span>
           </div>
+          <InstallAppButton />
           {user && (
             <Button
               variant="ghost"
