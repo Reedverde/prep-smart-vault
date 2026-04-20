@@ -28,7 +28,6 @@ const Dashboard = () => {
 
   const refreshMs = (settings.refresh_interval_min || 10) * 60 * 1000;
   const { latitude: lat, longitude: lng } = settings;
-  const stateCode = resolveStateCode(settings.location_name);
 
   return (
     <PageContainer>
@@ -81,7 +80,7 @@ const Dashboard = () => {
           <NationalPanel refreshMs={refreshMs} />
         </div>
         <div className="order-8 xl:order-9">
-          <NewsPanel state={stateCode} refreshMs={refreshMs} />
+          <GlobalHeadlinesPanel refreshMs={refreshMs} />
         </div>
 
         {/* Row 4 */}
