@@ -161,7 +161,80 @@ export const useAcled = (refreshMs: number) =>
       }
       if (!res.ok) throw new Error("ACLED proxy failed");
       const json = await res.json();
-      return json;
+      return json as {
+        count: number;
+        byRegion: Record<string, number>;
+        byType: Record<string, number>;
+        from: string;
+        to: string;
+      };
+    },
+    refetchInterval: refreshMs,
+    staleTime: refreshMs * 0.8,
+    retry: 1,
+  });
+
+// ============ NASA (via edge proxy) ============
+export const useNasa = (refreshMs: number) =>
+  useQuery({
+    queryKey: ["nasa"],
+    queryFn: async () => {
+      const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
+      const url = `https://${projectId}.supabase.co/functions/v1/nasa-space`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${(import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+      });
+      if (res.status === 503) return { notConfigured: true } as any;
+      if (!res.ok) throw new Error("NASA proxy failed");
+      return await res.json();
+    },
+    refetchInterval: refreshMs,
+    staleTime: refreshMs * 0.8,
+    retry: 1,
+  });
+
+// ============ EIA Grid (via edge proxy) ============
+export const useEiaGrid = (refreshMs: number) =>
+  useQuery({
+    queryKey: ["eia-grid"],
+    queryFn: async () => {
+      const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
+      const url = `https://${projectId}.supabase.co/functions/v1/eia-grid`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${(import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+      });
+      if (res.status === 503) return { notConfigured: true } as any;
+      if (!res.ok) throw new Error("EIA proxy failed");
+      return await res.json();
+    },
+    refetchInterval: refreshMs,
+    staleTime: refreshMs * 0.8,
+    retry: 1,
+  });
+
+// ============ News Feed (via edge proxy) ============
+export const useNewsFeed = (state: string | null, refreshMs: number) =>
+  useQuery({
+    queryKey: ["news-feed", state],
+    queryFn: async () => {
+      const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
+      const qs = state ? `?state=${encodeURIComponent(state)}` : "";
+      const url = `https://${projectId}.supabase.co/functions/v1/news-feed${qs}`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${(import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+      });
+      if (res.status === 503) return { notConfigured: true } as any;
+      if (!res.ok) throw new Error("News proxy failed");
+      return await res.json() as { items: Array<{ source: string; title: string; url: string; publishedAt: string; description?: string }> };
     },
     refetchInterval: refreshMs,
     staleTime: refreshMs * 0.8,
