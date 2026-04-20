@@ -128,14 +128,19 @@ export const useAirQuality = (
   });
 
 // ============ GDACS ============
+// Major disasters = currently-active GDACS events at Orange (humanitarian impact likely)
+// or Red (severe humanitarian impact) alert level. Green excluded — minor events.
+// iscurrent filter excludes events that have already ended.
 export const useGdacs = (refreshMs: number) =>
   useQuery({
     queryKey: ["gdacs"],
     queryFn: async () => {
-      const res = await fetch("https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?fromDate=&toDate=&alertlevel=Green;Orange;Red&eventlist=EQ;TC;FL;VO;DR;WF");
+      const res = await fetch("https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?fromDate=&toDate=&alertlevel=Orange;Red&eventlist=EQ;TC;FL;VO;DR;WF");
       if (!res.ok) throw new Error("GDACS failed");
       const json = await res.json();
-      const features = json?.features || [];
+      const features = (json?.features || []).filter(
+        (f: any) => String(f?.properties?.iscurrent).toLowerCase() === "true",
+      );
       return features as Array<any>;
     },
     refetchInterval: refreshMs,
