@@ -14,6 +14,17 @@ import { NasaPanel } from "@/components/panels/NasaPanel";
 import { GridStatusPanel } from "@/components/panels/GridStatusPanel";
 import { GlobalHeadlinesPanel } from "@/components/panels/GlobalHeadlinesPanel";
 
+const debugRows = new URLSearchParams(window.location.search).get("debug") === "rows";
+
+const RowLabel = ({ children }: { children: string }) =>
+  debugRows ? (
+    <div className="font-mono text-[10px] tracking-[0.2em] text-dim mb-1 uppercase">
+      {children}
+    </div>
+  ) : null;
+
+const rowGrid = "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-4 auto-rows-fr";
+
 const Dashboard = () => {
   const { settings, loading } = useUserSettings();
 
@@ -30,19 +41,6 @@ const Dashboard = () => {
   const refreshMs = (settings.refresh_interval_min || 10) * 60 * 1000;
   const { latitude: lat, longitude: lng } = settings;
 
-  /*
-    CSS-columns masonry, column-major flow.
-    Mobile (1 col): Alerts, Weather, Earthquakes, ConflictPulse,
-                    SpaceWeather, AirQuality, National, ActiveDisasters,
-                    GridStatus, NASA, GlobalHeadlines, SystemHealth
-    md (2 col): col-major fill across 2 columns
-    xl (3 col): col-major fill across 3 columns:
-      Col 1: Alerts, Weather, Earthquakes, ConflictPulse
-      Col 2: SpaceWeather, AirQuality, National, ActiveDisasters
-      Col 3: GridStatus, NASA, GlobalHeadlines, SystemHealth
-  */
-  const wrap = "break-inside-avoid mb-4";
-
   return (
     <PageContainer>
       <div className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs">
@@ -54,24 +52,36 @@ const Dashboard = () => {
         </span>
       </div>
 
-      <div className="columns-1 md:columns-2 xl:columns-3 gap-4">
-        {/* Col 1 */}
-        <div className={wrap}><AlertsPanel lat={lat} lng={lng} refreshMs={refreshMs} /></div>
-        <div className={wrap}><WeatherPanel lat={lat} lng={lng} refreshMs={refreshMs} /></div>
-        <div className={wrap}><EarthquakesPanel refreshMs={refreshMs} lat={lat} lng={lng} /></div>
-        <div className={wrap}><ConflictPulsePanel refreshMs={refreshMs} /></div>
+      {/* Row 1 — LOCAL */}
+      <RowLabel>LOCAL</RowLabel>
+      <div className={rowGrid}>
+        <WeatherPanel lat={lat} lng={lng} refreshMs={refreshMs} />
+        <AlertsPanel lat={lat} lng={lng} refreshMs={refreshMs} />
+        <AirQualityPanel lat={lat} lng={lng} refreshMs={refreshMs} />
+      </div>
 
-        {/* Col 2 */}
-        <div className={wrap}><SpaceWeatherPanel refreshMs={refreshMs} /></div>
-        <div className={wrap}><AirQualityPanel lat={lat} lng={lng} refreshMs={refreshMs} /></div>
-        <div className={wrap}><NationalPanel refreshMs={refreshMs} /></div>
-        <div className={wrap}><ActiveDisastersPanel refreshMs={refreshMs} /></div>
+      {/* Row 2 — NEWS + NATIONAL */}
+      <RowLabel>NEWS + NATIONAL</RowLabel>
+      <div className={rowGrid}>
+        <GlobalHeadlinesPanel refreshMs={refreshMs} />
+        <NationalPanel refreshMs={refreshMs} />
+        <GridStatusPanel refreshMs={refreshMs} />
+      </div>
 
-        {/* Col 3 */}
-        <div className={wrap}><GridStatusPanel refreshMs={refreshMs} /></div>
-        <div className={wrap}><NasaPanel refreshMs={refreshMs} /></div>
-        <div className={wrap}><GlobalHeadlinesPanel refreshMs={refreshMs} /></div>
-        <div className={wrap}><SystemHealthPanel refreshMin={settings.refresh_interval_min} /></div>
+      {/* Row 3 — WORLD */}
+      <RowLabel>WORLD</RowLabel>
+      <div className={rowGrid}>
+        <EarthquakesPanel refreshMs={refreshMs} lat={lat} lng={lng} />
+        <ActiveDisastersPanel refreshMs={refreshMs} />
+        <ConflictPulsePanel refreshMs={refreshMs} />
+      </div>
+
+      {/* Row 4 — SPACE + SYSTEM */}
+      <RowLabel>SPACE + SYSTEM</RowLabel>
+      <div className={rowGrid}>
+        <SpaceWeatherPanel refreshMs={refreshMs} />
+        <NasaPanel refreshMs={refreshMs} />
+        <SystemHealthPanel refreshMin={settings.refresh_interval_min} />
       </div>
     </PageContainer>
   );

@@ -58,34 +58,36 @@ export const SpaceWeatherPanel = ({ refreshMs }: { refreshMs: number }) => {
         <PanelError message="Could not load SWPC data" onRetry={() => refetch()} />
       ) : (
         <div className="space-y-4">
-          {!sunFailed && (
-            <div className="flex flex-col items-center gap-1.5">
-              <img
-                src={sunSrc}
-                alt="Live image of the Sun, NASA SDO 193 Ångström channel"
-                width={120}
-                height={120}
-                onError={() => setSunFailed(true)}
-                className="rounded-full border border-border/60 bg-inset"
-                style={{ width: 120, height: 120, objectFit: "cover" }}
-              />
-              <div className="font-mono text-[10px] uppercase tracking-wider text-dim">
-                Sun now · 193Å · NASA SDO
+          <div className="flex flex-col sm:flex-row items-center justify-around gap-4">
+            {!sunFailed && (
+              <div className="flex flex-col items-center gap-1.5">
+                <img
+                  src={sunSrc}
+                  alt="Live image of the Sun, NASA SDO 193 Ångström channel"
+                  width={120}
+                  height={120}
+                  onError={() => setSunFailed(true)}
+                  className="rounded-full border border-border/60 bg-inset"
+                  style={{ width: 120, height: 120, objectFit: "cover" }}
+                />
+                <div className="font-mono text-[10px] uppercase tracking-wider text-dim">
+                  Sun now · 193Å · NASA SDO
+                </div>
               </div>
-            </div>
-          )}
-          <div className="flex flex-col items-center">
-            <SemiGauge value={current} min={0} max={9} zones={zones} />
-            <div className="flex items-baseline gap-2 -mt-1">
-              <span className="font-mono text-2xl font-semibold text-foreground tabular-nums">
-                Kp {current.toFixed(1)}
-              </span>
-              <span
-                className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border"
-                style={{ color: status.color, borderColor: status.color }}
-              >
-                {status.label}
-              </span>
+            )}
+            <div className="flex flex-col items-center">
+              <SemiGauge value={current} min={0} max={9} zones={zones} />
+              <div className="flex items-baseline gap-2 -mt-1">
+                <span className="font-mono text-2xl font-semibold text-foreground tabular-nums">
+                  Kp {current.toFixed(1)}
+                </span>
+                <span
+                  className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border"
+                  style={{ color: status.color, borderColor: status.color }}
+                >
+                  {status.label}
+                </span>
+              </div>
             </div>
           </div>
 

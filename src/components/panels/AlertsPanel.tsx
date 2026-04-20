@@ -19,6 +19,66 @@ const sevBorder = (s: string) => {
   return "border-l-accent";
 };
 
+const AlertCard = ({
+  a,
+  expanded,
+  setExpanded,
+  dimmed = false,
+}: {
+  a: any;
+  expanded: string | null;
+  setExpanded: (id: string | null) => void;
+  dimmed?: boolean;
+}) => {
+  const p = a.properties;
+  const isOpen = expanded === a.id;
+  return (
+    <div
+      className={cn(
+        "rounded-md bg-inset border-l-2 border-y border-r border-border",
+        dimmed ? "border-l-border opacity-60" : sevBorder(p.severity),
+      )}
+    >
+      <button
+        className="w-full text-left px-3 py-2.5"
+        onClick={() => setExpanded(isOpen ? null : a.id)}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="font-mono text-xs font-semibold text-foreground">{p.event}</div>
+            <div className="flex items-center gap-2 mt-1">
+              <SeverityBadge level={dimmed ? "low" : sevToLevel(p.severity)}>
+                {p.severity}
+              </SeverityBadge>
+              {dimmed && p.ends ? (
+                <span className="font-mono text-[10px] text-dim">
+                  Ended {formatDistanceToNow(new Date(p.ends), { addSuffix: true })}
+                </span>
+              ) : p.expires ? (
+                <span className="font-mono text-[10px] text-dim">
+                  ends {formatDistanceToNow(new Date(p.expires), { addSuffix: true })}
+                </span>
+              ) : null}
+            </div>
+            <div className="font-mono text-[11px] text-dim mt-1.5 line-clamp-2">{p.headline}</div>
+          </div>
+          <ChevronDown className={cn("h-3 w-3 text-dim transition-transform mt-0.5", isOpen && "rotate-180")} />
+        </div>
+      </button>
+      {isOpen && (
+        <div className="px-3 pb-3 space-y-1.5 border-t border-border/60 pt-2">
+          <div className="font-mono text-[10px] uppercase tracking-wider text-dim">Area</div>
+          <div className="font-mono text-xs text-foreground">{p.areaDesc}</div>
+          <div className="font-mono text-[10px] uppercase tracking-wider text-dim mt-2">Description</div>
+          <p className="font-mono text-[11px] text-foreground whitespace-pre-wrap leading-relaxed">
+            {p.description}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const AlertsPanel = ({
   lat,
   lng,
@@ -30,6 +90,10 @@ export const AlertsPanel = ({
 }) => {
   const { data, isLoading, error, refetch, isFetching, dataUpdatedAt } = useLocalAlerts(lat, lng, refreshMs);
   const [expanded, setExpanded] = useState<string | null>(null);
+
+  const active = data?.active || [];
+  const expired = data?.expired || [];
+  const expiredTotal = data?.expiredTotal || 0;
 
   return (
     <Panel
@@ -47,7 +111,7 @@ export const AlertsPanel = ({
         <PanelSkeleton rows={3} />
       ) : error ? (
         <PanelError message="Could not load alerts" onRetry={() => refetch()} />
-      ) : !data || data.length === 0 ? (
+      ) : active.length === 0 && expired.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 gap-2 text-center">
           <div className="h-10 w-10 rounded-full bg-severity-low/15 flex items-center justify-center">
             <Check className="h-5 w-5 text-severity-low" />
@@ -56,48 +120,39 @@ export const AlertsPanel = ({
           <p className="font-mono text-[10px] text-dim">All clear for this area</p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {data.map((a: any) => {
-            const p = a.properties;
-            const isOpen = expanded === a.id;
-            return (
-              <div
-                key={a.id}
-                className={cn("rounded-md bg-inset border-l-2 border-y border-r border-border", sevBorder(p.severity))}
-              >
-                <button
-                  className="w-full text-left px-3 py-2.5"
-                  onClick={() => setExpanded(isOpen ? null : a.id)}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="font-mono text-xs font-semibold text-foreground">{p.event}</div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <SeverityBadge level={sevToLevel(p.severity)}>{p.severity}</SeverityBadge>
-                        {p.expires && (
-                          <span className="font-mono text-[10px] text-dim">
-                            ends {formatDistanceToNow(new Date(p.expires), { addSuffix: true })}
-                          </span>
-                        )}
-                      </div>
-                      <div className="font-mono text-[11px] text-dim mt-1.5 line-clamp-2">{p.headline}</div>
-                    </div>
-                    <ChevronDown className={cn("h-3 w-3 text-dim transition-transform mt-0.5", isOpen && "rotate-180")} />
-                  </div>
-                </button>
-                {isOpen && (
-                  <div className="px-3 pb-3 space-y-1.5 border-t border-border/60 pt-2">
-                    <div className="font-mono text-[10px] uppercase tracking-wider text-dim">Area</div>
-                    <div className="font-mono text-xs text-foreground">{p.areaDesc}</div>
-                    <div className="font-mono text-[10px] uppercase tracking-wider text-dim mt-2">Description</div>
-                    <p className="font-mono text-[11px] text-foreground whitespace-pre-wrap leading-relaxed">
-                      {p.description}
-                    </p>
-                  </div>
-                )}
+        <div className="flex-1 overflow-y-auto scroll-thin -mr-1 pr-1 space-y-2">
+          {/* Active alerts */}
+          {active.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-6 gap-2 text-center">
+              <div className="h-10 w-10 rounded-full bg-severity-low/15 flex items-center justify-center">
+                <Check className="h-5 w-5 text-severity-low" />
               </div>
-            );
-          })}
+              <p className="font-mono text-xs text-foreground">No active alerts</p>
+              <p className="font-mono text-[10px] text-dim">All clear for this area</p>
+            </div>
+          ) : (
+            active.map((a: any) => (
+              <AlertCard key={a.id} a={a} expanded={expanded} setExpanded={setExpanded} />
+            ))
+          )}
+
+          {/* Expired alerts — past 7 days */}
+          {expired.length > 0 && (
+            <>
+              <div className="font-mono text-[10px] uppercase tracking-[0.15em] text-dim mt-3 mb-2 pt-3 border-t border-border/60">
+                Recent · past 7 days
+              </div>
+              {expired.map((a: any) => (
+                <AlertCard key={a.id} a={a} expanded={expanded} setExpanded={setExpanded} dimmed />
+              ))}
+              {expiredTotal > expired.length && (
+                <div className="text-[10px] text-dim font-mono mt-2">
+                  + {expiredTotal - expired.length} more this week
+                </div>
+              )}
+            </>
+          )}
+
           <ContextBox>
             NWS severity: Extreme = immediate threat to life · Severe = significant · Moderate = possible · Minor = minimal.
           </ContextBox>
