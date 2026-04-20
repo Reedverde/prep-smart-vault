@@ -3,9 +3,23 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// In-memory cache to respect GDELT's 1-request-per-5-seconds rate limit.
+// GDELT data updates every 15 min; 5-min cache is plenty fresh and prevents
+// 429s from concurrent clients / dashboard auto-refreshes hitting the function.
+const CACHE_TTL_MS = 5 * 60 * 1000;
+let cached: { at: number; payload: unknown } | null = null;
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
+  }
+
+  // Serve from cache if fresh
+  if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
+    return new Response(JSON.stringify(cached.payload), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'HIT' },
+    });
   }
 
   try {
@@ -19,6 +33,13 @@ Deno.serve(async (req) => {
     });
     if (!res.ok) {
       const body = await res.text().catch(() => '');
+      // If we have stale cache and upstream failed (e.g. 429), serve stale.
+      if (cached) {
+        return new Response(JSON.stringify(cached.payload), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'STALE' },
+        });
+      }
       return new Response(
         JSON.stringify({
           error: 'upstream_failed',
@@ -62,19 +83,19 @@ Deno.serve(async (req) => {
     const weekAgo = new Date(today.getTime() - 7 * 86400000);
     const fmt = (d: Date) => d.toISOString().slice(0, 10);
 
-    return new Response(
-      JSON.stringify({
-        count: articles.length,
-        byRegion,
-        byType,
-        from: fmt(weekAgo),
-        to: fmt(today),
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
-    );
+    const payload = {
+      count: articles.length,
+      byRegion,
+      byType,
+      from: fmt(weekAgo),
+      to: fmt(today),
+    };
+    cached = { at: Date.now(), payload };
+
+    return new Response(JSON.stringify(payload), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'MISS' },
+    });
   } catch (err) {
     return new Response(
       JSON.stringify({ error: 'internal_error', message: String(err) }),
