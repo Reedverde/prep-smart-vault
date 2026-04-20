@@ -14,7 +14,261 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      alerts: {
+        Row: {
+          area_desc: string | null
+          created_at: string
+          delivered_channels: string[]
+          description: string | null
+          dismissed_at: string | null
+          event_type: string | null
+          expires_at: string | null
+          external_id: string
+          headline: string
+          id: string
+          issued_at: string | null
+          severity: string | null
+          source: string
+          tier: number
+          user_id: string
+        }
+        Insert: {
+          area_desc?: string | null
+          created_at?: string
+          delivered_channels?: string[]
+          description?: string | null
+          dismissed_at?: string | null
+          event_type?: string | null
+          expires_at?: string | null
+          external_id: string
+          headline: string
+          id?: string
+          issued_at?: string | null
+          severity?: string | null
+          source: string
+          tier: number
+          user_id: string
+        }
+        Update: {
+          area_desc?: string | null
+          created_at?: string
+          delivered_channels?: string[]
+          description?: string | null
+          dismissed_at?: string | null
+          event_type?: string | null
+          expires_at?: string | null
+          external_id?: string
+          headline?: string
+          id?: string
+          issued_at?: string | null
+          severity?: string | null
+          source?: string
+          tier?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      inventory_items: {
+        Row: {
+          category: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          location: string | null
+          name: string
+          notes: string | null
+          quantity: number | null
+          unit: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          location?: string | null
+          name: string
+          notes?: string | null
+          quantity?: number | null
+          unit?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          location?: string | null
+          name?: string
+          notes?: string | null
+          quantity?: number | null
+          unit?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      library_docs: {
+        Row: {
+          categories: string[]
+          created_at: string
+          description: string | null
+          doc_type: string | null
+          drive_file_id: string | null
+          id: string
+          mime_type: string | null
+          original_filename: string | null
+          page_count: number | null
+          storage_path: string | null
+          tags: string[]
+          text_content: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          categories?: string[]
+          created_at?: string
+          description?: string | null
+          doc_type?: string | null
+          drive_file_id?: string | null
+          id?: string
+          mime_type?: string | null
+          original_filename?: string | null
+          page_count?: number | null
+          storage_path?: string | null
+          tags?: string[]
+          text_content?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          categories?: string[]
+          created_at?: string
+          description?: string | null
+          doc_type?: string | null
+          drive_file_id?: string | null
+          id?: string
+          mime_type?: string | null
+          original_filename?: string | null
+          page_count?: number | null
+          storage_path?: string | null
+          tags?: string[]
+          text_content?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      snapshots: {
+        Row: {
+          captured_at: string
+          created_at: string
+          dashboard_data: Json
+          id: string
+          kind: string
+          notes: string | null
+          screenshot_url: string | null
+          summary: Json
+          title: string | null
+          user_id: string
+        }
+        Insert: {
+          captured_at?: string
+          created_at?: string
+          dashboard_data?: Json
+          id?: string
+          kind?: string
+          notes?: string | null
+          screenshot_url?: string | null
+          summary?: Json
+          title?: string | null
+          user_id: string
+        }
+        Update: {
+          captured_at?: string
+          created_at?: string
+          dashboard_data?: Json
+          id?: string
+          kind?: string
+          notes?: string | null
+          screenshot_url?: string | null
+          summary?: Json
+          title?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          acled_api_key: string | null
+          acled_email: string | null
+          airnow_api_key: string | null
+          alert_tier_1: boolean
+          alert_tier_2: boolean
+          alert_tier_3: boolean
+          channel_banner: boolean
+          channel_email: boolean
+          channel_ntfy: boolean
+          channel_web_push: boolean
+          created_at: string
+          latitude: number
+          location_name: string
+          longitude: number
+          ntfy_topic: string | null
+          refresh_interval_min: number
+          timezone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          acled_api_key?: string | null
+          acled_email?: string | null
+          airnow_api_key?: string | null
+          alert_tier_1?: boolean
+          alert_tier_2?: boolean
+          alert_tier_3?: boolean
+          channel_banner?: boolean
+          channel_email?: boolean
+          channel_ntfy?: boolean
+          channel_web_push?: boolean
+          created_at?: string
+          latitude?: number
+          location_name?: string
+          longitude?: number
+          ntfy_topic?: string | null
+          refresh_interval_min?: number
+          timezone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          acled_api_key?: string | null
+          acled_email?: string | null
+          airnow_api_key?: string | null
+          alert_tier_1?: boolean
+          alert_tier_2?: boolean
+          alert_tier_3?: boolean
+          channel_banner?: boolean
+          channel_email?: boolean
+          channel_ntfy?: boolean
+          channel_web_push?: boolean
+          created_at?: string
+          latitude?: number
+          location_name?: string
+          longitude?: number
+          ntfy_topic?: string | null
+          refresh_interval_min?: number
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
