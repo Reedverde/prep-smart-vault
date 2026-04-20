@@ -13,7 +13,7 @@ const SOURCES: { key: string; label: string }[] = [
   { key: "kp-index", label: "NOAA SWPC" },
   { key: "airnow", label: "EPA AirNow" },
   { key: "gdacs", label: "GDACS" },
-  { key: "acled", label: "ACLED" },
+  { key: "gdelt", label: "GDELT" },
 ];
 
 export const SystemHealthPanel = ({ refreshMin }: { refreshMin: number }) => {
