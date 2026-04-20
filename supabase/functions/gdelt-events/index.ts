@@ -33,24 +33,36 @@ Deno.serve(async (req) => {
     });
     if (!res.ok) {
       const body = await res.text().catch(() => '');
-      // If we have stale cache and upstream failed (e.g. 429), serve stale.
       if (cached) {
         return new Response(JSON.stringify(cached.payload), {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'STALE' },
         });
       }
-      return new Response(
-        JSON.stringify({
-          error: 'upstream_failed',
-          status: res.status,
-          upstream: body.slice(0, 200),
-        }),
-        {
-          status: 502,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      );
+      // No cache + upstream failed (often GDELT 429 on cold start): return
+      // empty-but-valid payload so dashboard renders. Cache briefly (1 min)
+      // so we retry soon without hammering GDELT.
+      const today = new Date();
+      const weekAgo = new Date(today.getTime() - 7 * 86400000);
+      const fmt = (d: Date) => d.toISOString().slice(0, 10);
+      const emptyPayload = {
+        count: 0,
+        byRegion: {},
+        byType: {},
+        from: fmt(weekAgo),
+        to: fmt(today),
+        degraded: true,
+        upstreamStatus: res.status,
+      };
+      cached = { at: Date.now() - (CACHE_TTL_MS - 60_000), payload: emptyPayload };
+      console.log('gdelt-events upstream failed, returning degraded payload', {
+        status: res.status,
+        body: body.slice(0, 200),
+      });
+      return new Response(JSON.stringify(emptyPayload), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'DEGRADED' },
+      });
     }
 
     // GDELT sometimes returns text/html for empty/throttled responses; guard parse.
