@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { useUserSettings } from "@/hooks/useUserSettings";
+import { InstallAppButton } from "./InstallAppButton";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard" },
@@ -74,6 +75,7 @@ export const TopNav = () => {
             <LiveIndicator />
             <span className="font-mono text-xs text-dim tabular-nums">{time}</span>
           </div>
+          <InstallAppButton />
           {user && (
             <Button
               variant="ghost"
