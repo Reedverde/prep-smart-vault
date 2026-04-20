@@ -27,7 +27,9 @@ const zones = [
 export const SpaceWeatherPanel = ({ refreshMs }: { refreshMs: number }) => {
   const { data, isLoading, error, refetch, isFetching, dataUpdatedAt } = useKpIndex(refreshMs);
 
-  const current = data?.[data.length - 1]?.kp ?? 0;
+  const hasData = Array.isArray(data) && data.length > 0;
+  const latest = hasData ? data[data.length - 1].kp : null;
+  const current = Number.isFinite(latest as number) ? (latest as number) : 0;
   const status = kpStatus(current);
   const impl = implications(current);
   const trend = (data || []).slice(-24).map((r) => ({ kp: r.kp }));

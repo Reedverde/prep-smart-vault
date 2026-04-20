@@ -79,11 +79,15 @@ export const useKpIndex = (refreshMs: number) =>
         "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json",
       );
       if (!res.ok) throw new Error("SWPC failed");
-      const json = (await res.json()) as Array<Array<string>>;
-      const rows = json.slice(1).map((r) => ({
-        time: r[0],
-        kp: parseFloat(r[1]),
-      }));
+      const json = (await res.json()) as Array<Array<any>>;
+      const rows = json
+        .slice(1)
+        .filter((r) => r && r[1] !== null && r[1] !== undefined && r[1] !== "")
+        .map((r) => ({
+          time: r[0] as string,
+          kp: Number(r[1]),
+        }))
+        .filter((r) => Number.isFinite(r.kp));
       return rows;
     },
     refetchInterval: refreshMs,
@@ -157,7 +161,80 @@ export const useAcled = (refreshMs: number) =>
       }
       if (!res.ok) throw new Error("ACLED proxy failed");
       const json = await res.json();
-      return json;
+      return json as {
+        count: number;
+        byRegion: Record<string, number>;
+        byType: Record<string, number>;
+        from: string;
+        to: string;
+      };
+    },
+    refetchInterval: refreshMs,
+    staleTime: refreshMs * 0.8,
+    retry: 1,
+  });
+
+// ============ NASA (via edge proxy) ============
+export const useNasa = (refreshMs: number) =>
+  useQuery({
+    queryKey: ["nasa"],
+    queryFn: async () => {
+      const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
+      const url = `https://${projectId}.supabase.co/functions/v1/nasa-space`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${(import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+      });
+      if (res.status === 503) return { notConfigured: true } as any;
+      if (!res.ok) throw new Error("NASA proxy failed");
+      return await res.json();
+    },
+    refetchInterval: refreshMs,
+    staleTime: refreshMs * 0.8,
+    retry: 1,
+  });
+
+// ============ EIA Grid (via edge proxy) ============
+export const useEiaGrid = (refreshMs: number) =>
+  useQuery({
+    queryKey: ["eia-grid"],
+    queryFn: async () => {
+      const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
+      const url = `https://${projectId}.supabase.co/functions/v1/eia-grid`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${(import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+      });
+      if (res.status === 503) return { notConfigured: true } as any;
+      if (!res.ok) throw new Error("EIA proxy failed");
+      return await res.json();
+    },
+    refetchInterval: refreshMs,
+    staleTime: refreshMs * 0.8,
+    retry: 1,
+  });
+
+// ============ News Feed (via edge proxy) ============
+export const useNewsFeed = (state: string | null, refreshMs: number) =>
+  useQuery({
+    queryKey: ["news-feed", state],
+    queryFn: async () => {
+      const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
+      const qs = state ? `?state=${encodeURIComponent(state)}` : "";
+      const url = `https://${projectId}.supabase.co/functions/v1/news-feed${qs}`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${(import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+      });
+      if (res.status === 503) return { notConfigured: true } as any;
+      if (!res.ok) throw new Error("News proxy failed");
+      return await res.json() as { items: Array<{ source: string; title: string; url: string; publishedAt: string; description?: string }> };
     },
     refetchInterval: refreshMs,
     staleTime: refreshMs * 0.8,
