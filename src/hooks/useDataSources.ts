@@ -17,6 +17,7 @@ export const useWeather = (lat: number, lng: number, refreshMs: number) =>
       return {
         period: fc.properties.periods[0],
         nextPeriod: fc.properties.periods[1],
+        upcoming: fc.properties.periods.slice(1, 5),
         forecastUrl: point.properties.forecast,
       };
     },
