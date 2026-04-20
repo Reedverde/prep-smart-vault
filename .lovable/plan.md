@@ -1,60 +1,76 @@
 
 
-# Wire 3 Panels into Dashboard + State Code Parsing
+# Update Logos: Favicon, Login Image, and Installable Manifest
 
-Single-file code change to `src/pages/Dashboard.tsx`, plus a memory update. No visual QA — ship default layout.
+Two uploaded mascots get wired in:
+- `lcon.jpg` (light-green background, square) → favicon + PWA install icon
+- `PrepPi_1-2.png` (transparent background) → Login page mascot, 404 page, replaces the current `src/assets/preppi-logo.png` used by `LogoMark`
 
-## State code helper (in `Dashboard.tsx`)
+## Asset placement
 
-`resolveStateCode(locationName: string | null): string | null`
+Copy uploads into the project:
+- `user-uploads://lcon.jpg` → `public/favicon.png` (also used as PWA icon at 512×512)
+- `user-uploads://lcon.jpg` → `public/icon-192.png` (same file, browsers will scale)
+- `user-uploads://PrepPi_1-2.png` → `src/assets/preppi-mascot.png` (transparent, for in-app use)
 
-1. Regex `/,\s*([A-Z]{2})\s*$/i` against `location_name`. If match and code is in valid US states set (50 + DC), return uppercased.
-2. Otherwise, take last comma-segment, lowercase, look up in inline full-name map (`{ pennsylvania: "PA", ohio: "OH", ... }` for all 50 + DC).
-3. Otherwise return `null` (NewsPanel falls back to national-only).
+Delete the old `public/favicon.ico` so browsers don't fall back to it.
 
-Pass to `<NewsPanel state={stateCode} refreshMs={refreshMs} />`.
+Keep `src/assets/preppi-logo.png` in place but stop referencing it (LogoMark switches to the new transparent mascot).
 
-## Grid layout (default — Global wide)
+## Code changes
 
-```text
-xl 3-col:
-Row 1: Weather        Alerts          Earthquakes
-Row 2: Space Wx       NASA            Air Quality
-Row 3: Grid Status    National        News
-Row 4: Global (col-span-2)            System Health
+**`index.html`**
+- Add `<link rel="icon" href="/favicon.png" type="image/png">`
+- Add `<link rel="apple-touch-icon" href="/favicon.png">`
+- Add `<link rel="manifest" href="/manifest.webmanifest">`
+
+**`public/manifest.webmanifest`** (new file — installable, no service worker)
+```json
+{
+  "name": "PrepPi",
+  "short_name": "PrepPi",
+  "description": "Situational Awareness Console",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0e14",
+  "theme_color": "#0a0e14",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/favicon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/favicon.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
 ```
 
-Mobile single-column order:
-Alerts → Weather → Earthquakes → Space Wx → NASA → Air Quality → Grid Status → National → News → Global → System Health
+No `vite-plugin-pwa`, no service worker — per project guidance, this gives "Add to Home Screen" installability without breaking the Lovable preview.
 
-Use `order-N md:order-N xl:order-N` classes on each panel wrapper to control responsive ordering, matching the existing pattern in `Dashboard.tsx`.
+**`src/components/LogoMark.tsx`**
+- Swap import from `@/assets/preppi-logo.png` → `@/assets/preppi-mascot.png`
+- Remove the `rounded-2xl` class (the new mascot is transparent; rounded corners on transparent PNG do nothing useful and may clip leaf tips)
 
-## Memory update
+This automatically updates everywhere `LogoMark` is rendered:
+- `Login.tsx` (via `<Logo size="lg" />`)
+- `NotFound.tsx` (via `<Logo size="lg" />`)
 
-Rewrite `mem://features/dashboard-panels` to list 11 panels with their data sources and proxy edge functions:
+No changes needed to `Login.tsx` or `NotFound.tsx` themselves — they already render the mascot at `size="lg"`.
 
-- Weather (Open-Meteo, direct)
-- Alerts (NWS, direct)
-- Earthquakes (USGS, direct)
-- Space Weather (NOAA SWPC, direct — Kp parsing hardened)
-- NASA (DONKI + NEO via `nasa-space` proxy)
-- Air Quality (AirNow via `airnow-observations` proxy)
-- Grid Status (EIA PJM via `eia-grid` proxy)
-- National (RSS, direct)
-- News (NewsAPI + RSS via `news-feed` proxy, state-filtered)
-- Global (GDACS direct + ACLED via `acled-events` OAuth proxy)
-- System Health (internal)
+## Why no full PWA / service worker
+
+Per project guidance, service workers break Lovable's iframe preview (stale caches, navigation interference). A plain `manifest.webmanifest` gives users the install prompt and home-screen icon without the downsides. Offline support isn't in scope here (Stage 5 territory if ever needed).
 
 ## Files touched
 
-- `src/pages/Dashboard.tsx` — add 3 imports, state code helper, render 3 panels with responsive ordering
-- `mem://features/dashboard-panels` — updated panel inventory (11 panels)
+- `index.html` — icon links + manifest link
+- `public/favicon.png` (new, from `lcon.jpg`)
+- `public/icon-192.png` (new, from `lcon.jpg`)
+- `public/manifest.webmanifest` (new)
+- `public/favicon.ico` (deleted)
+- `src/assets/preppi-mascot.png` (new, from `PrepPi_1-2.png`)
+- `src/components/LogoMark.tsx` — swap image source, drop `rounded-2xl`
 
-## Out of scope (confirmed)
+## Out of scope
 
-- Stage 3 snapshots
-- Stage 4 alert delivery
-- Edge function changes
-- Settings page changes
-- Visual QA (you'll eyeball it post-ship)
+- Service worker / offline caching
+- Wordmark (`LogoWordmark`) changes — the magenta-Pi text logo in the top-nav stays as-is
+- Settings/Snapshots/Library page logo changes (they use the wordmark, not the mascot)
 
