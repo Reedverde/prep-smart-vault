@@ -25,15 +25,35 @@ export const useWeather = (lat: number, lng: number, refreshMs: number) =>
     enabled: Number.isFinite(lat) && Number.isFinite(lng),
   });
 
-// ============ NWS LOCAL ALERTS ============
+// ============ NWS LOCAL ALERTS (with 7-day history) ============
 export const useLocalAlerts = (lat: number, lng: number, refreshMs: number) =>
   useQuery({
     queryKey: ["alerts-local", lat, lng],
     queryFn: async () => {
-      const res = await fetch(`https://api.weather.gov/alerts/active?point=${lat},${lng}`, { headers: nwsHeaders });
+      const start = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const res = await fetch(
+        `https://api.weather.gov/alerts?point=${lat},${lng}&start=${start}`,
+        { headers: nwsHeaders },
+      );
       if (!res.ok) throw new Error("NWS alerts failed");
       const json = await res.json();
-      return json.features as Array<any>;
+      const features = (json.features || []) as Array<any>;
+      const now = new Date();
+      const active = features.filter((f: any) => {
+        const ends = f.properties?.ends;
+        return !ends || new Date(ends) > now;
+      });
+      const allExpired = features
+        .filter((f: any) => {
+          const ends = f.properties?.ends;
+          return ends && new Date(ends) <= now;
+        })
+        .sort((a: any, b: any) => new Date(b.properties.ends).getTime() - new Date(a.properties.ends).getTime());
+      return {
+        active,
+        expired: allExpired.slice(0, 10),
+        expiredTotal: allExpired.length,
+      };
     },
     refetchInterval: refreshMs,
     staleTime: refreshMs * 0.8,
