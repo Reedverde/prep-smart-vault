@@ -89,9 +89,28 @@ export const NasaPanel = ({ refreshMs }: { refreshMs: number }) => {
             )}
           </div>
 
-          <ContextBox>
-            DONKI tracks solar flares (C/M/X class) and CMEs. NEO feed flags asteroids passing within 1 lunar distance (~384,400 km).
-          </ContextBox>
+          <div className="rounded-md bg-inset border border-border/60 p-3 max-h-[200px] overflow-y-auto scroll-thin">
+            <div className="font-mono text-[10px] uppercase tracking-wider text-foreground mb-2">About NASA DONKI + NEO</div>
+            <div className="font-mono text-xs text-dim leading-relaxed space-y-2">
+              <p>
+                <span className="text-foreground">DONKI</span> (Database Of Notifications, Knowledge, Information) is NASA's space-weather event log — the authoritative record of flares, CMEs, and radiation events.
+              </p>
+              <p>
+                <span className="text-foreground">Solar flare classes</span> are logarithmic by X-ray brightness:<br />
+                A &lt; B &lt; <span className="text-severity-low">C</span> &lt; <span className="text-severity-severe">M</span> &lt; <span className="text-severity-critical">X</span>.<br />
+                Each step = 10× stronger. M-class can cause brief radio blackouts on Earth's sunlit side; X-class can disrupt GPS, HF radio, and satellite operations.
+              </p>
+              <p>
+                <span className="text-foreground">CMEs</span> (Coronal Mass Ejections) are billion-ton plasma eruptions from the Sun. If Earth-directed, they take 1–3 days to arrive and can drive geomagnetic storms — see the Kp index on the Space Weather panel.
+              </p>
+              <p>
+                <span className="text-foreground">NEO</span> = Near-Earth Object. <span className="text-foreground">LD</span> = Lunar Distance (≈384,400 km, the Earth–Moon distance). The <span className="text-severity-critical">CLOSE</span> flag marks passes within 1 LD.
+              </p>
+              <p className="text-[11px] italic">
+                Anything outside 1 LD has zero impact risk on that pass. Even &quot;close&quot; tracked NEOs are catalogued well in advance — surprise impacts come only from undetected smaller objects.
+              </p>
+            </div>
+          </div>
           <UpdatedAgo date={dataUpdatedAt ? new Date(dataUpdatedAt) : undefined} />
         </div>
       )}

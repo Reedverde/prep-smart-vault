@@ -92,8 +92,8 @@ export const GlobalHeadlinesPanel = ({ refreshMs }: { refreshMs: number }) => {
       ) : visible.length === 0 ? (
         <div className="font-mono text-xs text-dim py-4 text-center">No recent headlines</div>
       ) : (
-        <div className="flex-1 flex flex-col space-y-2">
-          <div className="flex-1 overflow-y-auto pr-1 scroll-thin space-y-2">
+        <div className="space-y-2">
+          <div className="max-h-[640px] overflow-y-auto pr-1 -mr-1 scroll-thin space-y-2">
             {visible.map((item, i) => {
               const flag = flagEmoji(item.country);
               return (

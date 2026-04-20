@@ -108,9 +108,27 @@ export const SpaceWeatherPanel = ({ refreshMs }: { refreshMs: number }) => {
             <Row label="Power Grid" value={impl.grid} />
           </div>
 
-          <ContextBox>
-            Kp index 0–9 measures global geomagnetic disturbance. 5+ may impact GPS, HF radio, and high-latitude power grids.
-          </ContextBox>
+          <div className="rounded-md bg-inset border border-border/60 p-3 max-h-[200px] overflow-y-auto scroll-thin">
+            <div className="font-mono text-[10px] uppercase tracking-wider text-foreground mb-2">About Space Weather</div>
+            <div className="font-mono text-xs text-dim leading-relaxed space-y-2">
+              <p>
+                The <span className="text-foreground">Kp index</span> (0–9) measures global geomagnetic disturbance, derived from magnetometers across 13 sub-auroral observatories. NOAA SWPC publishes a new value every 3 hours.
+              </p>
+              <p>
+                <span className="text-severity-low">0–3 QUIET</span> · <span className="text-severity-moderate">4 UNSETTLED</span> · <span className="text-severity-severe">5–6 STORM</span> · <span className="text-severity-critical">7–9 SEVERE</span>
+              </p>
+              <p>
+                <span className="text-foreground">Sun image:</span> NASA SDO 193 Å EUV channel showing the ~1 million °C corona. Dark patches are <span className="text-foreground">coronal holes</span> (open magnetic field lines spewing fast solar wind). Bright loops are active regions where flares originate.
+              </p>
+              <p>
+                <span className="text-foreground">Impact rows:</span><br />
+                <span className="text-foreground">Aurora</span> — visible latitude band; mid-latitudes need Kp 6+.<br />
+                <span className="text-foreground">HF Radio</span> — shortwave/ham/aviation comms degrade at Kp 4+.<br />
+                <span className="text-foreground">GPS</span> — positioning errors grow with ionospheric turbulence (Kp 5+).<br />
+                <span className="text-foreground">Power Grid</span> — geomagnetically induced currents stress high-latitude transformers at Kp 6+.
+              </p>
+            </div>
+          </div>
           <UpdatedAgo date={dataUpdatedAt ? new Date(dataUpdatedAt) : undefined} />
         </div>
       )}

@@ -81,9 +81,25 @@ export const ActiveDisastersPanel = ({ refreshMs }: { refreshMs: number }) => {
             )}
           </div>
 
-          <ContextBox>
-            GDACS (Global Disaster Alert and Coordination System) issues Green/Orange/Red alerts within minutes of major events worldwide.
-          </ContextBox>
+          <div className="rounded-md bg-inset border border-border/60 p-3 max-h-[180px] overflow-y-auto scroll-thin">
+            <div className="font-mono text-[10px] uppercase tracking-wider text-foreground mb-2">About GDACS</div>
+            <div className="font-mono text-xs text-dim leading-relaxed space-y-2">
+              <p>
+                The <span className="text-foreground">Global Disaster Alert and Coordination System</span> is run jointly by the UN and European Commission. It auto-detects major sudden-onset disasters worldwide and issues alerts within minutes — typically before mainstream news.
+              </p>
+              <p>
+                <span className="text-foreground">Alert levels:</span><br />
+                <span className="text-severity-low">GREEN</span> — minor event, low humanitarian impact (filtered out here).<br />
+                <span className="text-severity-moderate">ORANGE</span> — significant impact likely, regional response.<br />
+                <span className="text-severity-critical">RED</span> — severe, international assistance probable.
+              </p>
+              <p>
+                <span className="text-foreground">Event types:</span><br />
+                EQ = earthquake · TC = tropical cyclone · FL = flood · VO = volcano · DR = drought · WF = wildfire.
+              </p>
+              <p>This panel shows currently-active Orange and Red alerts only.</p>
+            </div>
+          </div>
           <UpdatedAgo date={dataUpdatedAt ? new Date(dataUpdatedAt) : undefined} />
         </div>
       )}
