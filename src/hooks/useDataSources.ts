@@ -143,23 +143,20 @@ export const useGdacs = (refreshMs: number) =>
     retry: 1,
   });
 
-// ============ ACLED (via edge proxy) ============
-export const useAcled = (refreshMs: number) =>
+// ============ GDELT (via edge proxy, keyless) ============
+export const useGdelt = (refreshMs: number) =>
   useQuery({
-    queryKey: ["acled"],
+    queryKey: ["gdelt"],
     queryFn: async () => {
       const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
-      const url = `https://${projectId}.supabase.co/functions/v1/acled-events`;
+      const url = `https://${projectId}.supabase.co/functions/v1/gdelt-events`;
       const res = await fetch(url, {
         headers: {
           apikey: (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY,
           Authorization: `Bearer ${(import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
       });
-      if (res.status === 503) {
-        return { notConfigured: true } as any;
-      }
-      if (!res.ok) throw new Error("ACLED proxy failed");
+      if (!res.ok) throw new Error("GDELT proxy failed");
       const json = await res.json();
       return json as {
         count: number;
