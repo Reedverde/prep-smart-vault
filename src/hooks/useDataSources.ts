@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const UA = "PrepPi (situational-awareness-app)";
 const nwsHeaders = { "User-Agent": UA, Accept: "application/geo+json" };
@@ -90,25 +91,45 @@ export const useKpIndex = (refreshMs: number) =>
     staleTime: refreshMs * 0.8,
   });
 
-// ============ EPA AIRNOW ============
+// ============ EPA AIRNOW (via edge proxy) ============
 export const useAirQuality = (
   lat: number,
   lng: number,
-  apiKey: string | null,
   refreshMs: number,
 ) =>
   useQuery({
-    queryKey: ["airnow", lat, lng, !!apiKey],
+    queryKey: ["airnow", lat, lng],
     queryFn: async () => {
-      if (!apiKey) return null;
-      const url = `https://www.airnowapi.org/aq/observation/latLong/current/?format=application/json&latitude=${lat}&longitude=${lng}&distance=25&API_KEY=${encodeURIComponent(apiKey)}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("AirNow failed");
-      return (await res.json()) as Array<any>;
+      const { data, error } = await supabase.functions.invoke("airnow-observations", {
+        method: "GET",
+        // Pass coords via query string (Supabase SDK forwards these)
+        headers: { "Content-Type": "application/json" },
+        body: undefined,
+        // @ts-ignore - supabase-js supports query param via URL but we use a different approach below
+      });
+      // Fallback: use direct fetch with constructed URL to pass query params reliably
+      const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
+      const url = `https://${projectId}.supabase.co/functions/v1/airnow-observations?lat=${lat}&lng=${lng}&distance=25`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${(import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+      });
+      if (res.status === 503) {
+        return { notConfigured: true } as any;
+      }
+      if (!res.ok) throw new Error("AirNow proxy failed");
+      const json = await res.json();
+      return json as Array<any>;
     },
     refetchInterval: refreshMs,
     staleTime: refreshMs * 0.8,
-    enabled: !!apiKey && Number.isFinite(lat) && Number.isFinite(lng),
+    enabled: Number.isFinite(lat) && Number.isFinite(lng),
+    retry: (failureCount, error: any) => {
+      if (error?.message?.includes("not_configured")) return false;
+      return failureCount < 2;
+    },
   });
 
 // ============ GDACS ============
@@ -116,11 +137,9 @@ export const useGdacs = (refreshMs: number) =>
   useQuery({
     queryKey: ["gdacs"],
     queryFn: async () => {
-      // GDACS RSS — use a CORS-friendly fallback via their JSON endpoint
       const res = await fetch("https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?fromDate=&toDate=&alertlevel=Green;Orange;Red&eventlist=EQ;TC;FL;VO;DR;WF");
       if (!res.ok) throw new Error("GDACS failed");
       const json = await res.json();
-      // Returns FeatureCollection
       const features = json?.features || [];
       return features as Array<any>;
     },
@@ -129,27 +148,27 @@ export const useGdacs = (refreshMs: number) =>
     retry: 1,
   });
 
-// ============ ACLED ============
-export const useAcled = (
-  email: string | null,
-  apiKey: string | null,
-  refreshMs: number,
-) =>
+// ============ ACLED (via edge proxy) ============
+export const useAcled = (refreshMs: number) =>
   useQuery({
-    queryKey: ["acled", !!apiKey],
+    queryKey: ["acled"],
     queryFn: async () => {
-      if (!apiKey || !email) return null;
-      const today = new Date();
-      const weekAgo = new Date(today.getTime() - 7 * 86400000);
-      const fmt = (d: Date) => d.toISOString().slice(0, 10);
-      const url = `https://api.acleddata.com/acled/read?key=${encodeURIComponent(apiKey)}&email=${encodeURIComponent(email)}&limit=0&event_date=${fmt(weekAgo)}|${fmt(today)}&event_date_where=BETWEEN`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("ACLED failed");
+      const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
+      const url = `https://${projectId}.supabase.co/functions/v1/acled-events`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${(import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+      });
+      if (res.status === 503) {
+        return { notConfigured: true } as any;
+      }
+      if (!res.ok) throw new Error("ACLED proxy failed");
       const json = await res.json();
       return json;
     },
     refetchInterval: refreshMs,
     staleTime: refreshMs * 0.8,
-    enabled: !!apiKey && !!email,
     retry: 1,
   });
