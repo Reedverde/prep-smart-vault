@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import { Panel, ContextBox } from "@/components/Panel";
 import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo, SemiGauge } from "@/components/PanelKit";
 import { useKpIndex } from "@/hooks/useDataSources";
@@ -26,6 +27,7 @@ const zones = [
 
 export const SpaceWeatherPanel = ({ refreshMs }: { refreshMs: number }) => {
   const { data, isLoading, error, refetch, isFetching, dataUpdatedAt } = useKpIndex(refreshMs);
+  const [sunFailed, setSunFailed] = useState(false);
 
   const hasData = Array.isArray(data) && data.length > 0;
   const latest = hasData ? data[data.length - 1].kp : null;
@@ -33,6 +35,10 @@ export const SpaceWeatherPanel = ({ refreshMs }: { refreshMs: number }) => {
   const status = kpStatus(current);
   const impl = implications(current);
   const trend = (data || []).slice(-24).map((r) => ({ kp: r.kp }));
+
+  // Cache-buster: change every 10 minutes (SDO updates ~12 min)
+  const sunBucket = useMemo(() => Math.floor(Date.now() / (10 * 60 * 1000)), [dataUpdatedAt]);
+  const sunSrc = `https://sdo.gsfc.nasa.gov/assets/img/latest/latest_512_0193.jpg?b=${sunBucket}`;
 
   return (
     <Panel
@@ -52,6 +58,22 @@ export const SpaceWeatherPanel = ({ refreshMs }: { refreshMs: number }) => {
         <PanelError message="Could not load SWPC data" onRetry={() => refetch()} />
       ) : (
         <div className="space-y-4">
+          {!sunFailed && (
+            <div className="flex flex-col items-center gap-1.5">
+              <img
+                src={sunSrc}
+                alt="Live image of the Sun, NASA SDO 193 Ångström channel"
+                width={120}
+                height={120}
+                onError={() => setSunFailed(true)}
+                className="rounded-full border border-border/60 bg-inset"
+                style={{ width: 120, height: 120, objectFit: "cover" }}
+              />
+              <div className="font-mono text-[10px] uppercase tracking-wider text-dim">
+                Sun now · 193Å · NASA SDO
+              </div>
+            </div>
+          )}
           <div className="flex flex-col items-center">
             <SemiGauge value={current} min={0} max={9} zones={zones} />
             <div className="flex items-baseline gap-2 -mt-1">
