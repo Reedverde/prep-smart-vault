@@ -25,6 +25,16 @@ export const GlobalPanel = ({ refreshMs }: { refreshMs: number }) => {
     return "NORMAL";
   };
 
+  const conflictExplanation = (label: string): string | null => {
+    if (label === "HIGH") return "Above typical global conflict news volume";
+    if (label === "ELEVATED") return "Slightly above typical global conflict news volume";
+    if (label === "NORMAL") return "Typical global conflict news volume";
+    return null;
+  };
+
+  const currentLabel = hasGdelt ? conflictLabel(conflictCount) : "—";
+  const currentExplanation = hasGdelt ? conflictExplanation(currentLabel) : null;
+
   return (
     <Panel
       title="Global Situation"
