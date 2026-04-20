@@ -1,14 +1,26 @@
 import { Panel, StatBox, ContextBox } from "@/components/Panel";
 import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo } from "@/components/PanelKit";
 import { useEarthquakes } from "@/hooks/useDataSources";
-import { BarChart, Bar, XAxis, YAxis, Tooltip as ReTooltip, ResponsiveContainer, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip as ReTooltip, ResponsiveContainer } from "recharts";
 import { formatDistanceToNow, startOfDay, format } from "date-fns";
+import { MapContainer, TileLayer, CircleMarker, Popup, Tooltip as LTooltip } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 
 const magBucket = (mag: number) => (mag >= 5 ? "M5+" : mag >= 4 ? "M4-5" : "M2.5-4");
 const magColor = (mag: number) =>
   mag >= 5 ? "hsl(var(--severity-critical))" : mag >= 4 ? "hsl(var(--severity-moderate))" : "hsl(var(--dim))";
+const magRadius = (mag: number) => (mag >= 5 ? 7 : mag >= 4 ? 5 : 3);
 
-export const EarthquakesPanel = ({ refreshMs }: { refreshMs: number }) => {
+// Resolve hsl(var(--token)) to a concrete color string Leaflet/SVG can use.
+const resolveColor = (cssVar: string): string => {
+  if (typeof window === "undefined") return cssVar;
+  const match = cssVar.match(/--[\w-]+/);
+  if (!match) return cssVar;
+  const v = getComputedStyle(document.documentElement).getPropertyValue(match[0]).trim();
+  return v ? `hsl(${v})` : cssVar;
+};
+
+export const EarthquakesPanel = ({ refreshMs, lat, lng }: { refreshMs: number; lat: number; lng: number }) => {
   const { data, isLoading, error, refetch, isFetching, dataUpdatedAt } = useEarthquakes(refreshMs);
 
   const events = data || [];
@@ -32,6 +44,8 @@ export const EarthquakesPanel = ({ refreshMs }: { refreshMs: number }) => {
   const recent = [...events]
     .sort((a: any, b: any) => b.properties.time - a.properties.time)
     .slice(0, 5);
+
+  const primary = resolveColor("hsl(var(--primary))");
 
   return (
     <Panel
@@ -59,6 +73,73 @@ export const EarthquakesPanel = ({ refreshMs }: { refreshMs: number }) => {
               unit="M"
               hint={largest >= 5 ? "Significant" : largest >= 4 ? "Moderate" : "Minor"}
             />
+          </div>
+
+          {/* Map */}
+          <div className="h-[200px] rounded-md overflow-hidden border border-border/60 bg-inset">
+            <MapContainer
+              center={[lat, lng]}
+              zoom={2}
+              scrollWheelZoom={false}
+              worldCopyJump
+              style={{ height: "100%", width: "100%", background: "hsl(var(--inset))" }}
+              attributionControl={false}
+            >
+              <TileLayer
+                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                subdomains={["a", "b", "c", "d"]}
+              />
+              {events.map((e: any) => {
+                const [lng2, lat2] = e.geometry?.coordinates || [];
+                if (!Number.isFinite(lat2) || !Number.isFinite(lng2)) return null;
+                const mag = e.properties.mag || 0;
+                const color = magColor(mag);
+                return (
+                  <CircleMarker
+                    key={e.id}
+                    center={[lat2, lng2]}
+                    radius={magRadius(mag)}
+                    pathOptions={{
+                      color: resolveColor(color),
+                      fillColor: resolveColor(color),
+                      fillOpacity: 0.7,
+                      weight: 1,
+                      opacity: 0.9,
+                    }}
+                  >
+                    <Popup>
+                      <div className="font-mono text-[11px] leading-snug">
+                        <div className="font-semibold">M{mag.toFixed(1)}</div>
+                        <div>{e.properties.place}</div>
+                        <a
+                          href={e.properties.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-blue-600 underline"
+                        >
+                          USGS detail ↗
+                        </a>
+                      </div>
+                    </Popup>
+                  </CircleMarker>
+                );
+              })}
+              {Number.isFinite(lat) && Number.isFinite(lng) && (
+                <CircleMarker
+                  center={[lat, lng]}
+                  radius={8}
+                  pathOptions={{
+                    color: primary,
+                    fillColor: primary,
+                    fillOpacity: 0.4,
+                    weight: 2,
+                    opacity: 1,
+                  }}
+                >
+                  <LTooltip>Your location</LTooltip>
+                </CircleMarker>
+              )}
+            </MapContainer>
           </div>
 
           <div className="h-32 -mx-1">
