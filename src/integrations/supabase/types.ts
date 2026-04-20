@@ -205,9 +205,6 @@ export type Database = {
       }
       user_settings: {
         Row: {
-          acled_api_key: string | null
-          acled_email: string | null
-          airnow_api_key: string | null
           alert_tier_1: boolean
           alert_tier_2: boolean
           alert_tier_3: boolean
@@ -226,9 +223,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          acled_api_key?: string | null
-          acled_email?: string | null
-          airnow_api_key?: string | null
           alert_tier_1?: boolean
           alert_tier_2?: boolean
           alert_tier_3?: boolean
@@ -247,9 +241,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          acled_api_key?: string | null
-          acled_email?: string | null
-          airnow_api_key?: string | null
           alert_tier_1?: boolean
           alert_tier_2?: boolean
           alert_tier_3?: boolean
