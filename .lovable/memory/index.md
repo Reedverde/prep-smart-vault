@@ -16,3 +16,4 @@ Visuals: Recharts for panels. LogoMark (mascot) for Login/404, LogoWordmark (SVG
 - [Deployment Strategy](mem://architecture/deployment-strategy) — Supabase V1 to self-hosted Raspberry Pi migration path
 - [API Security](mem://architecture/api-security-model) — Management and proxying of third-party API keys via Edge Functions
 - [Dashboard Panels](mem://features/dashboard-panels) — Specs for 11 live dashboard panels, data sources, and layout
+- [Stage 5 Drive (parked)](mem://features/stage-5-drive-plan) — Full Drive integration plan, on hold until Stages 3 & 4 ship
