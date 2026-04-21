@@ -1,80 +1,81 @@
 
 
-# Plan — Fix Current Weather: real-time temp + humidity + dewpoint
+# Plan — NASA Space: tell me what it means
 
-## Root cause
+Single panel edit. Add an interpretation header + fix the misleading "CLOSE" badge + tighten labels. No new data, no API changes.
 
-The Current Weather panel uses NWS `/forecast` (12-hour periods like "Today" / "Tonight"). Two problems with that endpoint:
+## Problem
 
-1. **Temperature doesn't update during the day.** `periods[0].temperature` is the *forecast high/low for that 12-hour block*, not the current observed temperature. So at 2pm and 4pm you see the same number — it's the day's predicted high, not "now."
-2. **Humidity, dewpoint, and precip chance render blank.** The 12-hour `/forecast` endpoint omits these fields most of the time. They live on `/forecast/hourly` (and observed humidity/dewpoint live on the nearest station's latest observation).
+The panel shows raw counts (0 flares, 34 CMEs, 5 NEOs at 0.27–0.68 LD) and slaps a red **CLOSE** badge on every NEO under 1 Lunar Distance. That makes a totally normal week look like an asteroid emergency. There is no plain-English verdict telling you whether to care.
 
-The panel reads `data.period.relativeHumidity` and `data.period.dewpoint` — those keys are simply `undefined` on the daily forecast response, hence the em-dashes.
+## Part 1 — "Status Today" verdict block (top of panel)
 
-## Fix
+Add a compact summary box above the two metric tiles that reads the data and renders **one sentence + one color** answering "should I care right now?"
 
-Update `useWeather` in `src/hooks/useDataSources.ts` to fetch three NWS endpoints in parallel and merge them:
+Logic (computed in the component):
 
-1. **`/points/{lat,lng}`** (already used) — to discover URLs for the other endpoints
-2. **`/stations/{nearest}/observations/latest`** — gives **real observed** temperature, humidity, dewpoint, wind, updated every ~hour. This is what the local airport/ASOS station is actually measuring right now.
-3. **`/forecast/hourly`** — gives precip chance for the next hour and the multi-period upcoming forecast
-4. **`/forecast`** (already used) — keep for the "Today / Tonight / Wednesday" upcoming-period strip and the detailed narrative
+- **Flare verdict** — based on strongest class in last 7d:
+  - none / A / B → "Sun is quiet"
+  - C-class → "Background activity, no impacts"
+  - M-class → "Moderate flares — possible brief radio blackouts"
+  - X-class → "Strong flare(s) — GPS/HF radio disruption likely"
+- **CME verdict** — count thresholds:
+  - 0–10 → "Low CME activity"
+  - 11–25 → "Typical CME activity"
+  - 26+ → "Elevated CME activity — watch Space Weather panel for Kp"
+- **NEO verdict** — closest miss distance:
+  - min > 5 LD → "No notably close passes"
+  - 1–5 LD → "Routine close passes (well outside Moon's orbit)"
+  - 0.05–1 LD → "Close pass inside lunar orbit — tracked, no impact risk"
+  - < 0.05 LD (≈20,000 km) → "Very close pass — within geosynchronous orbit altitude"
 
-Return shape becomes:
+Rendered as:
 
-```ts
-{
-  observed: {
-    temperatureC, temperatureF, humidity, dewpointC, dewpointF,
-    windSpeedKph, windDirection, shortForecast (icon-derived),
-    timestamp, stationName,
-  },
-  period: fc.properties.periods[0],          // for "Today" name + detailed narrative
-  hourlyPrecipChance: number | null,         // next hour's PoP
-  upcoming: fc.properties.periods.slice(1,5),
-  forecastUrl, stationsUrl,
-}
+```
+TODAY'S READ
+☀ Sun: quiet           ·  no flares above background
+🌬 CMEs: typical (34)  ·  watch Kp if Earth-directed
+☄ Asteroids: routine   ·  closest 0.27 LD (~104,000 km), no risk
 ```
 
-Stations endpoint discovery: `point.properties.observationStations` returns a stations list URL → fetch first station → use its `stationIdentifier` to hit `/stations/{id}/observations/latest`. Cache the station ID inside the query so we only resolve it once per location.
+Each row colored low/moderate/severe/critical via existing severity tokens. Uses existing `font-mono` and color classes — no new design tokens.
 
-## Panel updates
+## Part 2 — Fix the misleading CLOSE badge
 
-`src/components/panels/WeatherPanel.tsx`:
+Replace the single red `< 1 LD = CLOSE` badge with a 3-tier system that matches actual risk:
 
-- **Big temp** now reads `data.observed.temperatureF` (or C based on user prefs) — actually changes through the day
-- **Humidity stat** reads `data.observed.humidity` (already a percentage, no unit conversion)
-- **Dewpoint stat** reads `data.observed.dewpointF` / `dewpointC`
-- **Wind stat** reads `data.observed.windSpeedKph` converted to mph + `windDirection` (degrees → compass: N/NE/E/SE/...)
-- **Precip stat** reads `data.hourlyPrecipChance` (next-hour chance from hourly forecast); falls back to `data.period.probabilityOfPrecipitation` if hourly missing
-- **Condition text** under the big temp reads `data.observed.shortForecast` (e.g. "Cloudy", "Light Rain") — derived from observation `textDescription`
-- **"Updated"** small text shows observation timestamp (e.g. "obs 23 min ago"), not query time, so user knows how fresh the *measurement* is
-- Upcoming forecast strip + detailed narrative — unchanged, still uses `period`
+- `< 0.05 LD` (inside geosynchronous orbit) → red **VERY CLOSE** badge
+- `0.05–1 LD` (inside lunar orbit) → amber **INSIDE LUNAR** badge
+- `1–5 LD` → no badge, just the distance
+- `> 5 LD` → dim text, no badge
 
-## Resilience
+Also add a km readout next to LD (e.g. `0.27 LD · 104,000 km`) so the number is tangible. Most users don't internalize "Lunar Distance" but do internalize kilometers.
 
-- If the nearest station observation is null/stale (>3h old), fall back to the next station in the list (NWS station data goes offline occasionally)
-- If all stations fail, render observed-section em-dashes but keep the forecast strip working (graceful degrade — the panel still shows tonight + tomorrow)
-- Wrap station resolution + observation fetch in a single try; on failure, return `observed: null` instead of throwing the whole query
+## Part 3 — Tighten the metric tiles
+
+- "Solar Flares (7d)" tile: when count is 0, replace the bare `0` with `0` + small dim text "background only" so it doesn't look broken / missing data.
+- "CMEs (7d)" tile: add a small dim qualifier underneath: `low` / `typical` / `elevated` based on the same thresholds as the verdict.
+
+## Part 4 — Section headers with intent
+
+- Rename `NEAR-EARTH APPROACHES` → `CLOSEST PASSES THIS WEEK` (clearer that it's a top-5 sorted list, not "incoming threats").
+- Keep the existing scrollable "About" block at the bottom unchanged — it's the reference; the new top block is the "right now" verdict.
 
 ## Files touched
 
-- `src/hooks/useDataSources.ts` — rewrite `useWeather` to fetch points + stations + hourly + forecast and merge
-- `src/components/panels/WeatherPanel.tsx` — read from `data.observed.*` and `data.hourlyPrecipChance`, add C→F conversion helper, degrees→compass helper, "obs N min ago" label
+- `src/components/panels/NasaPanel.tsx` — add verdict block, replace CLOSE badge logic, tighten tile copy, rename section header
 
 ## Acceptance
 
-- [ ] Big temperature changes through the day as the station reports new observations (no longer stuck on the day's forecast high)
-- [ ] Humidity shows a real percentage (e.g. "62%")
-- [ ] Dewpoint shows a real temperature (e.g. "54°F")
-- [ ] Wind shows real observed speed + compass direction
-- [ ] Precip chance shows next-hour probability
-- [ ] "Updated" label reflects the observation timestamp, not the React Query fetch time
-- [ ] If the nearest station has no recent obs, panel falls back to the next station gracefully
-- [ ] Upcoming forecast strip (Today / Tonight / Wednesday) still renders unchanged
+- [ ] Top of panel shows a 3-line "Today's Read" with sun / CMEs / asteroid verdicts in plain English
+- [ ] NEO badges are tiered: VERY CLOSE (red, <0.05 LD), INSIDE LUNAR (amber, 0.05–1 LD), none above 1 LD
+- [ ] NEO rows show both LD and km
+- [ ] Solar Flares tile shows "background only" when count is 0
+- [ ] CMEs tile shows low/typical/elevated qualifier
+- [ ] "About" reference block at bottom still present and unchanged
 - [ ] No console errors
 
 ## Out of scope
 
-Hourly temperature sparkline · weather icons per period · radar tile · alerting on rapid pressure drops
+Forecast of upcoming flares · Earth-directed CME filtering (DONKI doesn't reliably tag this) · Adding new data sources · Changes to Space Weather panel
 
