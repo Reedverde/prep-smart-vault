@@ -1,79 +1,80 @@
 
 
-# Plan — Panel polish: heights + context
+# Plan — Fix Current Weather: real-time temp + humidity + dewpoint
 
-Single small commit. Five panel tweaks. No new data sources, no layout changes.
+## Root cause
 
-## Part 1 — Global Headlines: cap height + scroll
+The Current Weather panel uses NWS `/forecast` (12-hour periods like "Today" / "Tonight"). Two problems with that endpoint:
 
-`src/components/panels/GlobalHeadlinesPanel.tsx`
+1. **Temperature doesn't update during the day.** `periods[0].temperature` is the *forecast high/low for that 12-hour block*, not the current observed temperature. So at 2pm and 4pm you see the same number — it's the day's predicted high, not "now."
+2. **Humidity, dewpoint, and precip chance render blank.** The 12-hour `/forecast` endpoint omits these fields most of the time. They live on `/forecast/hourly` (and observed humidity/dewpoint live on the nearest station's latest observation).
 
-The panel currently uses `flex-1 overflow-y-auto`, so it stretches to whatever its grid row dictates (right now Grid Status is making Row 2 short). Cap the scroll area to match the reference screenshot (~640px content area, same as Active Alerts for consistency across the dashboard).
+The panel reads `data.period.relativeHumidity` and `data.period.dewpoint` — those keys are simply `undefined` on the daily forecast response, hence the em-dashes.
 
-- Change the inner scroller from `flex-1 overflow-y-auto pr-1 scroll-thin` to `max-h-[640px] overflow-y-auto pr-1 scroll-thin -mr-1`
-- Outer wrapper drops `flex-1 flex flex-col` → just `space-y-2`
-- Result: panel renders all ~25 headlines, scrollable inside a fixed 640px window, matches the visual density in the screenshot
+## Fix
 
-## Part 2 — Active Disasters: scrollable explainer section
+Update `useWeather` in `src/hooks/useDataSources.ts` to fetch three NWS endpoints in parallel and merge them:
 
-`src/components/panels/ActiveDisastersPanel.tsx`
+1. **`/points/{lat,lng}`** (already used) — to discover URLs for the other endpoints
+2. **`/stations/{nearest}/observations/latest`** — gives **real observed** temperature, humidity, dewpoint, wind, updated every ~hour. This is what the local airport/ASOS station is actually measuring right now.
+3. **`/forecast/hourly`** — gives precip chance for the next hour and the multi-period upcoming forecast
+4. **`/forecast`** (already used) — keep for the "Today / Tonight / Wednesday" upcoming-period strip and the detailed narrative
 
-Currently shows count + top 5 + one-line ContextBox. Add a scrollable "About GDACS" section below the event list with real explanatory content the user can read.
+Return shape becomes:
 
-- Replace the single `ContextBox` with a `max-h-[180px] overflow-y-auto scroll-thin` block titled "About GDACS"
-- Content covers: what GDACS is, what each alert color means (Green/Orange/Red), event type abbreviations (EQ=earthquake, TC=tropical cyclone, FL=flood, VO=volcano, DR=drought, WF=wildfire), how soon alerts appear after an event, and that Green minor events are filtered out
+```ts
+{
+  observed: {
+    temperatureC, temperatureF, humidity, dewpointC, dewpointF,
+    windSpeedKph, windDirection, shortForecast (icon-derived),
+    timestamp, stationName,
+  },
+  period: fc.properties.periods[0],          // for "Today" name + detailed narrative
+  hourlyPrecipChance: number | null,         // next hour's PoP
+  upcoming: fc.properties.periods.slice(1,5),
+  forecastUrl, stationsUrl,
+}
+```
 
-## Part 3 — Conflict Pulse: scrollable explainer section
+Stations endpoint discovery: `point.properties.observationStations` returns a stations list URL → fetch first station → use its `stationIdentifier` to hit `/stations/{id}/observations/latest`. Cache the station ID inside the query so we only resolve it once per location.
 
-`src/components/panels/ConflictPulsePanel.tsx`
+## Panel updates
 
-Same treatment. Replace the one-line ContextBox with a scrollable explainer.
+`src/components/panels/WeatherPanel.tsx`:
 
-- "About the Conflict Index" — what GDELT scans, how the index is computed (7-day article volume on conflict/protest/violence themes), what HIGH/ELEVATED/NORMAL thresholds mean, what "Top region" and "Top theme" represent, caveats (volume reflects news *coverage*, not necessarily ground-truth event severity)
-- `max-h-[180px] overflow-y-auto scroll-thin`
+- **Big temp** now reads `data.observed.temperatureF` (or C based on user prefs) — actually changes through the day
+- **Humidity stat** reads `data.observed.humidity` (already a percentage, no unit conversion)
+- **Dewpoint stat** reads `data.observed.dewpointF` / `dewpointC`
+- **Wind stat** reads `data.observed.windSpeedKph` converted to mph + `windDirection` (degrees → compass: N/NE/E/SE/...)
+- **Precip stat** reads `data.hourlyPrecipChance` (next-hour chance from hourly forecast); falls back to `data.period.probabilityOfPrecipitation` if hourly missing
+- **Condition text** under the big temp reads `data.observed.shortForecast` (e.g. "Cloudy", "Light Rain") — derived from observation `textDescription`
+- **"Updated"** small text shows observation timestamp (e.g. "obs 23 min ago"), not query time, so user knows how fresh the *measurement* is
+- Upcoming forecast strip + detailed narrative — unchanged, still uses `period`
 
-## Part 4 — Space Weather: rich explainer section
+## Resilience
 
-`src/components/panels/SpaceWeatherPanel.tsx`
-
-Replace single-line ContextBox with a scrollable "About Space Weather" block.
-
-- What the Kp index measures (planetary geomagnetic disturbance, 0–9 scale, updated every 3h by NOAA SWPC)
-- What the sun image shows (193Å EUV channel from NASA SDO, ~1 million °C corona, dark patches = coronal holes, bright regions = active flare sites)
-- Why it matters: each row (Aurora, HF Radio, GPS, Power Grid) explained — what's affected and at what Kp level
-- `max-h-[200px] overflow-y-auto scroll-thin`
-
-## Part 5 — NASA Space: rich explainer section
-
-`src/components/panels/NasaPanel.tsx`
-
-Replace single-line ContextBox with scrollable "About NASA DONKI + NEO" block.
-
-- DONKI = Database of Notifications, Knowledge, Information (NASA's space weather event log)
-- Solar flare classes: A < B < C < M < X (logarithmic, X is most powerful, can disrupt radio/GPS)
-- CMEs (Coronal Mass Ejections): billions of tons of plasma; if Earth-directed, can drive geomagnetic storms 1–3 days later (links to Kp on the Space Weather panel)
-- NEO = Near-Earth Object. LD = Lunar Distance (≈384,400 km). "Close" flag = within 1 LD. Context: anything outside 1 LD has zero impact risk for that pass
-- `max-h-[200px] overflow-y-auto scroll-thin`
+- If the nearest station observation is null/stale (>3h old), fall back to the next station in the list (NWS station data goes offline occasionally)
+- If all stations fail, render observed-section em-dashes but keep the forecast strip working (graceful degrade — the panel still shows tonight + tomorrow)
+- Wrap station resolution + observation fetch in a single try; on failure, return `observed: null` instead of throwing the whole query
 
 ## Files touched
 
-- `src/components/panels/GlobalHeadlinesPanel.tsx` — cap scroll height at 640px
-- `src/components/panels/ActiveDisastersPanel.tsx` — replace ContextBox with scrollable explainer
-- `src/components/panels/ConflictPulsePanel.tsx` — replace ContextBox with scrollable explainer
-- `src/components/panels/SpaceWeatherPanel.tsx` — replace ContextBox with scrollable explainer
-- `src/components/panels/NasaPanel.tsx` — replace ContextBox with scrollable explainer
+- `src/hooks/useDataSources.ts` — rewrite `useWeather` to fetch points + stations + hourly + forecast and merge
+- `src/components/panels/WeatherPanel.tsx` — read from `data.observed.*` and `data.hourlyPrecipChance`, add C→F conversion helper, degrees→compass helper, "obs N min ago" label
 
 ## Acceptance
 
-- [ ] Global Headlines renders at ~640px tall on desktop, scrolls internally, matches screenshot density
-- [ ] Active Disasters has a readable scrollable "About" section explaining alert colors and event types
-- [ ] Conflict Pulse has a readable scrollable explainer covering methodology and caveats
-- [ ] Space Weather explainer covers Kp scale, sun image, and what each impact row means
-- [ ] NASA Space explainer covers flare classes, CMEs, and LD/NEO terminology
-- [ ] Row 2 and Row 4 row-height equalization still works (panels stretch to tallest in row; new explainers fit comfortably in existing space)
+- [ ] Big temperature changes through the day as the station reports new observations (no longer stuck on the day's forecast high)
+- [ ] Humidity shows a real percentage (e.g. "62%")
+- [ ] Dewpoint shows a real temperature (e.g. "54°F")
+- [ ] Wind shows real observed speed + compass direction
+- [ ] Precip chance shows next-hour probability
+- [ ] "Updated" label reflects the observation timestamp, not the React Query fetch time
+- [ ] If the nearest station has no recent obs, panel falls back to the next station gracefully
+- [ ] Upcoming forecast strip (Today / Tonight / Wednesday) still renders unchanged
 - [ ] No console errors
 
 ## Out of scope
 
-Layout changes · new data sources · Commit 4 (grid regions map) · design tokens
+Hourly temperature sparkline · weather icons per period · radar tile · alerting on rapid pressure drops
 
