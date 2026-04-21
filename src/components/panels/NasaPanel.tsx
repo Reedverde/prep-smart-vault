@@ -1,6 +1,29 @@
-import { Panel, ContextBox } from "@/components/Panel";
+import { Panel } from "@/components/Panel";
 import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo } from "@/components/PanelKit";
 import { useNasa } from "@/hooks/useDataSources";
+
+const LD_KM = 384400;
+
+type Tone = "low" | "moderate" | "severe" | "critical";
+
+const toneClass: Record<Tone, string> = {
+  low: "text-severity-low",
+  moderate: "text-severity-moderate",
+  severe: "text-severity-severe",
+  critical: "text-severity-critical",
+};
+
+const formatKm = (km: number) => {
+  if (km >= 1_000_000) return `${(km / 1_000_000).toFixed(2)}M km`;
+  if (km >= 1_000) return `${Math.round(km / 1_000).toLocaleString()},000 km`.replace(",000,000 km", "M km");
+  return `${Math.round(km).toLocaleString()} km`;
+};
+
+const kmFromLd = (ld: number) => {
+  const km = ld * LD_KM;
+  if (km >= 1_000_000) return `${(km / 1_000_000).toFixed(2)}M km`;
+  return `${Math.round(km / 1000).toLocaleString()}k km`;
+};
 
 export const NasaPanel = ({ refreshMs }: { refreshMs: number }) => {
   const { data, isLoading, error, refetch, isFetching, dataUpdatedAt } = useNasa(refreshMs);
@@ -15,12 +38,60 @@ export const NasaPanel = ({ refreshMs }: { refreshMs: number }) => {
     return (f.classType || "").localeCompare(best.classType || "") > 0 ? f : best;
   }, null);
 
-  const flareTone = (cls?: string) => {
-    if (!cls) return "text-dim";
-    if (cls.startsWith("X")) return "text-severity-critical";
-    if (cls.startsWith("M")) return "text-severity-severe";
-    if (cls.startsWith("C")) return "text-severity-moderate";
-    return "text-severity-low";
+  const flareTone = (cls?: string): Tone => {
+    if (!cls) return "low";
+    if (cls.startsWith("X")) return "critical";
+    if (cls.startsWith("M")) return "severe";
+    if (cls.startsWith("C")) return "moderate";
+    return "low";
+  };
+
+  // --- Verdicts ---
+  const flareVerdict = (() => {
+    const cls = strongestFlare?.classType;
+    if (!cls || cls.startsWith("A") || cls.startsWith("B")) {
+      return { tone: "low" as Tone, label: "quiet", detail: "no flares above background" };
+    }
+    if (cls.startsWith("C")) return { tone: "low" as Tone, label: "background", detail: `peak ${cls} — no impacts` };
+    if (cls.startsWith("M")) return { tone: "severe" as Tone, label: "moderate", detail: `peak ${cls} — possible brief radio blackouts` };
+    if (cls.startsWith("X")) return { tone: "critical" as Tone, label: "strong", detail: `peak ${cls} — GPS/HF radio disruption likely` };
+    return { tone: "low" as Tone, label: "quiet", detail: "no flares above background" };
+  })();
+
+  const cmeVerdict = (() => {
+    const n = cmes.length;
+    if (n <= 10) return { tone: "low" as Tone, label: "low", detail: `${n} this week` };
+    if (n <= 25) return { tone: "low" as Tone, label: "typical", detail: `${n} this week` };
+    return { tone: "moderate" as Tone, label: "elevated", detail: `${n} this week — watch Kp if Earth-directed` };
+  })();
+
+  const closestNeo = neo.reduce((min: any, n: any) => (!min || n.missLd < min.missLd ? n : min), null);
+  const neoVerdict = (() => {
+    if (!closestNeo) return { tone: "low" as Tone, label: "none tracked", detail: "no close approaches this week" };
+    const ld = closestNeo.missLd;
+    const kmLabel = kmFromLd(ld);
+    if (ld > 5) return { tone: "low" as Tone, label: "none close", detail: `closest ${ld.toFixed(2)} LD (~${kmLabel})` };
+    if (ld >= 1) return { tone: "low" as Tone, label: "routine", detail: `closest ${ld.toFixed(2)} LD (~${kmLabel}), well outside Moon` };
+    if (ld >= 0.05) return { tone: "moderate" as Tone, label: "inside lunar orbit", detail: `closest ${ld.toFixed(2)} LD (~${kmLabel}), tracked, no risk` };
+    return { tone: "critical" as Tone, label: "very close", detail: `closest ${ld.toFixed(3)} LD (~${kmLabel}), within geosync altitude` };
+  })();
+
+  const neoBadge = (ld: number) => {
+    if (ld < 0.05) {
+      return (
+        <span className="px-1.5 py-0.5 rounded border border-severity-critical/40 bg-severity-critical/15 text-severity-critical text-[9px] uppercase tracking-wider">
+          VERY CLOSE
+        </span>
+      );
+    }
+    if (ld < 1) {
+      return (
+        <span className="px-1.5 py-0.5 rounded border border-severity-moderate/40 bg-severity-moderate/15 text-severity-moderate text-[9px] uppercase tracking-wider">
+          INSIDE LUNAR
+        </span>
+      );
+    }
+    return null;
   };
 
   return (
@@ -47,41 +118,67 @@ export const NasaPanel = ({ refreshMs }: { refreshMs: number }) => {
         <PanelError message="Could not load NASA data" onRetry={() => refetch()} />
       ) : (
         <div className="space-y-3">
+          {/* Today's Read — verdict block */}
+          <div className="rounded-md bg-inset border border-border/60 p-3">
+            <div className="font-mono text-[10px] uppercase tracking-wider text-foreground mb-2">Today's Read</div>
+            <div className="space-y-1.5 font-mono text-xs">
+              <div className="flex items-baseline gap-2">
+                <span className="text-dim w-20 shrink-0">☀ Sun:</span>
+                <span className={`${toneClass[flareVerdict.tone]} font-semibold`}>{flareVerdict.label}</span>
+                <span className="text-dim truncate">· {flareVerdict.detail}</span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-dim w-20 shrink-0">🌬 CMEs:</span>
+                <span className={`${toneClass[cmeVerdict.tone]} font-semibold`}>{cmeVerdict.label}</span>
+                <span className="text-dim truncate">· {cmeVerdict.detail}</span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-dim w-20 shrink-0">☄ Asteroids:</span>
+                <span className={`${toneClass[neoVerdict.tone]} font-semibold`}>{neoVerdict.label}</span>
+                <span className="text-dim truncate">· {neoVerdict.detail}</span>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-2">
             <div className="rounded-md bg-inset border border-border/60 p-3">
               <div className="font-mono text-[10px] uppercase tracking-wider text-dim mb-1">Solar flares (7d)</div>
               <div className="flex items-baseline gap-2">
                 <span className="font-mono text-2xl font-semibold text-foreground tabular-nums">{flares.length}</span>
-                {strongestFlare?.classType && (
-                  <span className={`font-mono text-xs ${flareTone(strongestFlare.classType)}`}>
+                {strongestFlare?.classType ? (
+                  <span className={`font-mono text-xs ${toneClass[flareTone(strongestFlare.classType)]}`}>
                     max {strongestFlare.classType}
                   </span>
+                ) : (
+                  <span className="font-mono text-[10px] text-dim">background only</span>
                 )}
               </div>
             </div>
             <div className="rounded-md bg-inset border border-border/60 p-3">
               <div className="font-mono text-[10px] uppercase tracking-wider text-dim mb-1">CMEs (7d)</div>
-              <span className="font-mono text-2xl font-semibold text-foreground tabular-nums">{cmes.length}</span>
+              <div className="flex items-baseline gap-2">
+                <span className="font-mono text-2xl font-semibold text-foreground tabular-nums">{cmes.length}</span>
+                <span className={`font-mono text-[10px] ${toneClass[cmeVerdict.tone]}`}>{cmeVerdict.label}</span>
+              </div>
             </div>
           </div>
 
           <div className="space-y-1">
-            <div className="font-mono text-[10px] uppercase tracking-wider text-dim">Near-Earth approaches</div>
+            <div className="font-mono text-[10px] uppercase tracking-wider text-dim">Closest passes this week</div>
             {neo.length === 0 ? (
               <div className="font-mono text-xs text-dim py-1">No close approaches this week</div>
             ) : (
               neo.slice(0, 5).map((n: any) => {
-                const close = n.missLd < 1;
+                const badge = neoBadge(n.missLd);
+                const distant = n.missLd > 5;
                 return (
                   <div key={n.id} className="flex items-center justify-between py-1 border-b border-border/40 last:border-0 font-mono text-xs">
-                    <span className="truncate text-foreground">{n.name}</span>
+                    <span className={`truncate ${distant ? "text-dim" : "text-foreground"}`}>{n.name}</span>
                     <span className="flex items-center gap-2 shrink-0">
-                      <span className="text-dim tabular-nums">{n.missLd.toFixed(2)} LD</span>
-                      {close && (
-                        <span className="px-1.5 py-0.5 rounded border border-severity-critical/40 bg-severity-critical/15 text-severity-critical text-[9px] uppercase tracking-wider">
-                          CLOSE
-                        </span>
-                      )}
+                      <span className="text-dim tabular-nums">
+                        {n.missLd.toFixed(2)} LD · {kmFromLd(n.missLd)}
+                      </span>
+                      {badge}
                     </span>
                   </div>
                 );
@@ -104,7 +201,7 @@ export const NasaPanel = ({ refreshMs }: { refreshMs: number }) => {
                 <span className="text-foreground">CMEs</span> (Coronal Mass Ejections) are billion-ton plasma eruptions from the Sun. If Earth-directed, they take 1–3 days to arrive and can drive geomagnetic storms — see the Kp index on the Space Weather panel.
               </p>
               <p>
-                <span className="text-foreground">NEO</span> = Near-Earth Object. <span className="text-foreground">LD</span> = Lunar Distance (≈384,400 km, the Earth–Moon distance). The <span className="text-severity-critical">CLOSE</span> flag marks passes within 1 LD.
+                <span className="text-foreground">NEO</span> = Near-Earth Object. <span className="text-foreground">LD</span> = Lunar Distance (≈384,400 km, the Earth–Moon distance). Badges: <span className="text-severity-moderate">INSIDE LUNAR</span> = closer than the Moon but tracked & safe; <span className="text-severity-critical">VERY CLOSE</span> = within geosynchronous-satellite altitude (&lt;0.05 LD ≈ 20,000 km).
               </p>
               <p className="text-[11px] italic">
                 Anything outside 1 LD has zero impact risk on that pass. Even &quot;close&quot; tracked NEOs are catalogued well in advance — surprise impacts come only from undetected smaller objects.
