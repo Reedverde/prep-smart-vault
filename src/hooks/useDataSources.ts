@@ -4,6 +4,40 @@ const UA = "PrepPi (situational-awareness-app)";
 const nwsHeaders = { "User-Agent": UA, Accept: "application/geo+json" };
 
 // ============ NWS WEATHER ============
+const cToF = (c: number | null | undefined) =>
+  c == null || !Number.isFinite(c) ? null : (c * 9) / 5 + 32;
+
+const tryStationObs = async (stationId: string) => {
+  const res = await fetch(
+    `https://api.weather.gov/stations/${stationId}/observations/latest`,
+    { headers: nwsHeaders },
+  );
+  if (!res.ok) return null;
+  const json = await res.json();
+  const p = json?.properties;
+  if (!p) return null;
+  const tempC = p.temperature?.value ?? null;
+  // Stale if older than 3h
+  const ts = p.timestamp ? new Date(p.timestamp) : null;
+  if (!ts || Date.now() - ts.getTime() > 3 * 60 * 60 * 1000) {
+    if (tempC == null) return null; // truly empty
+  }
+  return {
+    temperatureC: tempC,
+    temperatureF: cToF(tempC),
+    humidity: p.relativeHumidity?.value != null ? Math.round(p.relativeHumidity.value) : null,
+    dewpointC: p.dewpoint?.value ?? null,
+    dewpointF: cToF(p.dewpoint?.value),
+    windSpeedKph: p.windSpeed?.value ?? null, // m/s or km/h depending; NWS returns km/h with unitCode wmoUnit:km_h-1
+    windSpeedUnit: p.windSpeed?.unitCode ?? null,
+    windDirectionDeg: p.windDirection?.value ?? null,
+    shortForecast: p.textDescription || null,
+    timestamp: p.timestamp || null,
+    stationName: json?.properties?.station || stationId,
+    stationId,
+  };
+};
+
 export const useWeather = (lat: number, lng: number, refreshMs: number) =>
   useQuery({
     queryKey: ["weather", lat, lng],
@@ -11,14 +45,66 @@ export const useWeather = (lat: number, lng: number, refreshMs: number) =>
       const pointRes = await fetch(`https://api.weather.gov/points/${lat},${lng}`, { headers: nwsHeaders });
       if (!pointRes.ok) throw new Error("NWS points failed");
       const point = await pointRes.json();
-      const fcRes = await fetch(point.properties.forecast, { headers: nwsHeaders });
+
+      const forecastUrl: string = point.properties.forecast;
+      const hourlyUrl: string = point.properties.forecastHourly;
+      const stationsUrl: string = point.properties.observationStations;
+
+      // Fire forecast + hourly + stations list in parallel
+      const [fcRes, hourlyRes, stationsRes] = await Promise.all([
+        fetch(forecastUrl, { headers: nwsHeaders }),
+        hourlyUrl
+          ? fetch(hourlyUrl, { headers: nwsHeaders }).catch(() => null)
+          : Promise.resolve(null),
+        stationsUrl
+          ? fetch(stationsUrl, { headers: nwsHeaders }).catch(() => null)
+          : Promise.resolve(null),
+      ]);
+
       if (!fcRes.ok) throw new Error("NWS forecast failed");
       const fc = await fcRes.json();
+
+      // Hourly precip chance for next hour
+      let hourlyPrecipChance: number | null = null;
+      if (hourlyRes && (hourlyRes as Response).ok) {
+        try {
+          const hourly = await (hourlyRes as Response).json();
+          const next = hourly?.properties?.periods?.[0];
+          const pop = next?.probabilityOfPrecipitation?.value;
+          if (pop != null) hourlyPrecipChance = Math.round(pop);
+        } catch {
+          /* ignore */
+        }
+      }
+
+      // Resolve nearest station observation, fallback up to 4 stations
+      let observed: Awaited<ReturnType<typeof tryStationObs>> | null = null;
+      if (stationsRes && (stationsRes as Response).ok) {
+        try {
+          const stations = await (stationsRes as Response).json();
+          const features = (stations?.features || []) as Array<any>;
+          for (const f of features.slice(0, 4)) {
+            const id = f?.properties?.stationIdentifier;
+            if (!id) continue;
+            const obs = await tryStationObs(id);
+            if (obs && obs.temperatureC != null) {
+              observed = obs;
+              break;
+            }
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+
       return {
+        observed,
         period: fc.properties.periods[0],
         nextPeriod: fc.properties.periods[1],
         upcoming: fc.properties.periods.slice(1, 5),
-        forecastUrl: point.properties.forecast,
+        hourlyPrecipChance,
+        forecastUrl,
+        stationsUrl,
       };
     },
     refetchInterval: refreshMs,
