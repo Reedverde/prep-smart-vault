@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import Live from "./pages/Live";
+import Pi from "./pages/Pi";
 import Snapshots from "./pages/Snapshots";
 import Library from "./pages/Library";
 import Operations from "./pages/Operations";
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/live" element={<Live />} />
+            <Route path="/pi" element={<Pi />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/snapshots" element={<ProtectedRoute><Snapshots /></ProtectedRoute>} />
