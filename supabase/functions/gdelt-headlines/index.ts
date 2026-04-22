@@ -8,17 +8,30 @@ const corsHeaders = {
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cached: { at: number; payload: unknown } | null = null;
 
-type Tag = 'CYBER' | 'COUP' | 'INVASION' | 'CONFLICT' | 'VIOLENCE' | 'PROTEST' | 'UNREST' | 'OTHER';
+type Tag =
+  | 'CYBER'
+  | 'COUP'
+  | 'INVASION'
+  | 'CONFLICT'
+  | 'VIOLENCE'
+  | 'PROTEST'
+  | 'UNREST'
+  | 'DISASTER'
+  | 'ECONOMIC'
+  | 'OTHER';
 
 const classify = (title: string): Tag => {
   const t = title.toLowerCase();
-  if (/(cyber|hack|ransomware|breach)/.test(t)) return 'CYBER';
+  // Most specific / highest-stakes first.
+  if (/(cyber|hack|ransomware|breach|malware|phishing|data leak|exploit|zero[- ]day|ddos)/.test(t)) return 'CYBER';
   if (/coup/.test(t)) return 'COUP';
   if (/(invasion|invade)/.test(t)) return 'INVASION';
-  if (/(conflict|war|military|airstrike|shelling)/.test(t)) return 'CONFLICT';
-  if (/(violence|attack|killed|shooting)/.test(t)) return 'VIOLENCE';
-  if (/(protest|demonstration|rally)/.test(t)) return 'PROTEST';
-  if (/(unrest|riot|clash)/.test(t)) return 'UNREST';
+  if (/(conflict|war|military|airstrike|shelling|offensive|missile|drone strike|skirmish|clash)/.test(t)) return 'CONFLICT';
+  if (/(violence|attack|killed|shooting|bombing|stabbing|assault|murder|massacre|ambush)/.test(t)) return 'VIOLENCE';
+  if (/(protest|demonstration|rally|march|riot|blockade)/.test(t)) return 'PROTEST';
+  if (/(unrest|uprising)/.test(t)) return 'UNREST';
+  if (/(earthquake|hurricane|wildfire|flood|tsunami|volcano|cyclone|typhoon|tornado)/.test(t)) return 'DISASTER';
+  if (/(recession|inflation|layoffs|stock crash|bank run|default|bankruptcy)/.test(t)) return 'ECONOMIC';
   return 'OTHER';
 };
 
@@ -66,9 +79,6 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'STALE' },
         });
       }
-      // No cache yet (cold start) and upstream throttled/failed.
-      // Return empty payload with a short cache so the panel renders cleanly
-      // and we back off from GDELT for at least 30s.
       const emptyPayload = { items: [], fetchedAt: new Date().toISOString() };
       cached = { at: Date.now() - (CACHE_TTL_MS - 30_000), payload: emptyPayload };
       return new Response(JSON.stringify(emptyPayload), {
@@ -123,7 +133,8 @@ Deno.serve(async (req) => {
       acc[item.tag] = (acc[item.tag] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
-    console.log('gdelt-headlines tag distribution:', tagCounts, 'total:', top.length);
+    const otherPct = top.length ? Math.round(((tagCounts.OTHER || 0) / top.length) * 100) : 0;
+    console.log('gdelt-headlines tag distribution:', tagCounts, 'total:', top.length, 'OTHER%:', otherPct);
 
     const payload = { items: top, fetchedAt: new Date().toISOString() };
     cached = { at: Date.now(), payload };
