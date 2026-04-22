@@ -1,134 +1,87 @@
 
 
-# Row layout — 3 wides, 17 tiles total
+# Plan — Tone down `/pi` background tints to match mockup
 
-Going with your option 1: Alerts, Conflict, System/Clock as the 3 wides. Disasters becomes standard (still gets alert-pulse when red events fire).
+## What's wrong
 
-Math: 3 wide × 2 + 14 standard × 1 = 20 cells = 5 cols × 4 rows ✓ → 17 total tiles.
+Comparing live `/pi` to the mockup screenshot:
 
-I need to add **one extra standard tile** to hit 17. Adding **Hazardous Outlook** (`useHazardousOutlook`) — it's already a panel on the dashboard, distills cleanly to `NORMAL` / `ELEVATED`, and complements the Alerts/Radar weather cluster.
+1. **Watch tiles are too green/amber** — currently row 2 (Fuel/STLFSI/Nat'l/PJM) shows a heavy uniform amber wash across the whole tile. In the mockup the tile body is near-black; only a *very faint* gradient bleeds in from the colored left border.
+2. **Alert tiles pulse too red** — Conflict Pulse and Disasters in the mockup show a barely-perceptible red haze localized near the left edge, not a strong full-tile red fill.
+3. The **3px colored left border** + the **colored value text** are doing all the severity work. The tile background should stay essentially `#050705` (near-black) across all severity levels.
 
-## Confirmed row layout
+## Fix (single file: `src/components/PiTile.tsx`)
 
-**Row 1 (5 cells):** Weather(1) · Alerts WIDE(2) · Air(1) · Radar(1)
-**Row 2 (5 cells):** Hazard Out(1) · Fuel(1) · STLFSI(1) · Nat'l Alerts(1) · PJM Load(1)
-**Row 3 (5 cells):** Outages(1) · Conflict WIDE(2) · Quakes(1) · Headlines(1)
-**Row 4 (5 cells):** Internet(1) · Disasters(1) · Space WX(1) · NASA(1) · System/Clock WIDE(2)
+### 1. Replace flat `backgroundColor` tints with a localized left-edge gradient
 
-Wait — row 4 = 1+1+1+1+2 = 6. Recounting:
+Instead of `backgroundColor: rgba(244,181,92,0.04)` (amber wash) on watch and `rgba(255,107,94,0.06)` on alert — both of which paint the whole tile — use a horizontal gradient that fades from a slightly-tinted left edge to pure `#050705` within the first ~40% of the tile width.
 
-**Row 4 (5 cells):** Disasters(1) · Space WX(1) · NASA(1) · System/Clock WIDE(2) = 5 ✓
+Replace `sevBgTint(sev)` with `sevBgGradient(sev)`:
 
-So Internet moves up to row 3, and row 3 needs to drop one tile. Let me lay it out cleanly:
+```ts
+const sevBgGradient = (sev: PiSeverity): string => {
+  switch (sev) {
+    case "alert":
+      return "linear-gradient(90deg, rgba(255,107,94,0.10) 0%, rgba(255,107,94,0) 35%)";
+    case "watch":
+      return "linear-gradient(90deg, rgba(244,181,92,0.06) 0%, rgba(244,181,92,0) 30%)";
+    case "clear":
+      return "linear-gradient(90deg, rgba(125,227,138,0.04) 0%, rgba(125,227,138,0) 25%)";
+    default:
+      return "none";
+  }
+};
+```
 
-## Final corrected layout (verified cell-by-cell)
+Apply in the tile root style:
+```ts
+style={{
+  background: "#050705",
+  backgroundImage: sevBgGradient(sev),
+  borderLeft: `3px solid ${color}`,
+  // ...
+}}
+```
 
-| Row | Tiles | Cells |
-|---|---|---|
-| 1 | Weather · **Alerts(wide)** · Air · Radar | 1+2+1+1 = 5 |
-| 2 | Hazard Out · Fuel · STLFSI · Nat'l Alerts · PJM Load | 1+1+1+1+1 = 5 |
-| 3 | Outages · **Conflict(wide)** · Quakes · Internet | 1+2+1+1 = 5 |
-| 4 | Headlines · Disasters · Space WX · NASA · ~~too many~~ | needs fix |
+### 2. Tone down the alert pulse keyframe
 
-Row 4 must end with the wide System/Clock. Final pass:
+Currently `pi-alert-pulse` swings the whole tile background between `rgba(255,107,94,0.04)` and `rgba(255,107,94,0.14)`. That fights with the new gradient. Change it to pulse only the gradient strength via opacity on a pseudo-overlay, OR — simpler — drop the pulse off the whole tile and instead pulse only the left border color brightness:
 
-| Row | Tiles | Cells |
-|---|---|---|
-| 1 | Weather · **Alerts(wide)** · Air · Radar | 1+2+1+1 = **5** |
-| 2 | Hazard Out · Fuel · STLFSI · Nat'l Alerts · PJM Load | 1+1+1+1+1 = **5** |
-| 3 | Outages · **Conflict(wide)** · Quakes · Internet | 1+2+1+1 = **5** |
-| 4 | Headlines · Disasters · Space WX · NASA · ~~System/Clock(wide)~~ | overflows |
+```css
+@keyframes pi-alert-pulse {
+  0%, 100% { border-left-color: #ff6b5e }
+  50%      { border-left-color: #ff8d83 }
+}
+```
 
-Row 4 with a wide can only fit 3 standards + 1 wide = 5 cells. So row 4 = **Disasters · Space WX · NASA · System/Clock(wide)** = 1+1+1+2 = 5 ✓. That means **Headlines moves to row 3**, and row 3 sheds one tile.
+Update in `Pi.tsx`'s inline `<style>` block (this is the only edit to `Pi.tsx`).
 
-## Final final layout (locked, 17 tiles, 20 cells)
+The animation now reads as a quiet "throb" on the severity bar itself instead of a full-tile red wash.
 
-| Row | Tile 1 | Tile 2 | Tile 3 | Tile 4 | Tile 5 | Cells |
-|---|---|---|---|---|---|---|
-| 1 | Weather | **Alerts** *(wide)* | Air | Radar | — | 5 |
-| 2 | Hazard Out | Fuel | STLFSI | Nat'l Alerts | PJM Load | 5 |
-| 3 | Outages | **Conflict** *(wide)* | Quakes | Headlines | Internet | 5 |
-| 4 | Disasters | Space WX | NASA | **System/Clock** *(wide)* | — | 5 |
+### 3. Keep everything else identical
 
-**Tile count: 17** (14 standard + 3 wide). **Cell count: 14 + 6 = 20** ✓.
+- 3px colored left border per severity → unchanged
+- Value color → unchanged (green/amber/red/faint)
+- Sparkline color/opacity → unchanged
+- Tile number, label, sub styling → unchanged
+- Layout, grid, frame, scanlines, ticker → unchanged
 
-## Tile inventory (locked, ordered by slot)
+## Files touched
 
-| # | Tile | Wide | Hook | Headline | Sub | Severity rule |
-|---|---|---|---|---|---|---|
-| 01 | Weather | — | `useWeather` | `{tempF}°F` | `{cond} · wind {n}mph` | info |
-| 02 | NWS Active Alerts | ✓ | `useAlerts` | active count | `no active warnings · forecast office {x}` | 0 clear / moderate watch / severe alert |
-| 03 | Air | — | `useAirQuality` | `{aqi}` | `AQI {category}` | <50 clear / 50–100 watch / >100 alert |
-| 04 | Radar | — | `useSevereRadar` | `—` / `ACTIVE` | `no echoes` / `{n} cells` | echoes = watch |
-| 05 | Hazard Out | — | `useHazardousOutlook` | `NORMAL` / `ELEVATED` | `routine` / `{n} hazards` | hazards present = watch |
-| 06 | Fuel | — (spark) | `useEiaFuel` | `${gas.latest}` | `±$X.XX wow · PADD 1B` | `spike` = watch |
-| 07 | STLFSI | — | `useFinancialStress` | `{value}` | `below avg stress`/etc | >0 watch / >1 alert |
-| 08 | Nat'l Alerts | — | `useAlerts` (national) | count | `active US · {n} states` | <100 clear / 100–500 watch / >500 alert |
-| 09 | PJM Load | — (spark) | `useGridStatus` | `{loadKMW}k` | `{pct}% of peak` | >85% watch |
-| 10 | Outages | — | `usePowerOutages` | customers or `—` | `localized` / `widespread` / `unavailable` | from existing field |
-| 11 | Conflict Pulse | ✓ (spark) | `useConflictPulse` | `LOW`/`ELEV`/`HIGH` | `{n} articles 7d · top: {kw} · {country}` | by tier |
-| 12 | Quakes | — | `useEarthquakes` | `M{mag}` | `{region} · {h}h` | <4 clear / 4–6 watch / 6+ alert |
-| 13 | Headlines | — | `useGlobalHeadlines` | item count | `last 6h` | info |
-| 14 | Internet | — | `useInternetHealth` | `OK`/`DEGRADED` | `no anomaly` / details | degraded = watch |
-| 15 | Disasters | — | `useActiveDisasters` | active count | `{n} red · {n} orange` | red = alert / orange = watch |
-| 16 | Space WX | — | `useSpaceWeather` | `Kp {n}` | `quiet`/`unsettled`/`storm` | Kp<5 clear / 5–6 watch / 7+ alert |
-| 17 | NASA | — | `useNasa` | next NEO `MM/DD` | `next NEO approach` | info |
-| 18 | System :: Clock | ✓ | `useSystemHealth` + local clock | `HH:MM:SS` | `scanner LIVE · system OK · {date}` | OK info / DEGRADED watch |
+- `src/components/PiTile.tsx` — replace `sevBgTint` with `sevBgGradient`, swap `backgroundColor` for `backgroundImage` in the root style.
+- `src/pages/Pi.tsx` — update the `pi-alert-pulse` keyframes inside the inline `<style>` block (lines 505–508) to animate `border-left-color` instead of `background-color`.
 
-18 entries listed but 17 tiles — System/Clock is one combined tile (slot 18 only). Recount: rows 1-4 = 4+5+5+4 = 18. One off.
+## Acceptance check after deploy
 
-Row 1 has 4 tile entries (Weather, Alerts-wide, Air, Radar) = 4 tiles.
-Row 4 has 4 tile entries (Disasters, Space WX, NASA, System/Clock-wide) = 4 tiles.
-Rows 2 + 3 = 5 + 5 = 10 tiles.
-Total = 4 + 10 + 4 = **18 tiles**.
+1. Quote the new `sevBgGradient` function and the updated tile root `style` block from `PiTile.tsx`
+2. Quote the updated `@keyframes pi-alert-pulse` from `Pi.tsx`
+3. Confirm visually (screenshot via the user) that:
+   - Watch tiles (amber) show only a faint left-edge glow, body stays near-black
+   - Alert tiles (red) pulse on the left bar, not the full tile background
+   - Clear tiles (green) and info tiles look unchanged
+4. No layout shift, no console errors
 
-Cell math: 18 tiles, 3 wide → 15 standard + 3 wide × 2 = 15 + 6 = **21 cells**. Off by 1.
+## Out of scope
 
-The actual constraint with 3 wides and 20 cells = **17 tiles** (14 standard + 3 wide). One row must have only 3 standards + 1 wide. I'll drop one tile.
-
-**Cutting Hazard Out** (row 2 becomes 4 tiles). Hazardous Outlook info gets folded into the Alerts tile sub-line ("...· {n} hazards" when present).
-
-## Corrected & verified final layout (17 tiles, 20 cells)
-
-| Row | Tiles | Math |
-|---|---|---|
-| 1 | Weather · **Alerts(wide)** · Air · Radar | 1+2+1+1 = 5 |
-| 2 | Fuel · STLFSI · Nat'l Alerts · PJM Load | 1+1+1+1 = **4** ✗ |
-
-Row 2 with no wide must have 5 standards. I keep Hazard Out and **drop something else**. Options: drop Headlines, drop NASA, drop Internet.
-
-Cleanest cut: **drop NASA** (lowest signal value of the three — next NEO date is informational fluff next to Internet/Headlines).
-
-## TRULY FINAL layout (17 tiles, 20 cells, verified)
-
-| Row | T1 | T2 | T3 | T4 | T5 | Cells |
-|---|---|---|---|---|---|---|
-| 1 | Weather | **Alerts** *(w)* | Air | Radar | — | 1+2+1+1 = **5** |
-| 2 | Hazard Out | Fuel | STLFSI | Nat'l Alerts | PJM Load | 1+1+1+1+1 = **5** |
-| 3 | Outages | **Conflict** *(w)* | Quakes | Headlines | Internet | 1+2+1+1+1 = 6 ✗ |
-
-Row 3 with one wide can only hold 3 standards. Drop one from row 3.
-
-**Drop Internet from row 3, move to row 4** in place of NASA-or-similar:
-
-| Row | T1 | T2 | T3 | T4 | T5 | Cells |
-|---|---|---|---|---|---|---|
-| 1 | Weather | **Alerts** *(w)* | Air | Radar | — | 5 |
-| 2 | Hazard Out | Fuel | STLFSI | Nat'l Alerts | PJM Load | 5 |
-| 3 | Outages | **Conflict** *(w)* | Quakes | Headlines | — | 1+2+1+1 = 5 |
-| 4 | Internet | Disasters | Space WX | **System/Clock** *(w)* | — | 1+1+1+2 = 5 |
-
-**Total tiles: 4 + 5 + 4 + 4 = 17 ✓. Total cells: 5+5+5+5 = 20 ✓. Wides: 3 ✓.**
-
-NASA is dropped entirely (out of scope for v1 of `/pi`; the dashboard still has it).
-
-## What changed vs. previous plan
-
-- 3 wide tiles instead of 4 (Alerts, Conflict, System/Clock)
-- Disasters demoted to standard (still pulses red on alert severity)
-- NASA dropped from `/pi` v1
-- Hazardous Outlook added as standard tile
-- Internet moves to row 4 to balance row 3
-
-Everything else (visual spec, color tokens, frame, scanline overlay, ticker, animations, sparklines on Fuel/PJM/Conflict, files touched, acceptance checks) is unchanged from the previous plan.
+Tile order, severity rules, hook wiring, fonts, scanlines, ticker, frame brackets — all unchanged.
 
