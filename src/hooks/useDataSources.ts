@@ -361,6 +361,72 @@ export const useGdeltHeadlines = (refreshMs: number) => {
   });
 };
 
+// ============ Phase 2 helpers ============
+const callEdge = async (fn: string, qs = '') => {
+  const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
+  const url = `https://${projectId}.supabase.co/functions/v1/${fn}${qs}`;
+  const res = await fetch(url, {
+    headers: {
+      apikey: (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${(import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+    },
+  });
+  if (res.status === 503) return { notConfigured: true } as any;
+  if (!res.ok) throw new Error(`${fn} proxy failed (${res.status})`);
+  return await res.json();
+};
+
+// ============ NWS Hazardous Weather Outlook ============
+export const useNwsHwo = (lat: number, lng: number, refreshMs: number) =>
+  useQuery({
+    queryKey: ["nws-hwo", lat, lng],
+    queryFn: () => callEdge("nws-hwo", `?lat=${lat}&lng=${lng}`),
+    refetchInterval: refreshMs,
+    staleTime: refreshMs * 0.8,
+    enabled: Number.isFinite(lat) && Number.isFinite(lng),
+    retry: 1,
+  });
+
+// ============ EIA Fuel Prices ============
+export const useEiaFuel = (refreshMs: number) =>
+  useQuery({
+    queryKey: ["eia-fuel"],
+    queryFn: () => callEdge("eia-fuel"),
+    refetchInterval: refreshMs,
+    staleTime: refreshMs * 0.8,
+    retry: 1,
+  });
+
+// ============ FRED Financial Stress ============
+export const useFredStress = (refreshMs: number) =>
+  useQuery({
+    queryKey: ["fred-stress"],
+    queryFn: () => callEdge("fred-stress"),
+    refetchInterval: refreshMs,
+    staleTime: refreshMs * 0.8,
+    retry: 1,
+  });
+
+// ============ Power Outages ============
+export const usePowerOutages = (refreshMs: number) =>
+  useQuery({
+    queryKey: ["power-outages"],
+    queryFn: () => callEdge("power-outages"),
+    refetchInterval: refreshMs,
+    staleTime: refreshMs * 0.8,
+    retry: 1,
+  });
+
+// ============ Cloudflare Radar ============
+export const useCloudflareRadar = (refreshMs: number) =>
+  useQuery({
+    queryKey: ["cloudflare-radar"],
+    queryFn: () => callEdge("cloudflare-radar"),
+    refetchInterval: refreshMs,
+    staleTime: refreshMs * 0.8,
+    retry: 1,
+  });
+
 // ============ News Feed (via edge proxy) ============
 // DEPRECATED: replaced by useGdeltHeadlines as of 2026-04-20.
 // Kept temporarily; remove in follow-up after Global Headlines verifies.
