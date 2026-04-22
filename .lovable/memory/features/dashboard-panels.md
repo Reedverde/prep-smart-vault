@@ -18,6 +18,7 @@ Rendered in `src/pages/Dashboard.tsx` as a CSS-columns masonry (`columns-1 md:co
 | Space Weather | `SpaceWeatherPanel` | NOAA SWPC Kp + live SDO 193Å sun image | Direct (no key) |
 | NASA | `NasaPanel` | DONKI flares/CMEs + NEO close approaches | `nasa-space` proxy (NASA_API_KEY) |
 | Air Quality | `AirQualityPanel` | AirNow observations | `airnow-observations` proxy (AIRNOW_API_KEY) |
+| Grid Status | `GridStatusPanel` | EIA PJM demand + fuel mix + 24h trend | `eia-grid` proxy (EIA_APP_KEY) |
 | Energy & Supply Costs | `EnergyCostsPanel` | EIA (gasoline/diesel/natgas/heating oil) + Freightos FBX | `eia-fuel` + `freightos-fbx` proxies |
 | National | `NationalPanel` | RSS aggregation | Direct |
 | Global Headlines | `GlobalHeadlinesPanel` | GDELT artlist 6h, English-only, server-classified tags. Scrollable (max-h ~500px). | `gdelt-headlines` keyless proxy |
