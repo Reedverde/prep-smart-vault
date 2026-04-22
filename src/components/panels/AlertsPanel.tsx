@@ -144,7 +144,7 @@ const RecentGroup = ({
   );
 };
 
-
+export const AlertsPanel = ({
   lat,
   lng,
   refreshMs,
