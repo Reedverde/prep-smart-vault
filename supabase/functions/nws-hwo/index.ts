@@ -1,7 +1,4 @@
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, requireUser } from '../_shared/auth.ts';
 
 const UA = 'PrepPi (situational-awareness-app)';
 const cache = new Map<string, { ts: number; payload: any }>();
@@ -28,6 +25,9 @@ const truncateWord = (s: string, max: number) => {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+  const auth = await requireUser(req);
+  if (!auth.ok) return auth.response;
 
   try {
     const url = new URL(req.url);
@@ -78,7 +78,6 @@ Deno.serve(async (req) => {
         const text: string = prod?.productText || '';
         productUrl = prod?.['@id'] || productUrl;
 
-        // Split on standard HWO sections
         const dayOneMatch = text.match(/\.DAY ONE\.\.\.([\s\S]*?)(?=\.DAYS TWO|\.SPOTTER|$)/i);
         const extMatch = text.match(/\.DAYS TWO THROUGH SEVEN\.\.\.([\s\S]*?)(?=\.SPOTTER|$)/i);
         const spotMatch = text.match(/\.SPOTTER INFORMATION STATEMENT\.\.\.([\s\S]*?)(?=\$\$|$)/i);
@@ -105,8 +104,9 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
+    console.error('nws-hwo error:', err);
     return new Response(
-      JSON.stringify({ error: 'internal_error', message: String(err) }),
+      JSON.stringify({ error: 'internal_error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   }

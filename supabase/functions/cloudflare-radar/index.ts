@@ -1,7 +1,4 @@
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, requireUser } from '../_shared/auth.ts';
 
 let cache: { ts: number; payload: any } | null = null;
 const CACHE_MS = 15 * 60 * 1000;
@@ -18,7 +15,6 @@ const cfFetch = async (token: string, path: string) => {
 };
 
 const computeTrafficDelta = (timeseries: any): number | null => {
-  // Try several shapes — Cloudflare returns {timestamps, values: {bytes:[], requests:[]}} typically.
   const series: number[] =
     timeseries?.main?.values?.requests?.map((v: any) => Number(v)) ??
     timeseries?.main?.values?.bytes?.map((v: any) => Number(v)) ??
@@ -45,6 +41,9 @@ const classifyAttacks = (summary: any): 'low' | 'medium' | 'high' => {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
+  const auth = await requireUser(req);
+  if (!auth.ok) return auth.response;
+
   const token = Deno.env.get('CLOUDFLARE_RADAR_API_TOKEN');
   if (!token) {
     return new Response(JSON.stringify({ notConfigured: true, key: 'CLOUDFLARE_RADAR_API_TOKEN' }), {
@@ -61,9 +60,18 @@ Deno.serve(async (req) => {
 
   try {
     const [traffic, attacks, targets] = await Promise.all([
-      cfFetch(token, '/radar/http/timeseries?dateRange=7d&location=US').catch((e) => ({ error: String(e) })),
-      cfFetch(token, '/radar/attacks/layer7/summary?dateRange=1d&location=US').catch((e) => ({ error: String(e) })),
-      cfFetch(token, '/radar/attacks/layer7/top/locations/target?dateRange=7d&limit=5').catch((e) => ({ error: String(e) })),
+      cfFetch(token, '/radar/http/timeseries?dateRange=7d&location=US').catch((e) => {
+        console.error('cloudflare-radar traffic fetch failed:', e);
+        return { error: true } as any;
+      }),
+      cfFetch(token, '/radar/attacks/layer7/summary?dateRange=1d&location=US').catch((e) => {
+        console.error('cloudflare-radar attacks fetch failed:', e);
+        return { error: true } as any;
+      }),
+      cfFetch(token, '/radar/attacks/layer7/top/locations/target?dateRange=7d&limit=5').catch((e) => {
+        console.error('cloudflare-radar targets fetch failed:', e);
+        return { error: true } as any;
+      }),
     ]);
 
     const trafficDeltaPct = traffic?.result ? computeTrafficDelta(traffic.result) : null;
@@ -95,7 +103,8 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: 'internal_error', message: String(err) }), {
+    console.error('cloudflare-radar error:', err);
+    return new Response(JSON.stringify({ error: 'internal_error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

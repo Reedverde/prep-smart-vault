@@ -1,7 +1,4 @@
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, requireUser } from '../_shared/auth.ts';
 
 let cache: { ts: number; payload: any } | null = null;
 const CACHE_MS = 5 * 60 * 1000;
@@ -20,6 +17,9 @@ const severityFor = (n: number): 'clear' | 'localized' | 'widespread' => {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+  const auth = await requireUser(req);
+  if (!auth.ok) return auth.response;
 
   if (cache && Date.now() - cache.ts < CACHE_MS) {
     return new Response(JSON.stringify(cache.payload), {
@@ -40,8 +40,6 @@ Deno.serve(async (req) => {
     scrapedAt: new Date().toISOString(),
   };
 
-  // Best-effort attempt at PowerOutage.us — if they ever start serving the
-  // anonymous web endpoint to non-browser clients, we'll pick it up here.
   try {
     const res = await fetch('https://poweroutage.us/api/web/states', {
       headers: {
@@ -72,7 +70,7 @@ Deno.serve(async (req) => {
       console.log('power-outages: poweroutage.us', res.status, body.slice(0, 200));
     }
   } catch (err) {
-    console.log('power-outages: probe failed', String(err));
+    console.error('power-outages probe failed:', err);
   }
 
   cache = { ts: Date.now(), payload };
