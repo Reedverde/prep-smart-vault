@@ -23,10 +23,38 @@ export const NationalPanel = ({ refreshMs }: { refreshMs: number }) => {
     const e = f.properties.event;
     counts[e] = (counts[e] || 0) + 1;
   });
-  const top = Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
+  const sortedEvents = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const top = sortedEvents
     .slice(0, 7)
     .map(([event, count]) => ({ event: event.length > 22 ? event.slice(0, 20) + "…" : event, count }));
+  const dominant = sortedEvents[0];
+
+  // State tally from areaDesc (NWS format: "Allegheny, PA; Beaver, PA")
+  const stateCounts: Record<string, number> = {};
+  features.forEach((f: any) => {
+    const desc: string = f.properties?.areaDesc || "";
+    const seenStates = new Set<string>();
+    desc.split(";").forEach((segment) => {
+      const parts = segment.split(",").map((p) => p.trim());
+      const last = parts[parts.length - 1];
+      if (last && /^[A-Z]{2}$/.test(last)) seenStates.add(last);
+    });
+    seenStates.forEach((s) => {
+      stateCounts[s] = (stateCounts[s] || 0) + 1;
+    });
+  });
+  const topStates = Object.entries(stateCounts).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+  const ratio = total > 0 ? sev / total : 0;
+  let interpretation = "Normal alert volume";
+  let interpretationClass = "text-severity-low";
+  if (ratio > 0.4) {
+    interpretation = "Major severe weather event nationwide";
+    interpretationClass = "text-severity-critical";
+  } else if (ratio >= 0.2) {
+    interpretation = "Elevated severe weather";
+    interpretationClass = "text-severity-moderate";
+  }
 
   return (
     <Panel
