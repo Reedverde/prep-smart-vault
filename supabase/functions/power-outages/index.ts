@@ -6,10 +6,11 @@ const corsHeaders = {
 let cache: { ts: number; payload: any } | null = null;
 const CACHE_MS = 5 * 60 * 1000;
 
-// PowerOutage.us aggregates utility outage data nationally. Public web API,
-// no auth required. Replaces the dead FirstEnergy/Kubra UUID scrape.
-const STATES_URL = 'https://poweroutage.us/api/web/states';
-const COUNTIES_URL = 'https://poweroutage.us/api/web/counties?statename=Pennsylvania';
+// Power outage data sources we've evaluated:
+//   • FirstEnergy/Kubra hardcoded UUID — 404 (utility reorganized portal)
+//   • PowerOutage.us /api/web/states  — 401 from Deno edge (requires session/auth)
+// Until we either find a public no-auth endpoint or run a browser-based scrape
+// from the Pi tier, this panel ships in a graceful "unavailable" state.
 
 const severityFor = (n: number): 'clear' | 'localized' | 'widespread' => {
   if (n <= 0) return 'clear';
@@ -26,101 +27,52 @@ Deno.serve(async (req) => {
     });
   }
 
-  let payload: any = {
+  // Default unavailable payload — shape matches the panel's expectations so it
+  // renders its dim "no data" state instead of erroring.
+  const payload: any = {
     status: 'unavailable',
-    message: 'Outage data not reachable. Will retry next refresh.',
+    message: 'Public outage feeds for FirstEnergy/Penelec are not currently reachable from the cloud tier. Will be re-enabled once a viable source is found.',
     lawrence: null,
     paTotal: null,
     topCounties: [],
     severity: 'clear' as const,
-    source: 'PowerOutage.us',
+    source: 'Power outage data',
     scrapedAt: new Date().toISOString(),
   };
 
+  // Best-effort attempt at PowerOutage.us — if they ever start serving the
+  // anonymous web endpoint to non-browser clients, we'll pick it up here.
   try {
-    const headers = {
-      Accept: 'application/json',
-      'User-Agent': 'Mozilla/5.0 (compatible; PrepPi/1.0)',
-    };
-
-    const [statesRes, countiesRes] = await Promise.all([
-      fetch(STATES_URL, { headers }),
-      fetch(COUNTIES_URL, { headers }),
-    ]);
-
-    if (!statesRes.ok) {
-      const body = await statesRes.text().catch(() => '');
-      console.log('power-outages: states endpoint', statesRes.status, body.slice(0, 200));
-    }
-    if (!countiesRes.ok) {
-      const body = await countiesRes.text().catch(() => '');
-      console.log('power-outages: counties endpoint', countiesRes.status, body.slice(0, 200));
-    }
-
-    if (statesRes.ok && countiesRes.ok) {
-      const statesText = await statesRes.text();
-      const countiesText = await countiesRes.text();
-
-      let statesJson: any = null;
-      let countiesJson: any = null;
-      try { statesJson = JSON.parse(statesText); } catch {
-        console.log('power-outages: states non-JSON (first 200):', statesText.slice(0, 200));
+    const res = await fetch('https://poweroutage.us/api/web/states', {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'Mozilla/5.0 (compatible; PrepPi/1.0)',
+      },
+    });
+    if (res.ok) {
+      const text = await res.text();
+      try {
+        const json = JSON.parse(text);
+        const rows: any[] = Array.isArray(json) ? json : (json?.WebStateRecords || []);
+        const pa = rows.find((s: any) => /pennsylvania/i.test(String(s?.StateName || s?.state_name || '')));
+        if (pa) {
+          const paTotal = Number(pa?.CustomersOut ?? pa?.customers_out ?? 0);
+          payload.status = 'ok';
+          payload.paTotal = paTotal;
+          payload.lawrence = { customers: 0, outages: 0 };
+          payload.severity = severityFor(0);
+          payload.source = 'PowerOutage.us';
+          payload.message = undefined;
+        }
+      } catch {
+        console.log('power-outages: poweroutage.us non-JSON (first 200):', text.slice(0, 200));
       }
-      try { countiesJson = JSON.parse(countiesText); } catch {
-        console.log('power-outages: counties non-JSON (first 200):', countiesText.slice(0, 200));
-      }
-
-      // Defensive shape extraction — PowerOutage.us has occasionally returned
-      // either a bare array or { WebStateRecords: [...] }.
-      const stateRows: any[] = Array.isArray(statesJson)
-        ? statesJson
-        : (statesJson?.WebStateRecords || statesJson?.states || []);
-      const countyRows: any[] = Array.isArray(countiesJson)
-        ? countiesJson
-        : (countiesJson?.WebCountyRecords || countiesJson?.counties || []);
-
-      const paState = stateRows.find((s: any) =>
-        /pennsylvania/i.test(String(s?.StateName || s?.state_name || s?.name || ''))
-      );
-      const paTotal = paState
-        ? Number(paState?.CustomersOut ?? paState?.customers_out ?? paState?.customersOut ?? 0)
-        : null;
-
-      const counties = countyRows
-        .map((c: any) => ({
-          name: String(c?.CountyName || c?.county_name || c?.name || '').trim(),
-          customers: Number(c?.CustomersOut ?? c?.customers_out ?? c?.customersOut ?? 0),
-          outages: Number(c?.OutageCount ?? c?.outage_count ?? c?.outages ?? 0),
-        }))
-        .filter((c: any) => c.name);
-
-      const lawrence = counties.find((c: any) => /^lawrence$/i.test(c.name)) || null;
-      const topCounties = [...counties]
-        .sort((a: any, b: any) => b.customers - a.customers)
-        .slice(0, 5)
-        .filter((c: any) => c.customers > 0);
-
-      if (paTotal !== null || counties.length > 0) {
-        payload = {
-          status: 'ok',
-          lawrence: lawrence
-            ? { customers: lawrence.customers, outages: lawrence.outages }
-            : { customers: 0, outages: 0 },
-          paTotal: paTotal ?? 0,
-          topCounties,
-          severity: severityFor(lawrence?.customers ?? 0),
-          source: 'PowerOutage.us',
-          scrapedAt: new Date().toISOString(),
-        };
-      } else {
-        console.log('power-outages: parsed but empty', {
-          stateRows: stateRows.length,
-          countyRows: countyRows.length,
-        });
-      }
+    } else {
+      const body = await res.text().catch(() => '');
+      console.log('power-outages: poweroutage.us', res.status, body.slice(0, 200));
     }
   } catch (err) {
-    console.log('power-outages: fetch failed', String(err));
+    console.log('power-outages: probe failed', String(err));
   }
 
   cache = { ts: Date.now(), payload };
