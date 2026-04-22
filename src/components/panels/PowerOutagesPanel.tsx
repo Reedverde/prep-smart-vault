@@ -23,8 +23,8 @@ export const PowerOutagesPanel = ({ refreshMs }: { refreshMs: number }) => {
   return (
     <Panel
       title="Power Outages · PA"
-      source={data?.source || "FirstEnergy"}
-      sourceUrl="https://www.firstenergycorp.com/outages.html"
+      source={data?.source || "PowerOutage.us"}
+      sourceUrl={data?.sourceUrl || "https://data.tcpalm.com/national-power-outage-map-tracker/area/lawrence-county-pa/42073/"}
       action={
         <>
           <InfoTip>
