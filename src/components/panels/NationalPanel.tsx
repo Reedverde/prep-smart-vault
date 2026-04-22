@@ -105,6 +105,30 @@ export const NationalPanel = ({ refreshMs }: { refreshMs: number }) => {
             </ResponsiveContainer>
           </div>
 
+          <div className="space-y-1">
+            {total > 0 && (
+              <div className={`font-mono text-xs font-semibold ${interpretationClass}`}>
+                {interpretation}
+              </div>
+            )}
+            {dominant && (
+              <div className="font-mono text-[11px] text-dim">
+                Dominant: <span className="text-foreground">{dominant[0]}</span> ({dominant[1]})
+              </div>
+            )}
+            {topStates.length > 0 && (
+              <div className="font-mono text-[11px] text-dim">
+                Most active:{" "}
+                {topStates.map(([s, c], i) => (
+                  <span key={s}>
+                    <span className="text-foreground">{s}</span> ({c})
+                    {i < topStates.length - 1 ? " · " : ""}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
           <ContextBox>Top event types currently active across the United States.</ContextBox>
           <UpdatedAgo date={dataUpdatedAt ? new Date(dataUpdatedAt) : undefined} />
         </div>
