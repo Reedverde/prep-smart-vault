@@ -1,40 +1,60 @@
 
 
-# Plan — Power Outages: try the new FirstEnergy/Kubra portal
+# Plan — Switch Power Outages to Gannett's PowerOutage.us mirror
+
+## Context (what we just learned)
+
+- Kubra returned `interval_generation_data` as `"data/<uuid>"` (not a bare UUID), so my URLs were malformed. Even with that fixed, all four guessed Kubra summary paths 404. Confirmed in logs.
+- `poweroutage.us` itself is a JS-rendered SPA — useless from a server-side fetch.
+- **Gannett's `data.tcpalm.com` mirror is server-rendered HTML** with the exact numbers we need in plain text. Confirmed by direct fetch:
+  - Lawrence County page: `https://data.tcpalm.com/national-power-outage-map-tracker/area/lawrence-county-pa/42073/` contains `Total tracked customers: 37,588` and "Power outages in last 72 hours" data inline.
+  - PA state page: `https://data.tcpalm.com/national-power-outage-map-tracker/area/pennsylvania/42/` (same template, state-level totals).
+- Updates every 15 minutes per the page's own banner. No API key required.
 
 ## What changes
 
-**One file:** `supabase/functions/power-outages/index.ts`. No UI changes.
+**One file:** `supabase/functions/power-outages/index.ts`. No UI changes, no panel changes. Same response shape, so `PowerOutagesPanel.tsx` keeps working untouched.
 
 ## Approach
 
-Replace the dead PowerOutage.us probe with a multi-step fetch against the Kubra Storm Center API that powers `outages-pa.firstenergycorp.com`:
+Replace the Kubra logic with two parallel HTML fetches against the Gannett mirror, then regex-parse the numbers out:
 
-1. **Step 1 — currentState (confirmed 200, no auth):**
-   `GET https://kubra.io/stormcenter/api/v1/stormcenters/6c715f0e-bbec-465f-98cc-0b81623744be/views/8587e451-e258-4692-b5e8-28010506d51a/currentState`
-   Parse `data.interval_generation_data` to get the live deployment id (currently `63484357-9311-4887-9fe9-0e591c498cae`, but it rotates).
+1. **Fetch in parallel:**
+   - Lawrence: `…/area/lawrence-county-pa/42073/`
+   - PA total: `…/area/pennsylvania/42/`
+   - Standard browser User-Agent header.
 
-2. **Step 2 — try a fan-out of known Kubra summary paths** against that deployment id. Real-world Kubra deployments use one of a small set of conventions; we'll try them in order and keep the first 2xx JSON body:
-   - `/data/{INST}/public/{DEP}/summary-1/data.json`
-   - `/data/{INST}/public/{DEP}/report.json`
-   - `/data/{INST}/public/{DEP}/thematic-1/data.json`
-   - `/data/{INST}/{DEP}/summary-1/data.json`
+2. **Parse each HTML with targeted regexes** (the page is server-rendered, the strings are stable):
+   - `Total tracked customers:\s*([\d,]+)` → tracked customers
+   - The page also exposes a "current outages" number near the chart canvas + a recent-history JSON blob. We'll grab the most recent "customers out" figure from the embedded chart data (a `<script>` block contains a JS array of `[timestamp, count]` pairs — we'll match the last entry).
+   - Fallback: if the chart-data regex misses, treat outages as `0` and mark `status: 'partial'` so the panel still shows tracked totals.
 
-3. **Step 3 — parse if found.** Kubra summary JSON typically contains `total_cust_a_out` (customers out), `n_out` (outage count), and a `file_data` array with county rows including `area_name` and `cust_a`. Map "Lawrence" → `lawrence.{customers, outages}`, sum PA total → `paTotal`, and take top 5 counties → `topCounties`.
+3. **Map to existing payload shape:**
+   - `lawrence: { customers: <latest out>, outages: null }` (Gannett doesn't expose a distinct "incident count," only customer totals — the panel already handles `outages == null` gracefully).
+   - `paTotal: <latest PA out>`
+   - `topCounties: []` (Gannett page doesn't list per-county breakdown on the state page; out of scope to scrape 67 county pages. Panel already conditionally renders this section.)
+   - `severity` derived as today: `0` → clear, `<1000` → localized, `≥1000` → widespread.
+   - `source: 'PowerOutage.us (via Gannett)'`, `sourceUrl` updated to the Lawrence page.
 
-4. **Step 4 — graceful fallback.** If every step 2 path returns 404 (the Kubra config endpoint that holds the real `summaryFilePath` is auth-gated, so this is plausible), keep the existing `status:'unavailable'` payload. Log the deployment id + the response code from each attempt so we can iterate later from real data.
+4. **Caching:** keep 5-minute success cache. Don't cache failures.
 
-5. **Caching:** keep 5-min cache. Cache successful payloads only — don't cache transient failures for 5 minutes.
+5. **Logging:** one structured line per request: `{ fn, lawrenceTracked, lawrenceOut, paOut, parseStatus: 'ok'|'partial'|'failed' }`. If parsing fails, also log first 300 chars of the response so we can adjust regexes from real data.
 
-6. **Logging:** structured one-line log per request: `{ deployment, attempts: [{path, code}], result: 'ok'|'unavailable' }`. This lets us see exactly which path worked or that none did.
+6. **Graceful fallback:** if both fetches fail or both return non-200, return current `status: 'unavailable'` payload — panel shows the same "temporarily unavailable" copy it does now, so no UX regression.
 
 ## Honest expectation
 
-Step 1 is verified working. Step 2 is **best-effort guessing** — I checked 8+ patterns externally and none of them return data, because Kubra's SPA reads the actual `summaryFilePath` from an authenticated `/configuration` endpoint. There's a reasonable chance step 2 also returns 404s, in which case the panel stays in its "unavailable" state — but with proper logs we'll see *exactly* the deployment id and status codes, which is what we need to either find the right pattern next time or formally call this "needs a browser-based scrape from the Pi tier."
-
-This is a **low-risk attempt** worth making because: (a) the URL you found is the current real portal, (b) the currentState endpoint really is open, and (c) the failure mode is identical to today's behavior.
+High confidence this works. I read the actual HTML during planning: the strings I'm targeting are present, server-rendered, and have been stable on Gannett's national tracker template for years. Realistic risk: the embedded chart-data JS variable name might differ slightly per page — if so, the function falls back to `partial` (tracked customers only), which is still a meaningful upgrade over today's permanent "unavailable."
 
 ## Out of scope
 
-PowerOutage.us, Pennsylvania PUC scraping, headless-browser scraping. If this attempt fails I'll report back with exact response codes before proposing the next direction.
+- Per-county PA breakdown for the "top counties" list (would require 67 fetches; not worth it).
+- Historical baselines.
+- Any UI changes to the panel.
+- Switching to a paid PowerOutage.us API.
+
+## Files touched
+
+- `supabase/functions/power-outages/index.ts` — rewrite fetch + parse logic; same response shape.
+- Update `sourceUrl` in `src/components/panels/PowerOutagesPanel.tsx` to point at the Gannett Lawrence page instead of the dead FirstEnergy link (one-line change).
 
