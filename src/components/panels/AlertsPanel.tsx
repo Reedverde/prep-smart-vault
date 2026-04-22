@@ -136,15 +136,38 @@ export const AlertsPanel = ({
             ))
           )}
 
-          {/* Expired alerts — past 7 days */}
+          {/* Expired alerts — past 7 days, grouped by event type */}
           {expired.length > 0 && (
             <>
               <div className="font-mono text-[10px] uppercase tracking-[0.15em] text-dim mt-3 mb-2 pt-3 border-t border-border/60">
                 Recent · past 7 days
               </div>
-              {expired.map((a: any) => (
-                <AlertCard key={a.id} a={a} expanded={expanded} setExpanded={setExpanded} dimmed />
-              ))}
+              {(() => {
+                type Group = { event: string; latest: any; all: any[] };
+                const grouped = expired.reduce<Group[]>((acc, a: any) => {
+                  const ev = a.properties?.event || "Unknown";
+                  const g = acc.find((x) => x.event === ev);
+                  if (g) {
+                    g.all.push(a);
+                    const aEnd = a.properties?.ends ? new Date(a.properties.ends).getTime() : 0;
+                    const lEnd = g.latest.properties?.ends
+                      ? new Date(g.latest.properties.ends).getTime()
+                      : 0;
+                    if (aEnd > lEnd) g.latest = a;
+                  } else {
+                    acc.push({ event: ev, latest: a, all: [a] });
+                  }
+                  return acc;
+                }, []);
+                return grouped.map((g) => (
+                  <RecentGroup
+                    key={g.event}
+                    group={g}
+                    expanded={expanded}
+                    setExpanded={setExpanded}
+                  />
+                ));
+              })()}
               {expiredTotal > expired.length && (
                 <div className="text-[10px] text-dim font-mono mt-2">
                   + {expiredTotal - expired.length} more this week
