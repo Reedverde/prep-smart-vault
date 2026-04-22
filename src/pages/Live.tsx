@@ -76,32 +76,32 @@ const Live = () => {
       ],
     },
     {
-      label: "NEWS + NATIONAL",
+      label: "NATIONAL",
       panels: [
-        <GlobalHeadlinesPanel key="headlines" refreshMs={refreshMs} />,
         <NationalPanel key="national" refreshMs={refreshMs} lat={lat} lng={lng} />,
         <GridStatusPanel key="grid" refreshMs={refreshMs} />,
-      ],
-    },
-    {
-      label: "WORLD",
-      panels: [
         <EarthquakesPanel key="quakes" refreshMs={refreshMs} lat={lat} lng={lng} />,
-        <ActiveDisastersPanel key="disasters" refreshMs={refreshMs} />,
-        <ConflictPulsePanel key="conflict" refreshMs={refreshMs} />,
       ],
     },
     {
-      label: "SPACE",
+      label: "NEWS & INTERNET",
       panels: [
+        <GlobalHeadlinesPanel key="headlines" refreshMs={refreshMs} />,
+        <ConflictPulsePanel key="conflict" refreshMs={refreshMs} />,
+        <InternetHealthPanel key="cf" refreshMs={15 * 60 * 1000} />,
+      ],
+    },
+    {
+      label: "WORLD & SPACE",
+      panels: [
+        <ActiveDisastersPanel key="disasters" refreshMs={refreshMs} />,
         <SpaceWeatherPanel key="space" refreshMs={refreshMs} />,
         <NasaPanel key="nasa" refreshMs={refreshMs} />,
       ],
     },
     {
-      label: "INTERNET & SYSTEM",
+      label: "SYSTEM",
       panels: [
-        <InternetHealthPanel key="cf" refreshMs={15 * 60 * 1000} />,
         <SystemHealthPanel key="system" refreshMin={refresh_interval_min} />,
       ],
     },
