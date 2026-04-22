@@ -1,6 +1,7 @@
-import { Panel, ContextBox } from "@/components/Panel";
+import { Panel } from "@/components/Panel";
 import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo } from "@/components/PanelKit";
 import { useGdacs } from "@/hooks/useDataSources";
+import { formatDistanceToNow } from "date-fns";
 
 const typeAbbrev: Record<string, string> = {
   EQ: "EQ",
@@ -18,6 +19,50 @@ const alertPillClass = (level: string) => {
   return "bg-secondary/40 text-dim border-border/60";
 };
 
+const safeNum = (v: any): number | null => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
+const fmtPop = (n: number): string => {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}k`;
+  return `${n}`;
+};
+
+const buildDetail = (p: any): string => {
+  const parts: string[] = [];
+  const type = p?.eventtype;
+  const sevVal = safeNum(p?.severitydata?.severity ?? p?.severity?.value ?? p?.severity);
+  const ed = p?.severitydata?.eventdetails || p?.severitydata || {};
+
+  if (type === "EQ") {
+    if (sevVal !== null) parts.push(`M${sevVal.toFixed(1)}`);
+    const depth = safeNum(ed?.depth);
+    if (depth !== null) parts.push(`${Math.round(depth)}km depth`);
+  } else if (type === "TC") {
+    const cat = ed?.Class || ed?.class || ed?.category;
+    if (cat) parts.push(`${cat}`);
+    const wind = safeNum(ed?.maxwind ?? ed?.wind);
+    if (wind !== null) parts.push(`${Math.round(wind)} kt`);
+  } else if (type === "FL") {
+    const pop = safeNum(p?.population?.value ?? p?.population);
+    if (pop !== null && pop > 0) parts.push(`pop ~${fmtPop(pop)} affected`);
+  } else if (type === "VO") {
+    if (sevVal !== null) parts.push(`VEI ${sevVal}`);
+  }
+
+  if (p?.fromdate) {
+    try {
+      parts.push(`${formatDistanceToNow(new Date(p.fromdate), { addSuffix: false })} ago`);
+    } catch {
+      // ignore
+    }
+  }
+
+  return parts.join(" · ");
+};
+
 export const ActiveDisastersPanel = ({ refreshMs }: { refreshMs: number }) => {
   const { data, isLoading, error, isFetching, refetch, dataUpdatedAt } = useGdacs(refreshMs);
 
@@ -33,7 +78,17 @@ export const ActiveDisastersPanel = ({ refreshMs }: { refreshMs: number }) => {
       action={
         <>
           <InfoTip>
-            Currently-active GDACS events at Orange (humanitarian impact likely) or Red (severe) alert level. Green minor events excluded.
+            <div className="space-y-2">
+              <p>
+                The Global Disaster Alert and Coordination System (UN + EU). Auto-detects major sudden-onset disasters worldwide and issues alerts within minutes — typically before mainstream news.
+              </p>
+              <p>
+                <strong>Alert levels:</strong> GREEN (filtered out) · ORANGE (significant impact likely) · RED (severe, international assistance probable).
+              </p>
+              <p>
+                <strong>Event types:</strong> EQ earthquake · TC tropical cyclone · FL flood · VO volcano · DR drought · WF wildfire.
+              </p>
+            </div>
           </InfoTip>
           <RefreshButton onClick={() => refetch()} loading={isFetching} />
         </>
@@ -57,21 +112,27 @@ export const ActiveDisastersPanel = ({ refreshMs }: { refreshMs: number }) => {
               top.map((e: any, i: number) => {
                 const p = e.properties || {};
                 const type = typeAbbrev[p.eventtype] || p.eventtype || "—";
-                const location = p.country || p.name || p.htmldescription || "Unknown";
+                const location = p.country || p.name || "Unknown";
                 const level = p.alertlevel || "";
                 const url = p.url?.report || p.url?.details || `https://www.gdacs.org/`;
+                const detail = buildDetail(p);
                 return (
                   <a
                     key={p.eventid ? `${p.eventtype}-${p.eventid}` : i}
                     href={url}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-2 py-1 hover:bg-secondary/40 rounded px-1 transition-colors"
+                    className="flex items-start gap-2 py-1.5 hover:bg-secondary/40 rounded px-1 transition-colors"
                   >
-                    <span className="font-mono text-[10px] font-semibold text-dim w-7 shrink-0">{type}</span>
-                    <span className="font-mono text-[11px] text-foreground flex-1 truncate">{location}</span>
+                    <span className="font-mono text-[10px] font-semibold text-dim w-7 shrink-0 mt-0.5">{type}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-mono text-[11px] text-foreground truncate">{location}</div>
+                      {detail && (
+                        <div className="font-mono text-[10px] text-dim truncate mt-0.5">{detail}</div>
+                      )}
+                    </div>
                     <span
-                      className={`font-mono text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border ${alertPillClass(level)}`}
+                      className={`font-mono text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border shrink-0 mt-0.5 ${alertPillClass(level)}`}
                     >
                       {level || "—"}
                     </span>
@@ -81,25 +142,6 @@ export const ActiveDisastersPanel = ({ refreshMs }: { refreshMs: number }) => {
             )}
           </div>
 
-          <div className="rounded-md bg-inset border border-border/60 p-3 max-h-[180px] overflow-y-auto scroll-thin">
-            <div className="font-mono text-[10px] uppercase tracking-wider text-foreground mb-2">About GDACS</div>
-            <div className="font-mono text-xs text-dim leading-relaxed space-y-2">
-              <p>
-                The <span className="text-foreground">Global Disaster Alert and Coordination System</span> is run jointly by the UN and European Commission. It auto-detects major sudden-onset disasters worldwide and issues alerts within minutes — typically before mainstream news.
-              </p>
-              <p>
-                <span className="text-foreground">Alert levels:</span><br />
-                <span className="text-severity-low">GREEN</span> — minor event, low humanitarian impact (filtered out here).<br />
-                <span className="text-severity-moderate">ORANGE</span> — significant impact likely, regional response.<br />
-                <span className="text-severity-critical">RED</span> — severe, international assistance probable.
-              </p>
-              <p>
-                <span className="text-foreground">Event types:</span><br />
-                EQ = earthquake · TC = tropical cyclone · FL = flood · VO = volcano · DR = drought · WF = wildfire.
-              </p>
-              <p>This panel shows currently-active Orange and Red alerts only.</p>
-            </div>
-          </div>
           <UpdatedAgo date={dataUpdatedAt ? new Date(dataUpdatedAt) : undefined} />
         </div>
       )}
