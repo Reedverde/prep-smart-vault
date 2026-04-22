@@ -35,14 +35,16 @@ const sevColorVar = (sev: PiSeverity): string => {
   }
 };
 
-const sevBgTint = (sev: PiSeverity): string => {
+const sevBgGradient = (sev: PiSeverity): string => {
   switch (sev) {
     case "alert":
-      return "rgba(255, 107, 94, 0.06)";
+      return "linear-gradient(90deg, rgba(255,107,94,0.10) 0%, rgba(255,107,94,0) 35%)";
     case "watch":
-      return "rgba(244, 181, 92, 0.04)";
+      return "linear-gradient(90deg, rgba(244,181,92,0.06) 0%, rgba(244,181,92,0) 30%)";
+    case "clear":
+      return "linear-gradient(90deg, rgba(125,227,138,0.04) 0%, rgba(125,227,138,0) 25%)";
     default:
-      return "transparent";
+      return "none";
   }
 };
 
@@ -75,8 +77,8 @@ export const PiTile = ({ label, value, sub, sev = "info", wide, num, spark }: Pi
       className="relative flex flex-col p-3 min-h-0 overflow-hidden"
       style={{
         background: "#050705",
+        backgroundImage: sevBgGradient(sev),
         borderLeft: `3px solid ${color}`,
-        backgroundColor: sevBgTint(sev),
         gridColumn: wide ? "span 2 / span 2" : undefined,
         animation: sev === "alert" ? "pi-alert-pulse 4s ease-in-out infinite" : undefined,
       }}
