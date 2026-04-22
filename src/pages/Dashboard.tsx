@@ -13,17 +13,12 @@ import { SystemHealthPanel } from "@/components/panels/SystemHealthPanel";
 import { NasaPanel } from "@/components/panels/NasaPanel";
 import { GridStatusPanel } from "@/components/panels/GridStatusPanel";
 import { GlobalHeadlinesPanel } from "@/components/panels/GlobalHeadlinesPanel";
+import { Fragment } from "react";
 
 const debugRows = new URLSearchParams(window.location.search).get("debug") === "rows";
 
-const RowLabel = ({ children }: { children: string }) =>
-  debugRows ? (
-    <div className="font-mono text-[10px] tracking-[0.2em] text-dim mb-1 uppercase">
-      {children}
-    </div>
-  ) : null;
-
-const rowGrid = "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-4 auto-rows-fr";
+const labelClass =
+  "font-mono text-[10px] tracking-[0.2em] text-dim mb-1 uppercase";
 
 const Dashboard = () => {
   const { settings, loading } = useUserSettings();
@@ -41,6 +36,41 @@ const Dashboard = () => {
   const refreshMs = (settings.refresh_interval_min || 10) * 60 * 1000;
   const { latitude: lat, longitude: lng } = settings;
 
+  const groups: { label: string; panels: JSX.Element[] }[] = [
+    {
+      label: "LOCAL",
+      panels: [
+        <WeatherPanel key="weather" lat={lat} lng={lng} refreshMs={refreshMs} />,
+        <AlertsPanel key="alerts" lat={lat} lng={lng} refreshMs={refreshMs} />,
+        <AirQualityPanel key="aq" lat={lat} lng={lng} refreshMs={refreshMs} />,
+      ],
+    },
+    {
+      label: "NEWS + NATIONAL",
+      panels: [
+        <GlobalHeadlinesPanel key="headlines" refreshMs={refreshMs} />,
+        <NationalPanel key="national" refreshMs={refreshMs} />,
+        <GridStatusPanel key="grid" refreshMs={refreshMs} />,
+      ],
+    },
+    {
+      label: "WORLD",
+      panels: [
+        <EarthquakesPanel key="quakes" refreshMs={refreshMs} lat={lat} lng={lng} />,
+        <ActiveDisastersPanel key="disasters" refreshMs={refreshMs} />,
+        <ConflictPulsePanel key="conflict" refreshMs={refreshMs} />,
+      ],
+    },
+    {
+      label: "SPACE + SYSTEM",
+      panels: [
+        <SpaceWeatherPanel key="space" refreshMs={refreshMs} />,
+        <NasaPanel key="nasa" refreshMs={refreshMs} />,
+        <SystemHealthPanel key="system" refreshMin={settings.refresh_interval_min} />,
+      ],
+    },
+  ];
+
   return (
     <PageContainer>
       <div className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs">
@@ -52,36 +82,31 @@ const Dashboard = () => {
         </span>
       </div>
 
-      {/* Row 1 — LOCAL */}
-      <RowLabel>LOCAL</RowLabel>
-      <div className={rowGrid}>
-        <WeatherPanel lat={lat} lng={lng} refreshMs={refreshMs} />
-        <AlertsPanel lat={lat} lng={lng} refreshMs={refreshMs} />
-        <AirQualityPanel lat={lat} lng={lng} refreshMs={refreshMs} />
-      </div>
-
-      {/* Row 2 — NEWS + NATIONAL */}
-      <RowLabel>NEWS + NATIONAL</RowLabel>
-      <div className={rowGrid}>
-        <GlobalHeadlinesPanel refreshMs={refreshMs} />
-        <NationalPanel refreshMs={refreshMs} />
-        <GridStatusPanel refreshMs={refreshMs} />
-      </div>
-
-      {/* Row 3 — WORLD */}
-      <RowLabel>WORLD</RowLabel>
-      <div className={rowGrid}>
-        <EarthquakesPanel refreshMs={refreshMs} lat={lat} lng={lng} />
-        <ActiveDisastersPanel refreshMs={refreshMs} />
-        <ConflictPulsePanel refreshMs={refreshMs} />
-      </div>
-
-      {/* Row 4 — SPACE + SYSTEM */}
-      <RowLabel>SPACE + SYSTEM</RowLabel>
-      <div className={rowGrid}>
-        <SpaceWeatherPanel refreshMs={refreshMs} />
-        <NasaPanel refreshMs={refreshMs} />
-        <SystemHealthPanel refreshMin={settings.refresh_interval_min} />
+      {/*
+        Single-tree layout that adapts via CSS:
+        - <md (mobile): 1-col grid, group labels render as section headers
+        - md..xl-1 (tablet): 2-col grid, panels flow continuously, labels span both cols
+        - xl+ (desktop): outer becomes block, inner row wrapper becomes 3-col grid with auto-rows-fr
+          per group — identical to previous per-row behavior. Labels hidden unless ?debug=rows.
+      */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:block gap-4 xl:gap-0">
+        {groups.map((g) => (
+          <Fragment key={g.label}>
+            {/* Tablet + mobile label: spans both columns; hidden on desktop */}
+            <div className={`${labelClass} md:col-span-2 xl:hidden mt-2 first:mt-0`}>
+              {g.label}
+            </div>
+            {/* Desktop debug-only label */}
+            {debugRows && (
+              <div className={`${labelClass} hidden xl:block`}>{g.label}</div>
+            )}
+            {/* Row wrapper: `contents` at md so panels promote into outer 2-col grid;
+                `grid` at xl restores per-row 3-col layout with equal heights */}
+            <div className="contents xl:grid xl:grid-cols-3 xl:gap-4 xl:auto-rows-fr xl:mb-4">
+              {g.panels}
+            </div>
+          </Fragment>
+        ))}
       </div>
     </PageContainer>
   );
