@@ -83,13 +83,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const query =
-      '(protest OR conflict OR war OR military OR invasion OR coup OR sanctions OR ceasefire OR ' +
-      'diplomatic OR parliament OR congress OR election OR legislation OR policy OR treaty OR ' +
-      'summit OR cyberattack OR ransomware OR breach OR terrorism OR terror OR bombing OR ' +
-      'missile OR airstrike OR "drone strike" OR shelling OR blockade OR embargo OR recession OR ' +
-      'inflation OR "currency crisis" OR "bank run" OR "sovereign default" OR "trade war" OR ' +
-      'tariff OR OPEC OR "oil prices") sourcelang:english';
+    // GDELT doc 2.0 enforces an undocumented OR-term cap — empirically ~7 terms.
+    // Anything more triggers "Your query was too short or too long".
+    // We pick the highest-signal situational-awareness keywords. Classification
+    // downstream catches related terms in titles even when not in the query.
+    const query = '(war OR conflict OR cyberattack OR terrorism OR sanctions OR protest OR coup) sourcelang:english';
     const url =
       'https://api.gdeltproject.org/api/v2/doc/doc?query=' +
       encodeURIComponent(query) +
@@ -115,10 +113,21 @@ Deno.serve(async (req) => {
 
     const text = await res.text();
     let json: any = {};
+    let parseFailed = false;
     try {
       json = text ? JSON.parse(text) : {};
     } catch {
       json = {};
+      parseFailed = true;
+    }
+    if (parseFailed) {
+      console.log('gdelt-headlines: non-JSON response from GDELT (first 200 chars):', text.slice(0, 200));
+      if (cached) {
+        return new Response(JSON.stringify(cached.payload), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'STALE' },
+        });
+      }
     }
     const articles: any[] = Array.isArray(json?.articles) ? json.articles : [];
 

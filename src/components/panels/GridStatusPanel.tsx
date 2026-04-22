@@ -145,6 +145,11 @@ export const GridStatusPanel = ({ refreshMs }: { refreshMs: number }) => {
 
           <div className="space-y-1.5">
             <div className="font-mono text-[10px] uppercase tracking-wider text-dim">Fuel mix</div>
+            {(!data.mixTotal || data.mixTotal === 0) && (
+              <div className="font-mono text-xs text-dim italic">
+                Fuel mix data delayed by EIA — refreshes hourly
+              </div>
+            )}
             {Object.entries(data.mix || {})
               .sort((a: any, b: any) => b[1] - a[1])
               .slice(0, 6)

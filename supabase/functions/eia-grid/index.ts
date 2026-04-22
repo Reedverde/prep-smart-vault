@@ -31,8 +31,9 @@ Deno.serve(async (req) => {
     // 7-day peak demand (for high-load flag)
     const peakUrl = `https://api.eia.gov/v2/electricity/rto/region-data/data/?api_key=${apiKey}&frequency=hourly&data[0]=value&facets[respondent][]=PJM&facets[type][]=D&start=${fmtHour(weekAgo)}&end=${fmtHour(now)}&sort[0][column]=value&sort[0][direction]=desc&length=1`;
 
-    // Generation mix by fuel (latest hour)
-    const mixUrl = `https://api.eia.gov/v2/electricity/rto/fuel-type-data/data/?api_key=${apiKey}&frequency=hourly&data[0]=value&facets[respondent][]=PJM&start=${fmtHour(dayAgo)}&end=${fmtHour(now)}&sort[0][column]=period&sort[0][direction]=desc&length=100`;
+    // Generation mix by fuel — widened to 7 days. EIA fuel-type-data publishes with a
+    // multi-hour (sometimes >24h) delay; we still take only the latest period found.
+    const mixUrl = `https://api.eia.gov/v2/electricity/rto/fuel-type-data/data/?api_key=${apiKey}&frequency=hourly&data[0]=value&facets[respondent][]=PJM&start=${fmtHour(weekAgo)}&end=${fmtHour(now)}&sort[0][column]=period&sort[0][direction]=desc&length=500`;
 
     const [demandRes, peakRes, mixRes] = await Promise.all([
       fetch(demandUrl),
@@ -102,6 +103,14 @@ Deno.serve(async (req) => {
       mix[fuel] = (mix[fuel] || 0) + Number(r.value || 0);
     }
     const mixTotal = Object.values(mix).reduce((a, b) => a + b, 0);
+
+    console.log('eia-grid: mix debug', {
+      mixRowsTotal: mixRows.length,
+      latestPeriod,
+      mixLatestRows: mixLatest.length,
+      fuels: Object.keys(mix),
+      mixTotal,
+    });
 
     return new Response(
       JSON.stringify({
