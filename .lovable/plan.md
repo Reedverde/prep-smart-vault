@@ -1,87 +1,90 @@
 
 
-# Plan — Tone down `/pi` background tints to match mockup
+# Plan — Persistent cache so new windows load instantly
 
-## What's wrong
+## Why it's slow now
 
-Comparing live `/pi` to the mockup screenshot:
+Every new tab/window creates a fresh in-memory React Query cache. Result: ~16 panel queries all fire from scratch, many waiting on edge-function cold starts (NASA, FRED, EIA, GDELT, Cloudflare, Power Outages, Freightos, AirNow, NWS HWO). Nothing is shared between windows or sessions.
 
-1. **Watch tiles are too green/amber** — currently row 2 (Fuel/STLFSI/Nat'l/PJM) shows a heavy uniform amber wash across the whole tile. In the mockup the tile body is near-black; only a *very faint* gradient bleeds in from the colored left border.
-2. **Alert tiles pulse too red** — Conflict Pulse and Disasters in the mockup show a barely-perceptible red haze localized near the left edge, not a strong full-tile red fill.
-3. The **3px colored left border** + the **colored value text** are doing all the severity work. The tile background should stay essentially `#050705` (near-black) across all severity levels.
+Two compounding issues:
+1. **No QueryClient defaults** — `new QueryClient()` with no options means default `staleTime: 0`, so even within a single session, navigating away and back re-fetches.
+2. **No persistence** — cache lives in JS memory only; closing or opening a new tab loses everything.
 
-## Fix (single file: `src/components/PiTile.tsx`)
+## Fix — three layers
 
-### 1. Replace flat `backgroundColor` tints with a localized left-edge gradient
+### Layer 1: Persist React Query cache to `localStorage` (biggest win)
 
-Instead of `backgroundColor: rgba(244,181,92,0.04)` (amber wash) on watch and `rgba(255,107,94,0.06)` on alert — both of which paint the whole tile — use a horizontal gradient that fades from a slightly-tinted left edge to pure `#050705` within the first ~40% of the tile width.
+Add `@tanstack/query-sync-storage-persister` + `@tanstack/react-query-persist-client`. Wrap the app with `PersistQueryClientProvider` instead of `QueryClientProvider`. Every successful query result is mirrored to `localStorage` under one key (`preppi-rq-cache`), and on app boot the cache is hydrated synchronously before any component mounts.
 
-Replace `sevBgTint(sev)` with `sevBgGradient(sev)`:
+Effect: open a new window → tiles render with the last-known values **instantly** (within ms), then quietly revalidate in the background. No spinners on cold open as long as the data is younger than the max age.
+
+Configuration:
+- `maxAge: 24 * 60 * 60 * 1000` (24h) — anything older is discarded on hydrate
+- `buster: <app version string>` — invalidate on deploy if data shape changes
+- Throttle writes (built-in 1s) to avoid thrashing localStorage
+- Exclude no-op error states from being persisted (default behavior)
+
+### Layer 2: Sensible QueryClient defaults
+
+Update `new QueryClient()` in `src/App.tsx`:
 
 ```ts
-const sevBgGradient = (sev: PiSeverity): string => {
-  switch (sev) {
-    case "alert":
-      return "linear-gradient(90deg, rgba(255,107,94,0.10) 0%, rgba(255,107,94,0) 35%)";
-    case "watch":
-      return "linear-gradient(90deg, rgba(244,181,92,0.06) 0%, rgba(244,181,92,0) 30%)";
-    case "clear":
-      return "linear-gradient(90deg, rgba(125,227,138,0.04) 0%, rgba(125,227,138,0) 25%)";
-    default:
-      return "none";
-  }
-};
+defaultOptions: {
+  queries: {
+    staleTime: 5 * 60 * 1000,           // 5 min — don't refetch on every mount
+    gcTime: 24 * 60 * 60 * 1000,        // 24h — keep in cache long enough to persist
+    refetchOnWindowFocus: false,         // already polling; focus refetch is noise
+    refetchOnReconnect: true,
+    retry: 1,
+  },
+},
 ```
 
-Apply in the tile root style:
-```ts
-style={{
-  background: "#050705",
-  backgroundImage: sevBgGradient(sev),
-  borderLeft: `3px solid ${color}`,
-  // ...
-}}
-```
+Per-query `refetchInterval` and `staleTime` already set in `useDataSources.ts` continue to override these defaults where appropriate.
 
-### 2. Tone down the alert pulse keyframe
+### Layer 3: Server-side cache headers on edge functions (smaller win, helps Pi/offline)
 
-Currently `pi-alert-pulse` swings the whole tile background between `rgba(255,107,94,0.04)` and `rgba(255,107,94,0.14)`. That fights with the new gradient. Change it to pulse only the gradient strength via opacity on a pseudo-overlay, OR — simpler — drop the pulse off the whole tile and instead pulse only the left border color brightness:
+Most edge functions already cache in-memory inside the function (`fred-stress`, `freightos-fbx`). Add `Cache-Control: public, max-age=300, stale-while-revalidate=900` to JSON responses on the slow ones:
 
-```css
-@keyframes pi-alert-pulse {
-  0%, 100% { border-left-color: #ff6b5e }
-  50%      { border-left-color: #ff8d83 }
-}
-```
+- `nasa-space` (DONKI + NEO is heavy)
+- `fred-stress` (already has 1h in-memory cache)
+- `eia-grid`, `eia-fuel`
+- `cloudflare-radar`
+- `power-outages`
+- `gdelt-events`, `gdelt-headlines`
+- `nws-hwo`
 
-Update in `Pi.tsx`'s inline `<style>` block (this is the only edit to `Pi.tsx`).
+This lets the browser HTTP cache and any CDN in front of Supabase serve repeat requests without invoking the function. Auth-required functions (`requireUser`) still need the JWT but the `Cache-Control` directive applies to the response, not the auth check.
 
-The animation now reads as a quiet "throb" on the severity bar itself instead of a full-tile red wash.
-
-### 3. Keep everything else identical
-
-- 3px colored left border per severity → unchanged
-- Value color → unchanged (green/amber/red/faint)
-- Sparkline color/opacity → unchanged
-- Tile number, label, sub styling → unchanged
-- Layout, grid, frame, scanlines, ticker → unchanged
+Skip: `airnow-observations` (location-specific, low-value to cache long).
 
 ## Files touched
 
-- `src/components/PiTile.tsx` — replace `sevBgTint` with `sevBgGradient`, swap `backgroundColor` for `backgroundImage` in the root style.
-- `src/pages/Pi.tsx` — update the `pi-alert-pulse` keyframes inside the inline `<style>` block (lines 505–508) to animate `border-left-color` instead of `background-color`.
+1. **`src/App.tsx`** — swap `QueryClientProvider` for `PersistQueryClientProvider`, add `createSyncStoragePersister`, add `defaultOptions` to `QueryClient`. ~15 lines changed.
+2. **`package.json`** — add `@tanstack/react-query-persist-client` and `@tanstack/query-sync-storage-persister` (both peer-compatible with the installed `@tanstack/react-query`).
+3. **8 edge functions** listed above — add one `Cache-Control` header line to the success response. No logic changes.
 
-## Acceptance check after deploy
+No changes to: `useDataSources.ts` (per-query options stay), panel components, auth, routes.
 
-1. Quote the new `sevBgGradient` function and the updated tile root `style` block from `PiTile.tsx`
-2. Quote the updated `@keyframes pi-alert-pulse` from `Pi.tsx`
-3. Confirm visually (screenshot via the user) that:
-   - Watch tiles (amber) show only a faint left-edge glow, body stays near-black
-   - Alert tiles (red) pulse on the left bar, not the full tile background
-   - Clear tiles (green) and info tiles look unchanged
-4. No layout shift, no console errors
+## What the user will notice
 
-## Out of scope
+- **First load ever** (or after 24h): same as today — cold fetches, spinners.
+- **Every subsequent new window/tab**: tiles render immediately with last-known values. A subtle revalidation happens in the background; values update silently if anything changed.
+- **Returning after a few hours**: instant render of cached values, then quiet refresh.
+- **After a deploy**: `buster` invalidates the cache once, then the new normal kicks in.
 
-Tile order, severity rules, hook wiring, fonts, scanlines, ticker, frame brackets — all unchanged.
+## Risks / out of scope
+
+- Stale data risk is bounded by per-query `refetchInterval` already in place — nothing displays >24h old, and live polling continues.
+- No service-worker / true offline mode in this pass (would add complexity; `localStorage` persistence covers the "instant new window" case).
+- No IndexedDB upgrade (localStorage is enough for the ~50–200KB of JSON involved; can revisit if quota becomes an issue).
+- No changes to user settings, auth flows, or panel layout.
+
+## Acceptance check after implementation
+
+1. Open `/dashboard` cold → wait for all tiles to populate → close tab.
+2. Open a new window to `/dashboard` → tiles should render with values **before** any network request completes (visible in DevTools Network).
+3. `localStorage` contains a `preppi-rq-cache` entry with serialized query data.
+4. Background refetches still occur per each query's `refetchInterval`.
+5. No console errors; no layout shift on hydrate.
 
