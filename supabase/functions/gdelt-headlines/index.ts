@@ -78,7 +78,12 @@ Deno.serve(async (req) => {
   if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
     return new Response(JSON.stringify(cached.payload), {
       status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'HIT' },
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+        'X-Cache': 'HIT',
+        'Cache-Control': 'public, max-age=300, stale-while-revalidate=900',
+      },
     });
   }
 
@@ -207,7 +212,12 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify(payload), {
       status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'MISS' },
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+        'X-Cache': 'MISS',
+        'Cache-Control': 'public, max-age=300, stale-while-revalidate=900',
+      },
     });
   } catch (err) {
     if (cached) {

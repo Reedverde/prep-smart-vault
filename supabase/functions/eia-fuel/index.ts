@@ -98,7 +98,11 @@ Deno.serve(async (req) => {
 
   if (cache && Date.now() - cache.ts < CACHE_MS) {
     return new Response(JSON.stringify(cache.payload), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=300, stale-while-revalidate=900',
+      },
     });
   }
 
@@ -124,7 +128,11 @@ Deno.serve(async (req) => {
 
     cache = { ts: Date.now(), payload };
     return new Response(JSON.stringify(payload), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=300, stale-while-revalidate=900',
+      },
     });
   } catch (err) {
     console.error('eia-fuel error:', err);
