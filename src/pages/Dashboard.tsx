@@ -53,6 +53,22 @@ const Dashboard = () => {
       ],
     },
     {
+      label: "LOCAL WEATHER DEEP DIVE",
+      panels: [
+        <SevereRadarPanel key="radar" lat={lat} lng={lng} refreshMs={5 * 60 * 1000} />,
+        <HazardousOutlookPanel key="hwo" lat={lat} lng={lng} refreshMs={30 * 60 * 1000} />,
+        <ScannerAudioPanel key="scanner" />,
+      ],
+    },
+    {
+      label: "MARKETS & INFRASTRUCTURE",
+      panels: [
+        <FuelPricesPanel key="fuel" refreshMs={60 * 60 * 1000} />,
+        <FinancialStressPanel key="fred" refreshMs={60 * 60 * 1000} />,
+        <PowerOutagesPanel key="outages" refreshMs={5 * 60 * 1000} />,
+      ],
+    },
+    {
       label: "NEWS + NATIONAL",
       panels: [
         <GlobalHeadlinesPanel key="headlines" refreshMs={refreshMs} />,
@@ -73,22 +89,6 @@ const Dashboard = () => {
       panels: [
         <SpaceWeatherPanel key="space" refreshMs={refreshMs} />,
         <NasaPanel key="nasa" refreshMs={refreshMs} />,
-      ],
-    },
-    {
-      label: "LOCAL WEATHER DEEP DIVE",
-      panels: [
-        <SevereRadarPanel key="radar" lat={lat} lng={lng} refreshMs={5 * 60 * 1000} />,
-        <HazardousOutlookPanel key="hwo" lat={lat} lng={lng} refreshMs={30 * 60 * 1000} />,
-        <ScannerAudioPanel key="scanner" />,
-      ],
-    },
-    {
-      label: "MARKETS & INFRASTRUCTURE",
-      panels: [
-        <FuelPricesPanel key="fuel" refreshMs={60 * 60 * 1000} />,
-        <FinancialStressPanel key="fred" refreshMs={60 * 60 * 1000} />,
-        <PowerOutagesPanel key="outages" refreshMs={5 * 60 * 1000} />,
       ],
     },
     {
