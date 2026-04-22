@@ -1,133 +1,109 @@
 
 
-# Plan — Six-panel quality pass
+# Plan — Global Headlines: situational-awareness filter
 
-Single commit. Pure data + display improvements using current sources. No historical baselines (parked).
+Single commit. One edge function + one panel tweak. Layered on top of the approved 4-panel pass.
 
-## 1. Active Alerts — dedupe Recent
+## 1. Broader positive query
 
-In `AlertsPanel.tsx`, group `expired[]` by `properties.event` before rendering:
+Replace the GDELT query string in `supabase/functions/gdelt-headlines/index.ts` with the geopolitical/political/economic-shock terms from the spec:
+
+```
+(protest OR conflict OR war OR military OR invasion OR coup OR sanctions OR ceasefire OR
+ diplomatic OR parliament OR congress OR election OR legislation OR policy OR treaty OR
+ summit OR cyberattack OR ransomware OR breach OR terrorism OR terror OR bombing OR
+ missile OR airstrike OR "drone strike" OR shelling OR blockade OR embargo OR recession OR
+ inflation OR "currency crisis" OR "bank run" OR "sovereign default" OR "trade war" OR
+ tariff OR OPEC OR "oil prices") sourcelang:english
+```
+
+Bump `maxrecords` from 75 → 100 so post-filtering still has enough to reach the 25-row display target.
+
+## 2. Server-side exclusion filter
+
+Before classification, run each article title through grouped regexes. First match wins; article dropped, reason tallied:
 
 ```ts
-type Group = { event: string; latest: any; all: any[] };
-const grouped = expired.reduce<Group[]>((acc, a) => {
-  const g = acc.find(x => x.event === a.properties.event);
-  if (g) { g.all.push(a); if (new Date(a.properties.ends) > new Date(g.latest.properties.ends)) g.latest = a; }
-  else acc.push({ event: a.properties.event, latest: a, all: [a] });
-  return acc;
-}, []);
+const EXCLUDE: Array<{ reason: string; rx: RegExp }> = [
+  { reason: 'entertainment', rx: /\b(actor|actress|singer|rapper|musician|celebrity|influencer|reality tv|kardashian|taylor swift|beyonce|oscars?|grammys?|golden globes?|emmy|mtv|billboard|netflix series|hbo series|marvel|dc comics)\b/i },
+  { reason: 'entertainment', rx: /\b(movie|film premiere|box office|tv show|reality show|streaming release|album release|tour announcement|red carpet)\b/i },
+  { reason: 'sports',        rx: /\b(nba|nfl|nhl|mlb|fifa|world cup|super bowl|olympics|athlete|quarterback|touchdown|playoff|championship game|coach fired|trade deadline)\b/i },
+  { reason: 'personal',      rx: /\b(wife|husband|boyfriend|girlfriend|ex-|love triangle|domestic dispute|neighborhood dispute|local man|local woman)\b/i },
+  { reason: 'personal',      rx: /\b(breast|sexual assault on|alleged affair|divorce filing|custody battle)\b/i },
+  { reason: 'lifestyle',     rx: /\b(recipe|diet|fashion|makeup|skincare|horoscope|zodiac|celebrity home|mansion tour|tiktok trend|viral video|dating app)\b/i },
+];
 ```
 
-Render one card per group. Card title shows event + count: `Freeze Warning · 3 issuances · latest ended 14h ago`. Expanding the card lists each individual issuance (small rows: `Ended 14h ago · 12 counties`). Active section unchanged.
+Tally a `reasons` map. Continue counting beyond the cap so the log reflects true input distribution.
 
-## 2. Global Headlines — classifier expansion
+## 3. Domain denylist
 
-Edit `supabase/functions/gdelt-headlines/index.ts`:
+Drop by domain (full match) or URL substring (sub-paths):
 
-- Expand existing regexes:
-  - CYBER: + `malware|phishing|data leak|exploit|zero-day|ddos`
-  - VIOLENCE: + `bombing|stabbing|assault|murder|massacre|ambush`
-  - CONFLICT: + `offensive|missile|drone strike|skirmish|clash`
-  - PROTEST: + `march|riot|blockade`
-- Add 2 new tags: `ECONOMIC` (`recession|inflation|layoffs|stock crash|bank run|default`), `DISASTER` (`earthquake|hurricane|wildfire|flood|tsunami|volcano`)
-- Update the `Tag` union type and the order of checks (more-specific tags first, OTHER last)
-- The existing `console.log('gdelt-headlines tag distribution:', tagCounts, ...)` already logs after — re-deploy to see the new distribution
-
-In `GlobalHeadlinesPanel.tsx` add tag styles for `ECONOMIC` (dim/low border) and `DISASTER` (dim/moderate border) to `tagStyle` + extend the `Tag` type.
-
-## 3. National US Alerts — interpretation + top regions
-
-In `NationalPanel.tsx`:
-
-- Compute severity ratio: `ratio = sev / total`
-  - `<0.2` → "Normal alert volume" (low color)
-  - `0.2–0.4` → "Elevated severe weather" (moderate)
-  - `>0.4` → "Major severe weather event nationwide" (severe)
-- Compute dominant event: highest entry from `counts`. Render: `Dominant: {event} ({count})`
-- Compute top 3 states from `properties.areaDesc`. NWS `areaDesc` is comma-joined (`"Allegheny, PA; Beaver, PA"`). Parse: split on `;` then `,` and take the trailing 2-letter token; tally; sort top 3.
-- Layout under the StatBoxes: a one-line interpretation (colored), then `Most active: FL (87) · TX (62) · CA (54)` row. Chart unchanged.
-
-## 4. Grid Status — stress label + peak context
-
-Edit `supabase/functions/eia-grid/index.ts`:
-
-- Add a request for today's hourly demand max (already inside `demandSeries` — compute `peakToday = Math.max(...demandSeries.map(d=>d.mw))`).
-- Keep `peakDemand7d`. Return both: `peakToday`, `peak7d` (rename from `peakDemand7d`).
-- Compute `stressPct = currentDemand / peakToday * 100` server-side and return `stressLevel: 'normal'|'elevated'|'stressed'|'critical'` (<80/<90/<95/else). Note: today's "peak" is observed-so-far if intraday; we'll label it as such.
-
-In `GridStatusPanel.tsx`:
-
-- Replace `HIGH LOAD` pill with a stress label colored by tier (low/moderate/severe/critical tokens), text: `NORMAL` / `ELEVATED` / `STRESSED` / `CRITICAL`.
-- Below current demand, two small rows: `Peak today: 98,200 MW` and `Peak 7d: 102,400 MW`.
-- Above sparkline add a tiny dim caption: `Last 24 hours`.
-
-## 5. Active Disasters — full per-event detail
-
-Edit `supabase/functions/...` — actually GDACS data is fetched directly client-side via `useGdacs` (not proxied). Move enrichment into the panel itself, parsing fields already in the GeoJSON properties:
-
-GDACS `properties` includes (varies by event type): `eventtype`, `severity` (often `{ value, unit }` like magnitude), `severitydata`, `episodeid`, `fromdate`, `country`, `htmldescription`, `name`, `population`, `coordinates`. For each type build a one-line detail string:
-
-- **EQ**: `M{severity.value} · {depth}km depth · {timeAgo} · {country/place}` (depth pulled from `severitydata.eventdetails.depth` if present, else omit)
-- **TC**: `Cat {category} · {wind}kt · {country}` (category/wind from `severitydata`)
-- **FL**: `Started {timeAgo} · pop ~{population.value} affected · {country}` (population field if present, else just timing)
-- **VO**: `VEI {value} · {country}` (VEI from severity if present)
-- **DR / WF / fallback**: `Started {timeAgo} · {country}`
-
-`timeAgo` from `fromdate` using `formatDistanceToNow`. Defensive: every field check is null-guarded; missing pieces drop silently.
-
-Render each row with the existing pill, plus the detail string as a second line under location:
-
-```
-[EQ]  Honshu, Japan                              [ORANGE]
-      M6.2 · 30km depth · 4h ago
+```ts
+const DENY_DOMAINS = new Set([
+  'tmz.com','people.com','usmagazine.com','eonline.com','etonline.com',
+  'buzzfeed.com','ranker.com','naturalnews.com',
+]);
+const DENY_URL_SUBSTR = ['dailymail.co.uk/tvshowbiz/','dailymail.co.uk/femail/'];
 ```
 
-Remove the entire "About GDACS" block. Move that copy into the existing `<InfoTip>` (expanded text, scrollable inside tooltip).
+Domain check uses already-parsed `domain`. URL substring check uses lowercased `articleUrl`. Counted under `reasons.domain`.
 
-## 6. Conflict Pulse — exclude OTHER + transparency
+## 4. Classifier — add POLITICAL
 
-Edit `supabase/functions/gdelt-events/index.ts`:
+Extend the `Tag` union and add this line in `classify()`, positioned AFTER VIOLENCE and BEFORE PROTEST (matches spec ordering):
 
-- Bucket logic already produces `Other` for unmatched. Keep but ensure capitalization is consistent (`Other` not `OTHER`).
-- No backend change strictly needed; client filters.
+```ts
+if (/(election|parliament|congress|legislation|diplomatic|summit|treaty|sanctions|ceasefire|tariff|embargo|\bpolicy\b)/.test(t)) return 'POLITICAL';
+```
 
-In `ConflictPulsePanel.tsx`:
+`\bpolicy\b` to avoid matching "policymaker" inside cyber stories etc.
 
-- Filter `byType` to exclude `Other` before computing `topType`. If filtered map is empty, hide the Top Theme row entirely.
-- Under the HIGH/ELEVATED/NORMAL label, replace the "Above typical global conflict news volume" line with: `Based on 7d article volume: {count} articles` (small dim).
-- Move the threshold breakdown (>200 HIGH, >100 ELEVATED, ≤100 NORMAL) into the InfoTip text.
-- Remove the large "About the Conflict Index" block. Move its content into the InfoTip.
+## 5. Logging
 
-## 7. Park historical baselines
+Replace the existing distribution log with the richer one:
 
-Create `mem://future-enhancements/historical-baselines` with the goal/scope/sketch from the prompt verbatim, status `PARKED`. Update `mem://index.md` Memories section to reference it.
+```ts
+console.log('gdelt-headlines:', {
+  fetched: articles.length,
+  excluded: excludedCount,
+  remaining: items.length,
+  reasons,        // { entertainment: 5, sports: 3, personal: 4, lifestyle: 1, domain: 2 }
+  tagCounts,      // post-classification
+  otherPct,
+});
+```
+
+## 6. Panel — POLITICAL tag style
+
+In `src/components/panels/GlobalHeadlinesPanel.tsx`:
+
+- Extend the `Tag` union with `"POLITICAL"`
+- Add to `tagStyle` map using the same moderate/dim treatment as ECONOMIC:
+  ```ts
+  POLITICAL: "border-severity-moderate/40 bg-severity-moderate/15 text-severity-moderate",
+  ```
+
+No layout, no copy, no header changes.
 
 ## Files touched
 
-- `src/components/panels/AlertsPanel.tsx` — group expired by event, expandable detail
-- `src/components/panels/GlobalHeadlinesPanel.tsx` — add ECONOMIC/DISASTER tag styles
-- `src/components/panels/NationalPanel.tsx` — interpretation line + top states row
-- `src/components/panels/GridStatusPanel.tsx` — stress label, peak rows, sparkline caption
-- `src/components/panels/ActiveDisastersPanel.tsx` — per-event detail line, About → InfoTip
-- `src/components/panels/ConflictPulsePanel.tsx` — exclude Other, caption, About → InfoTip
-- `supabase/functions/gdelt-headlines/index.ts` — expand classifier, add ECONOMIC/DISASTER
-- `supabase/functions/eia-grid/index.ts` — return `peakToday`, `peak7d`, `stressLevel`
-- `mem://future-enhancements/historical-baselines` (new) + `mem://index.md` (append reference)
+- `supabase/functions/gdelt-headlines/index.ts` — query, exclusion filter, denylist, POLITICAL tag, richer log
+- `src/components/panels/GlobalHeadlinesPanel.tsx` — POLITICAL tag style + type
 
-Edge functions deploy automatically.
+Edge function deploys automatically. After deploy I'll surface the new distribution log so we can tune.
 
 ## Acceptance
 
-- [ ] Active Alerts Recent section shows one card per event type with issuance count; expanding lists each
-- [ ] Global Headlines edge function logs new tag distribution; ECONOMIC/DISASTER appear; OTHER target <30%
-- [ ] National panel shows colored interpretation line + dominant event + top 3 states
-- [ ] Grid Status shows tiered stress label + Peak today / Peak 7d rows + "Last 24 hours" caption
-- [ ] Active Disasters shows magnitude/category/timing/location per event; About block removed and in InfoTip
-- [ ] Conflict Pulse Top Theme excludes Other; threshold caption visible; About block removed and in InfoTip
-- [ ] `mem://future-enhancements/historical-baselines` exists and is referenced from index
-- [ ] No console errors, no layout shifts
+- [ ] Entertainment, celebrity, personal-crime, sports, lifestyle stories filtered out before classification
+- [ ] Domain denylist drops TMZ/People/Buzzfeed/NaturalNews/etc.
+- [ ] POLITICAL tag appears in feed, styled like ECONOMIC
+- [ ] Edge function log reports `{ fetched, excluded, remaining, reasons, tagCounts, otherPct }`
+- [ ] OTHER tag share trends below 30% on next fetch
+- [ ] No console errors, no panel layout changes
 
 ## Out of scope
 
-30-day rolling baselines · US grid regions map · panel reordering · layout changes
+Panel rename · other panels · layout · the in-flight 4-panel commit (this stacks cleanly on it)
 
