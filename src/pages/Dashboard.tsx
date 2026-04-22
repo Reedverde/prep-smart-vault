@@ -69,11 +69,10 @@ const Dashboard = () => {
       ],
     },
     {
-      label: "SPACE + SYSTEM",
+      label: "SPACE",
       panels: [
         <SpaceWeatherPanel key="space" refreshMs={refreshMs} />,
         <NasaPanel key="nasa" refreshMs={refreshMs} />,
-        <SystemHealthPanel key="system" refreshMin={settings.refresh_interval_min} />,
       ],
     },
     {
@@ -93,9 +92,10 @@ const Dashboard = () => {
       ],
     },
     {
-      label: "INTERNET & COMMS",
+      label: "INTERNET & SYSTEM",
       panels: [
         <InternetHealthPanel key="cf" refreshMs={15 * 60 * 1000} />,
+        <SystemHealthPanel key="system" refreshMin={settings.refresh_interval_min} />,
       ],
     },
   ];
