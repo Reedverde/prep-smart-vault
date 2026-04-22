@@ -70,7 +70,24 @@ Deno.serve(async (req) => {
       .filter((r: any) => Number.isFinite(r.mw));
 
     const currentDemand = demandSeries.length ? demandSeries[demandSeries.length - 1].mw : null;
-    const peakDemand = peakJson?.response?.data?.[0]?.value ? Number(peakJson.response.data[0].value) : null;
+    const peak7d = peakJson?.response?.data?.[0]?.value ? Number(peakJson.response.data[0].value) : null;
+
+    // Today's peak (UTC day) from the 24h demand series — observed-so-far if intraday.
+    const todayUtc = new Date().toISOString().slice(0, 10);
+    const todaySeries = demandSeries.filter((d) => (d.time || '').slice(0, 10) === todayUtc);
+    const peakToday = todaySeries.length ? Math.max(...todaySeries.map((d) => d.mw)) : null;
+
+    // Stress level: current vs today's peak (or 7d peak as fallback)
+    const stressBaseline = peakToday ?? peak7d;
+    let stressLevel: 'normal' | 'elevated' | 'stressed' | 'critical' = 'normal';
+    let stressPct: number | null = null;
+    if (currentDemand && stressBaseline) {
+      stressPct = (currentDemand / stressBaseline) * 100;
+      if (stressPct >= 95) stressLevel = 'critical';
+      else if (stressPct >= 90) stressLevel = 'stressed';
+      else if (stressPct >= 80) stressLevel = 'elevated';
+      else stressLevel = 'normal';
+    }
 
     // Group mix by most-recent period
     const mixRows: any[] = mixJson?.response?.data || [];
@@ -90,8 +107,13 @@ Deno.serve(async (req) => {
       JSON.stringify({
         region: 'PJM',
         currentDemand,
-        peakDemand7d: peakDemand,
-        highLoad: currentDemand && peakDemand ? currentDemand >= peakDemand * 0.95 : false,
+        peakToday,
+        peak7d,
+        stressLevel,
+        stressPct,
+        // Back-compat
+        peakDemand7d: peak7d,
+        highLoad: stressLevel === 'stressed' || stressLevel === 'critical',
         demandTrend: demandSeries,
         mix,
         mixTotal,
