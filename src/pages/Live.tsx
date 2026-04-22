@@ -76,11 +76,10 @@ const Live = () => {
       ],
     },
     {
-      label: "SPACE + SYSTEM",
+      label: "SPACE",
       panels: [
         <SpaceWeatherPanel key="space" refreshMs={refreshMs} />,
         <NasaPanel key="nasa" refreshMs={refreshMs} />,
-        <SystemHealthPanel key="system" refreshMin={refresh_interval_min} />,
       ],
     },
     {
@@ -100,9 +99,10 @@ const Live = () => {
       ],
     },
     {
-      label: "INTERNET & COMMS",
+      label: "INTERNET & SYSTEM",
       panels: [
         <InternetHealthPanel key="cf" refreshMs={15 * 60 * 1000} />,
+        <SystemHealthPanel key="system" refreshMin={refresh_interval_min} />,
       ],
     },
   ];
