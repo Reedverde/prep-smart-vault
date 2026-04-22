@@ -41,21 +41,41 @@ export const GridStatusPanel = ({ refreshMs }: { refreshMs: number }) => {
                 <span className="font-mono text-xs text-dim">MW</span>
               </div>
             </div>
-            {data.highLoad && (
-              <span className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border border-severity-severe/40 bg-severity-severe/15 text-severity-severe">
-                HIGH LOAD
-              </span>
-            )}
+            {data.stressLevel && <StressPill level={data.stressLevel} />}
           </div>
 
+          {(data.peakToday || data.peak7d) && (
+            <div className="space-y-0.5 font-mono text-[11px]">
+              {data.peakToday && (
+                <div className="flex justify-between">
+                  <span className="text-dim">Peak today</span>
+                  <span className="text-foreground tabular-nums">
+                    {Math.round(data.peakToday).toLocaleString()} MW
+                  </span>
+                </div>
+              )}
+              {data.peak7d && (
+                <div className="flex justify-between">
+                  <span className="text-dim">Peak 7d</span>
+                  <span className="text-foreground tabular-nums">
+                    {Math.round(data.peak7d).toLocaleString()} MW
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
           {data.demandTrend?.length > 1 && (
-            <div className="h-14 -mx-1">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data.demandTrend}>
-                  <YAxis hide domain={["auto", "auto"]} />
-                  <Line type="monotone" dataKey="mw" stroke="hsl(var(--accent))" strokeWidth={1.5} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
+            <div>
+              <div className="font-mono text-[10px] uppercase tracking-wider text-dim mb-1">Last 24 hours</div>
+              <div className="h-14 -mx-1">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={data.demandTrend}>
+                    <YAxis hide domain={["auto", "auto"]} />
+                    <Line type="monotone" dataKey="mw" stroke="hsl(var(--accent))" strokeWidth={1.5} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           )}
 
