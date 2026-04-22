@@ -436,7 +436,15 @@ const Pi = () => {
   // Row 2: HazOut · Fuel · STLFSI · Nat'l · PJM
   // Row 3: Outages · Conflict(w) · Quakes · Headlines
   // Row 4: Internet · Disasters · Space WX · System/Clock(w)
-  const tiles = [
+  const tiles: Array<{
+    label: string;
+    value: string;
+    sub?: string;
+    sev: PiSeverity;
+    wide?: boolean;
+    spark?: number[];
+    num: string;
+  }> = [
     { ...weatherTile, num: "01" },
     { ...alertsTile, num: "02" },
     { ...airTile, num: "03" },
