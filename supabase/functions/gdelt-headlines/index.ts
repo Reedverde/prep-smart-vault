@@ -14,6 +14,7 @@ type Tag =
   | 'INVASION'
   | 'CONFLICT'
   | 'VIOLENCE'
+  | 'POLITICAL'
   | 'PROTEST'
   | 'UNREST'
   | 'DISASTER'
@@ -27,13 +28,31 @@ const classify = (title: string): Tag => {
   if (/coup/.test(t)) return 'COUP';
   if (/(invasion|invade)/.test(t)) return 'INVASION';
   if (/(conflict|war|military|airstrike|shelling|offensive|missile|drone strike|skirmish|clash)/.test(t)) return 'CONFLICT';
-  if (/(violence|attack|killed|shooting|bombing|stabbing|assault|murder|massacre|ambush)/.test(t)) return 'VIOLENCE';
+  if (/(violence|attack|killed|shooting|bombing|stabbing|assault|murder|massacre|ambush|terror|terrorism)/.test(t)) return 'VIOLENCE';
+  // POLITICAL after VIOLENCE so "political violence" still tags as VIOLENCE.
+  if (/(election|parliament|congress|legislation|diplomatic|summit|treaty|sanctions|ceasefire|tariff|embargo|\bpolicy\b)/.test(t)) return 'POLITICAL';
   if (/(protest|demonstration|rally|march|riot|blockade)/.test(t)) return 'PROTEST';
   if (/(unrest|uprising)/.test(t)) return 'UNREST';
   if (/(earthquake|hurricane|wildfire|flood|tsunami|volcano|cyclone|typhoon|tornado)/.test(t)) return 'DISASTER';
-  if (/(recession|inflation|layoffs|stock crash|bank run|default|bankruptcy)/.test(t)) return 'ECONOMIC';
+  if (/(recession|inflation|layoffs|stock crash|bank run|default|bankruptcy|currency crisis|trade war|opec|oil prices)/.test(t)) return 'ECONOMIC';
   return 'OTHER';
 };
+
+// Server-side noise filter — drop personal/entertainment/sports/lifestyle before classification.
+const EXCLUDE: Array<{ reason: string; rx: RegExp }> = [
+  { reason: 'entertainment', rx: /\b(actor|actress|singer|rapper|musician|celebrity|influencer|reality tv|kardashian|taylor swift|beyonce|oscars?|grammys?|golden globes?|emmy|mtv|billboard|netflix series|hbo series|marvel|dc comics)\b/i },
+  { reason: 'entertainment', rx: /\b(movie|film premiere|box office|tv show|reality show|streaming release|album release|tour announcement|red carpet)\b/i },
+  { reason: 'sports',        rx: /\b(nba|nfl|nhl|mlb|fifa|world cup|super bowl|olympics|athlete|quarterback|touchdown|playoff|championship game|coach fired|trade deadline)\b/i },
+  { reason: 'personal',      rx: /\b(wife|husband|boyfriend|girlfriend|ex-|love triangle|domestic dispute|neighborhood dispute|local man|local woman)\b/i },
+  { reason: 'personal',      rx: /\b(breast|sexual assault on|alleged affair|divorce filing|custody battle)\b/i },
+  { reason: 'lifestyle',     rx: /\b(recipe|diet|fashion|makeup|skincare|horoscope|zodiac|celebrity home|mansion tour|tiktok trend|viral video|dating app)\b/i },
+];
+
+const DENY_DOMAINS = new Set([
+  'tmz.com', 'people.com', 'usmagazine.com', 'eonline.com', 'etonline.com',
+  'buzzfeed.com', 'ranker.com', 'naturalnews.com',
+]);
+const DENY_URL_SUBSTR = ['dailymail.co.uk/tvshowbiz/', 'dailymail.co.uk/femail/'];
 
 const parseDomain = (url: string): string => {
   try {
@@ -64,10 +83,17 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const query =
+      '(protest OR conflict OR war OR military OR invasion OR coup OR sanctions OR ceasefire OR ' +
+      'diplomatic OR parliament OR congress OR election OR legislation OR policy OR treaty OR ' +
+      'summit OR cyberattack OR ransomware OR breach OR terrorism OR terror OR bombing OR ' +
+      'missile OR airstrike OR "drone strike" OR shelling OR blockade OR embargo OR recession OR ' +
+      'inflation OR "currency crisis" OR "bank run" OR "sovereign default" OR "trade war" OR ' +
+      'tariff OR OPEC OR "oil prices") sourcelang:english';
     const url =
       'https://api.gdeltproject.org/api/v2/doc/doc?query=' +
-      encodeURIComponent('(protest OR conflict OR violence OR unrest OR cyberattack OR coup OR invasion OR strike OR blockade) sourcelang:english') +
-      '&mode=artlist&maxrecords=75&timespan=6h&format=json&sort=DateDesc';
+      encodeURIComponent(query) +
+      '&mode=artlist&maxrecords=100&timespan=6h&format=json&sort=DateDesc';
 
     const res = await fetch(url, {
       headers: { 'User-Agent': 'PrepPi/1.0 (situational-awareness)' },
@@ -106,12 +132,36 @@ Deno.serve(async (req) => {
       seendate: string;
     }> = [];
 
+    let excludedCount = 0;
+    const reasons: Record<string, number> = {};
+
     for (const art of articles) {
       const title = String(art?.title || '').trim();
       const articleUrl = String(art?.url || '').trim();
       if (!title || !articleUrl) continue;
 
       const domain = String(art?.domain || '').trim() || parseDomain(articleUrl);
+      const lowerUrl = articleUrl.toLowerCase();
+
+      // Domain / URL denylist
+      if (DENY_DOMAINS.has(domain) || DENY_URL_SUBSTR.some((s) => lowerUrl.includes(s))) {
+        excludedCount++;
+        reasons.domain = (reasons.domain || 0) + 1;
+        continue;
+      }
+
+      // Title-based exclusion (first match wins)
+      let dropped = false;
+      for (const { reason, rx } of EXCLUDE) {
+        if (rx.test(title)) {
+          excludedCount++;
+          reasons[reason] = (reasons[reason] || 0) + 1;
+          dropped = true;
+          break;
+        }
+      }
+      if (dropped) continue;
+
       const dedupKey = `${domain}::${title.slice(0, 80).toLowerCase()}`;
       if (seen.has(dedupKey)) continue;
       seen.add(dedupKey);
@@ -134,7 +184,14 @@ Deno.serve(async (req) => {
       return acc;
     }, {} as Record<string, number>);
     const otherPct = top.length ? Math.round(((tagCounts.OTHER || 0) / top.length) * 100) : 0;
-    console.log('gdelt-headlines tag distribution:', tagCounts, 'total:', top.length, 'OTHER%:', otherPct);
+    console.log('gdelt-headlines:', {
+      fetched: articles.length,
+      excluded: excludedCount,
+      remaining: items.length,
+      reasons,
+      tagCounts,
+      otherPct,
+    });
 
     const payload = { items: top, fetchedAt: new Date().toISOString() };
     cached = { at: Date.now(), payload };

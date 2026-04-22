@@ -8,6 +8,7 @@ type Tag =
   | "INVASION"
   | "CONFLICT"
   | "VIOLENCE"
+  | "POLITICAL"
   | "PROTEST"
   | "UNREST"
   | "DISASTER"
@@ -29,6 +30,7 @@ const tagStyle: Record<Tag, string> = {
   INVASION: "border-severity-critical/40 bg-severity-critical/15 text-severity-critical",
   CONFLICT: "border-severity-severe/40 bg-severity-severe/15 text-severity-severe",
   VIOLENCE: "border-severity-severe/40 bg-severity-severe/15 text-severity-severe",
+  POLITICAL: "border-severity-moderate/40 bg-severity-moderate/15 text-severity-moderate",
   PROTEST: "border-severity-moderate/40 bg-severity-moderate/15 text-severity-moderate",
   UNREST: "border-severity-moderate/40 bg-severity-moderate/15 text-severity-moderate",
   DISASTER: "border-severity-moderate/40 bg-severity-moderate/15 text-severity-moderate",
