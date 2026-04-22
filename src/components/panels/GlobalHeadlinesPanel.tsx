@@ -1,6 +1,7 @@
 import { Panel, ContextBox } from "@/components/Panel";
 import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo } from "@/components/PanelKit";
 import { useGdeltHeadlines } from "@/hooks/useDataSources";
+import { flagEmoji } from "@/lib/flags";
 
 type Tag =
   | "CYBER"
@@ -36,32 +37,6 @@ const tagStyle: Record<Tag, string> = {
   DISASTER: "border-severity-moderate/40 bg-severity-moderate/15 text-severity-moderate",
   ECONOMIC: "border-severity-low/40 bg-severity-low/15 text-severity-low",
   OTHER: "border-border bg-inset text-dim",
-};
-
-// Top ~40 countries GDELT commonly returns. Unknown → no flag.
-const COUNTRY_TO_ISO2: Record<string, string> = {
-  "united states": "US", "usa": "US", "united kingdom": "GB", "uk": "GB",
-  "canada": "CA", "australia": "AU", "new zealand": "NZ", "ireland": "IE",
-  "france": "FR", "germany": "DE", "italy": "IT", "spain": "ES", "portugal": "PT",
-  "netherlands": "NL", "belgium": "BE", "switzerland": "CH", "austria": "AT",
-  "sweden": "SE", "norway": "NO", "denmark": "DK", "finland": "FI", "poland": "PL",
-  "ukraine": "UA", "russia": "RU", "belarus": "BY", "turkey": "TR", "greece": "GR",
-  "israel": "IL", "palestine": "PS", "iran": "IR", "iraq": "IQ", "syria": "SY",
-  "lebanon": "LB", "saudi arabia": "SA", "egypt": "EG", "south africa": "ZA",
-  "nigeria": "NG", "kenya": "KE", "ethiopia": "ET", "sudan": "SD",
-  "china": "CN", "japan": "JP", "south korea": "KR", "north korea": "KP",
-  "india": "IN", "pakistan": "PK", "bangladesh": "BD", "afghanistan": "AF",
-  "indonesia": "ID", "philippines": "PH", "vietnam": "VN", "thailand": "TH",
-  "malaysia": "MY", "singapore": "SG", "taiwan": "TW", "hong kong": "HK",
-  "mexico": "MX", "brazil": "BR", "argentina": "AR", "chile": "CL",
-  "colombia": "CO", "venezuela": "VE", "peru": "PE",
-};
-
-const flagEmoji = (country: string): string => {
-  const iso = COUNTRY_TO_ISO2[country.toLowerCase().trim()];
-  if (!iso) return "";
-  const codePoints = iso.toUpperCase().split("").map((c) => 0x1f1e6 + c.charCodeAt(0) - 65);
-  return String.fromCodePoint(...codePoints);
 };
 
 const timeAgo = (iso: string): string => {

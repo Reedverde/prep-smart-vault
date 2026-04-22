@@ -63,7 +63,7 @@ const Live = () => {
       label: "NEWS + NATIONAL",
       panels: [
         <GlobalHeadlinesPanel key="headlines" refreshMs={refreshMs} />,
-        <NationalPanel key="national" refreshMs={refreshMs} />,
+        <NationalPanel key="national" refreshMs={refreshMs} lat={lat} lng={lng} />,
         <GridStatusPanel key="grid" refreshMs={refreshMs} />,
       ],
     },

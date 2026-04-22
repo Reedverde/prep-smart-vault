@@ -20,9 +20,44 @@ const StressPill = ({ level }: { level: Stress }) => (
   </span>
 );
 
+// Per-fuel color tokens (semantic). Falls back to dim accent.
+const fuelColor = (fuel: string): string => {
+  const f = fuel.toLowerCase();
+  if (f.includes("gas") || f.includes("natural")) return "bg-severity-moderate";
+  if (f.includes("nuclear")) return "bg-severity-low";
+  if (f.includes("coal")) return "bg-severity-critical";
+  if (f.includes("wind")) return "bg-accent";
+  if (f.includes("hydro") || f.includes("water")) return "bg-primary";
+  if (f.includes("solar")) return "bg-severity-moderate";
+  if (f.includes("oil") || f.includes("petroleum")) return "bg-severity-severe";
+  return "bg-dim";
+};
+
 export const GridStatusPanel = ({ refreshMs }: { refreshMs: number }) => {
   const { data, isLoading, error, refetch, isFetching, dataUpdatedAt } = useEiaGrid(refreshMs);
   const notConfigured = data && (data as any).notConfigured;
+
+  // Compute warning banner data
+  let warning: { text: string; tone: "critical" | "moderate" } | null = null;
+  if (data && !notConfigured && !error) {
+    const stressPct = data.peakToday && data.currentDemand
+      ? (data.currentDemand / data.peakToday) * 100
+      : null;
+    if (data.stressLevel === "critical" || (stressPct !== null && stressPct >= 95)) {
+      const pctTxt = stressPct !== null ? `${Math.round(stressPct)}%` : "high";
+      warning = {
+        text: `HIGH LOAD WARNING · ${pctTxt} of today's peak`,
+        tone: "critical",
+      };
+    } else if (
+      data.stressLevel === "stressed" &&
+      data.peakToday &&
+      data.peak7d &&
+      data.peakToday >= data.peak7d * 0.98
+    ) {
+      warning = { text: "Approaching weekly peak", tone: "moderate" };
+    }
+  }
 
   return (
     <Panel
@@ -48,6 +83,18 @@ export const GridStatusPanel = ({ refreshMs }: { refreshMs: number }) => {
         <PanelError message="Could not load EIA data" onRetry={() => refetch()} />
       ) : (
         <div className="space-y-3">
+          {warning && (
+            <div
+              className={`font-mono text-[10px] uppercase tracking-wider px-2 py-1.5 rounded border ${
+                warning.tone === "critical"
+                  ? "border-severity-critical/50 bg-severity-critical/15 text-severity-critical"
+                  : "border-severity-moderate/50 bg-severity-moderate/15 text-severity-moderate"
+              }`}
+            >
+              ⚠ {warning.text}
+            </div>
+          )}
+
           <div className="flex items-baseline justify-between">
             <div>
               <div className="font-mono text-[10px] uppercase tracking-wider text-dim mb-1">Current demand</div>
@@ -103,14 +150,17 @@ export const GridStatusPanel = ({ refreshMs }: { refreshMs: number }) => {
               .slice(0, 6)
               .map(([fuel, mw]: any) => {
                 const pct = data.mixTotal ? (mw / data.mixTotal) * 100 : 0;
+                const mwNum = Number(mw) || 0;
                 return (
                   <div key={fuel} className="font-mono text-xs">
                     <div className="flex items-center justify-between">
                       <span className="text-foreground truncate">{fuel}</span>
-                      <span className="text-dim tabular-nums">{pct.toFixed(0)}%</span>
+                      <span className="text-dim tabular-nums">
+                        {pct.toFixed(0)}% · {Math.round(mwNum).toLocaleString()} MW
+                      </span>
                     </div>
-                    <div className="h-1 bg-inset rounded overflow-hidden mt-0.5">
-                      <div className="h-full bg-accent" style={{ width: `${pct}%` }} />
+                    <div className="h-1.5 bg-inset rounded overflow-hidden mt-0.5">
+                      <div className={`h-full ${fuelColor(fuel)}`} style={{ width: `${pct}%` }} />
                     </div>
                   </div>
                 );

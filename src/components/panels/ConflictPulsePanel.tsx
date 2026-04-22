@@ -1,6 +1,7 @@
 import { Panel } from "@/components/Panel";
 import { InfoTip, PanelSkeleton, RefreshButton, UpdatedAgo } from "@/components/PanelKit";
 import { useGdelt } from "@/hooks/useDataSources";
+import { flagEmoji } from "@/lib/flags";
 
 const conflictLabel = (n: number | null) => {
   if (n === null) return "—";
@@ -25,6 +26,24 @@ const labelBorder = (n: number | null) => {
 
 const isOther = (k: string) => k.trim().toLowerCase() === "other";
 
+const timeAgo = (iso: string): string => {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "now";
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  return `${Math.floor(h / 24)}d`;
+};
+
+interface Article {
+  title: string;
+  url: string;
+  domain: string;
+  country: string;
+  seendate: string;
+}
+
 export const ConflictPulsePanel = ({ refreshMs }: { refreshMs: number }) => {
   const { data, isLoading, isFetching, refetch, dataUpdatedAt } = useGdelt(refreshMs);
 
@@ -32,6 +51,7 @@ export const ConflictPulsePanel = ({ refreshMs }: { refreshMs: number }) => {
   const count: number | null = hasData ? (data!.count ?? 0) : null;
   const byRegion: Record<string, number> = hasData ? (data!.byRegion || {}) : {};
   const byType: Record<string, number> = hasData ? (data!.byType || {}) : {};
+  const articles: Article[] = hasData ? ((data as any)!.articles || []) : [];
 
   const topRegion = Object.entries(byRegion).sort((a, b) => b[1] - a[1])[0];
   const topType = Object.entries(byType)
@@ -93,6 +113,36 @@ export const ConflictPulsePanel = ({ refreshMs }: { refreshMs: number }) => {
           )}
           {hasData && topType && (
             <Row label={`Top theme · ${topType[0]}`} value={topType[1].toLocaleString()} />
+          )}
+
+          {articles.length > 0 && (
+            <div className="space-y-1.5 pt-1">
+              <div className="font-mono text-[10px] uppercase tracking-wider text-dim">
+                Top conflict stories
+              </div>
+              <div className="space-y-1">
+                {articles.map((a, i) => {
+                  const flag = flagEmoji(a.country);
+                  return (
+                    <a
+                      key={`${a.domain}-${i}`}
+                      href={a.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block py-1 px-1 -mx-1 rounded hover:bg-secondary/40 transition-colors"
+                    >
+                      <div className="font-mono text-[11px] text-foreground leading-snug line-clamp-2">
+                        {flag && <span className="mr-1">{flag}</span>}
+                        {a.title}
+                      </div>
+                      <div className="font-mono text-[10px] text-dim mt-0.5 truncate">
+                        {a.domain || "source"} · {timeAgo(a.seendate)}
+                      </div>
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
           )}
 
           <UpdatedAgo date={dataUpdatedAt ? new Date(dataUpdatedAt) : undefined} />

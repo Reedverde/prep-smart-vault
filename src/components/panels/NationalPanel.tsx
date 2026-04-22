@@ -2,6 +2,10 @@ import { Panel, StatBox, ContextBox } from "@/components/Panel";
 import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo } from "@/components/PanelKit";
 import { useNationalAlerts } from "@/hooks/useDataSources";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, LabelList } from "recharts";
+import { MapContainer, TileLayer, GeoJSON, CircleMarker, Tooltip as LTooltip } from "react-leaflet";
+import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
+import "leaflet/dist/leaflet.css";
 
 const eventColor = (event: string) => {
   const e = event.toLowerCase();
@@ -11,8 +15,66 @@ const eventColor = (event: string) => {
   return "hsl(var(--accent))";
 };
 
-export const NationalPanel = ({ refreshMs }: { refreshMs: number }) => {
+const resolveColor = (cssVar: string): string => {
+  if (typeof window === "undefined") return cssVar;
+  const match = cssVar.match(/--[\w-]+/);
+  if (!match) return cssVar;
+  const v = getComputedStyle(document.documentElement).getPropertyValue(match[0]).trim();
+  return v ? `hsl(${v})` : cssVar;
+};
+
+// State name → USPS code map for joining GeoJSON to NWS areaDesc state codes.
+const STATE_NAME_TO_USPS: Record<string, string> = {
+  "Alabama": "AL", "Alaska": "AK", "Arizona": "AZ", "Arkansas": "AR",
+  "California": "CA", "Colorado": "CO", "Connecticut": "CT", "Delaware": "DE",
+  "District of Columbia": "DC", "Florida": "FL", "Georgia": "GA", "Hawaii": "HI",
+  "Idaho": "ID", "Illinois": "IL", "Indiana": "IN", "Iowa": "IA",
+  "Kansas": "KS", "Kentucky": "KY", "Louisiana": "LA", "Maine": "ME",
+  "Maryland": "MD", "Massachusetts": "MA", "Michigan": "MI", "Minnesota": "MN",
+  "Mississippi": "MS", "Missouri": "MO", "Montana": "MT", "Nebraska": "NE",
+  "Nevada": "NV", "New Hampshire": "NH", "New Jersey": "NJ", "New Mexico": "NM",
+  "New York": "NY", "North Carolina": "NC", "North Dakota": "ND", "Ohio": "OH",
+  "Oklahoma": "OK", "Oregon": "OR", "Pennsylvania": "PA", "Rhode Island": "RI",
+  "South Carolina": "SC", "South Dakota": "SD", "Tennessee": "TN", "Texas": "TX",
+  "Utah": "UT", "Vermont": "VT", "Virginia": "VA", "Washington": "WA",
+  "West Virginia": "WV", "Wisconsin": "WI", "Wyoming": "WY", "Puerto Rico": "PR",
+};
+
+// Color a state by alert count using semantic severity tokens.
+const heatColor = (count: number): { fill: string; opacity: number } => {
+  if (count <= 0) return { fill: "transparent", opacity: 0 };
+  if (count <= 10) return { fill: resolveColor("hsl(var(--severity-low))"), opacity: 0.35 };
+  if (count <= 30) return { fill: resolveColor("hsl(var(--severity-moderate))"), opacity: 0.4 };
+  if (count <= 60) return { fill: resolveColor("hsl(var(--severity-severe))"), opacity: 0.45 };
+  return { fill: resolveColor("hsl(var(--severity-critical))"), opacity: 0.55 };
+};
+
+const useUsStatesGeo = () =>
+  useQuery({
+    queryKey: ["us-states-geo"],
+    queryFn: async () => {
+      const res = await fetch(
+        "https://cdn.jsdelivr.net/gh/PublicaMundi/MappingAPI@master/data/geojson/us-states.json",
+      );
+      if (!res.ok) throw new Error("us-states geojson failed");
+      return res.json();
+    },
+    staleTime: Infinity,
+    gcTime: Infinity,
+    retry: 1,
+  });
+
+export const NationalPanel = ({
+  refreshMs,
+  lat,
+  lng,
+}: {
+  refreshMs: number;
+  lat?: number;
+  lng?: number;
+}) => {
   const { data, isLoading, error, refetch, isFetching, dataUpdatedAt } = useNationalAlerts(refreshMs);
+  const { data: statesGeo } = useUsStatesGeo();
 
   const features = data || [];
   const total = features.length;
@@ -55,6 +117,41 @@ export const NationalPanel = ({ refreshMs }: { refreshMs: number }) => {
     interpretation = "Elevated severe weather";
     interpretationClass = "text-severity-moderate";
   }
+
+  const primary = resolveColor("hsl(var(--primary))");
+  const dim = resolveColor("hsl(var(--dim))");
+
+  // Stable style + onEachFeature handlers for GeoJSON
+  const styleFn = useMemo(
+    () => (feature: any) => {
+      const name = feature?.properties?.name || feature?.properties?.NAME;
+      const usps = name ? STATE_NAME_TO_USPS[name] : null;
+      const c = usps ? stateCounts[usps] || 0 : 0;
+      const { fill, opacity } = heatColor(c);
+      return {
+        fillColor: fill,
+        fillOpacity: opacity,
+        color: dim,
+        weight: 0.5,
+        opacity: 0.6,
+      };
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [JSON.stringify(stateCounts), dim],
+  );
+
+  const onEachFeature = (feature: any, layer: any) => {
+    const name = feature?.properties?.name || feature?.properties?.NAME;
+    const usps = name ? STATE_NAME_TO_USPS[name] : null;
+    const c = usps ? stateCounts[usps] || 0 : 0;
+    layer.bindTooltip(`${name}: ${c} alert${c === 1 ? "" : "s"}`, {
+      sticky: true,
+      className: "leaflet-tooltip-mono",
+    });
+  };
+
+  // Force GeoJSON layer to re-render when counts change (Leaflet caches layers).
+  const geoKey = useMemo(() => JSON.stringify(stateCounts), [stateCounts]);
 
   return (
     <Panel
@@ -105,6 +202,46 @@ export const NationalPanel = ({ refreshMs }: { refreshMs: number }) => {
             </ResponsiveContainer>
           </div>
 
+          {/* US Heat Map */}
+          <div className="h-[240px] rounded-md overflow-hidden border border-border/60 bg-inset">
+            <MapContainer
+              center={[39.5, -98.35]}
+              zoom={3}
+              scrollWheelZoom={false}
+              zoomControl={false}
+              style={{ height: "100%", width: "100%", background: "hsl(var(--inset))" }}
+              attributionControl={false}
+            >
+              <TileLayer
+                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                subdomains={["a", "b", "c", "d"]}
+              />
+              {statesGeo && (
+                <GeoJSON
+                  key={geoKey}
+                  data={statesGeo as any}
+                  style={styleFn as any}
+                  onEachFeature={onEachFeature}
+                />
+              )}
+              {Number.isFinite(lat) && Number.isFinite(lng) && (
+                <CircleMarker
+                  center={[lat as number, lng as number]}
+                  radius={6}
+                  pathOptions={{
+                    color: primary,
+                    fillColor: primary,
+                    fillOpacity: 0.5,
+                    weight: 2,
+                    opacity: 1,
+                  }}
+                >
+                  <LTooltip>Your location</LTooltip>
+                </CircleMarker>
+              )}
+            </MapContainer>
+          </div>
+
           <div className="space-y-1">
             {total > 0 && (
               <div className={`font-mono text-xs font-semibold ${interpretationClass}`}>
@@ -129,7 +266,7 @@ export const NationalPanel = ({ refreshMs }: { refreshMs: number }) => {
             )}
           </div>
 
-          <ContextBox>Top event types currently active across the United States.</ContextBox>
+          <ContextBox>Top event types currently active across the United States. Map shaded by alert density per state.</ContextBox>
           <UpdatedAgo date={dataUpdatedAt ? new Date(dataUpdatedAt) : undefined} />
         </div>
       )}
