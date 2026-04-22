@@ -1,6 +1,7 @@
 import { Panel, ContextBox } from "@/components/Panel";
 import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo } from "@/components/PanelKit";
 import { useGdeltHeadlines } from "@/hooks/useDataSources";
+import { flagEmoji } from "@/lib/flags";
 
 type Tag =
   | "CYBER"

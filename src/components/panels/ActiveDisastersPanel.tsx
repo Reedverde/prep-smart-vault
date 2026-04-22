@@ -12,6 +12,15 @@ const typeAbbrev: Record<string, string> = {
   WF: "WF",
 };
 
+const typeLabel: Record<string, string> = {
+  EQ: "Earthquake",
+  TC: "Tropical cyclone",
+  FL: "Flood",
+  VO: "Volcano",
+  DR: "Drought",
+  WF: "Wildfire",
+};
+
 const alertPillClass = (level: string) => {
   const l = (level || "").toLowerCase();
   if (l === "red") return "bg-severity-critical/15 text-severity-critical border-severity-critical/40";
@@ -61,6 +70,45 @@ const buildDetail = (p: any): string => {
   }
 
   return parts.join(" · ");
+};
+
+// Decode common HTML entities + strip tags + collapse whitespace.
+const stripHtml = (s: string): string => {
+  if (!s) return "";
+  return s
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<\/?[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/gi, "'")
+    .replace(/&#(\d+);/g, (_, n) => {
+      try { return String.fromCharCode(parseInt(n, 10)); } catch { return " "; }
+    })
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
+const truncate = (s: string, max = 140): string => {
+  if (!s) return "";
+  if (s.length <= max) return s;
+  const cut = s.slice(0, max);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd() + "…";
+};
+
+const buildDescription = (p: any): string => {
+  const raw =
+    p?.htmldescription ||
+    p?.description ||
+    "";
+  const stripped = stripHtml(String(raw));
+  if (stripped) return truncate(stripped, 140);
+  const t = typeLabel[p?.eventtype];
+  return t ? `${t} event` : "";
 };
 
 export const ActiveDisastersPanel = ({ refreshMs }: { refreshMs: number }) => {
@@ -116,6 +164,7 @@ export const ActiveDisastersPanel = ({ refreshMs }: { refreshMs: number }) => {
                 const level = p.alertlevel || "";
                 const url = p.url?.report || p.url?.details || `https://www.gdacs.org/`;
                 const detail = buildDetail(p);
+                const description = buildDescription(p);
                 return (
                   <a
                     key={p.eventid ? `${p.eventtype}-${p.eventid}` : i}
@@ -129,6 +178,11 @@ export const ActiveDisastersPanel = ({ refreshMs }: { refreshMs: number }) => {
                       <div className="font-mono text-[11px] text-foreground truncate">{location}</div>
                       {detail && (
                         <div className="font-mono text-[10px] text-dim truncate mt-0.5">{detail}</div>
+                      )}
+                      {description && (
+                        <div className="font-mono text-[10px] text-dim/90 mt-0.5 line-clamp-2 leading-snug">
+                          {description}
+                        </div>
                       )}
                     </div>
                     <span
