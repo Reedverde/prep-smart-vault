@@ -44,7 +44,11 @@ Deno.serve(async (req) => {
     const hit = cache.get(key);
     if (hit && Date.now() - hit.ts < CACHE_MS) {
       return new Response(JSON.stringify(hit.payload), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=300, stale-while-revalidate=900',
+        },
       });
     }
 
@@ -101,7 +105,11 @@ Deno.serve(async (req) => {
 
     cache.set(key, { ts: Date.now(), payload });
     return new Response(JSON.stringify(payload), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=300, stale-while-revalidate=900',
+      },
     });
   } catch (err) {
     console.error('nws-hwo error:', err);
