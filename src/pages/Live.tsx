@@ -15,7 +15,7 @@ import { GlobalHeadlinesPanel } from "@/components/panels/GlobalHeadlinesPanel";
 import { SevereRadarPanel } from "@/components/panels/SevereRadarPanel";
 import { HazardousOutlookPanel } from "@/components/panels/HazardousOutlookPanel";
 import { ScannerAudioPanel } from "@/components/panels/ScannerAudioPanel";
-import { FuelPricesPanel } from "@/components/panels/FuelPricesPanel";
+import { EnergyCostsPanel } from "@/components/panels/EnergyCostsPanel";
 import { FinancialStressPanel } from "@/components/panels/FinancialStressPanel";
 import { PowerOutagesPanel } from "@/components/panels/PowerOutagesPanel";
 import { InternetHealthPanel } from "@/components/panels/InternetHealthPanel";
@@ -70,7 +70,7 @@ const Live = () => {
     {
       label: "MARKETS & INFRASTRUCTURE",
       panels: [
-        <FuelPricesPanel key="fuel" refreshMs={60 * 60 * 1000} />,
+        <EnergyCostsPanel key="energy" refreshMs={60 * 60 * 1000} />,
         <FinancialStressPanel key="fred" refreshMs={60 * 60 * 1000} />,
         <PowerOutagesPanel key="outages" refreshMs={5 * 60 * 1000} />,
       ],
