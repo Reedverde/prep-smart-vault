@@ -12,6 +12,13 @@ import { SystemHealthPanel } from "@/components/panels/SystemHealthPanel";
 import { NasaPanel } from "@/components/panels/NasaPanel";
 import { GridStatusPanel } from "@/components/panels/GridStatusPanel";
 import { GlobalHeadlinesPanel } from "@/components/panels/GlobalHeadlinesPanel";
+import { SevereRadarPanel } from "@/components/panels/SevereRadarPanel";
+import { HazardousOutlookPanel } from "@/components/panels/HazardousOutlookPanel";
+import { ScannerAudioPanel } from "@/components/panels/ScannerAudioPanel";
+import { FuelPricesPanel } from "@/components/panels/FuelPricesPanel";
+import { FinancialStressPanel } from "@/components/panels/FinancialStressPanel";
+import { PowerOutagesPanel } from "@/components/panels/PowerOutagesPanel";
+import { InternetHealthPanel } from "@/components/panels/InternetHealthPanel";
 
 // Public read-only dashboard. No auth required. Uses fixed default location.
 const PUBLIC_SETTINGS = {
@@ -74,6 +81,28 @@ const Live = () => {
         <SpaceWeatherPanel key="space" refreshMs={refreshMs} />,
         <NasaPanel key="nasa" refreshMs={refreshMs} />,
         <SystemHealthPanel key="system" refreshMin={refresh_interval_min} />,
+      ],
+    },
+    {
+      label: "LOCAL WEATHER DEEP DIVE",
+      panels: [
+        <SevereRadarPanel key="radar" lat={lat} lng={lng} refreshMs={5 * 60 * 1000} />,
+        <HazardousOutlookPanel key="hwo" lat={lat} lng={lng} refreshMs={30 * 60 * 1000} />,
+        <ScannerAudioPanel key="scanner" />,
+      ],
+    },
+    {
+      label: "MARKETS & INFRASTRUCTURE",
+      panels: [
+        <FuelPricesPanel key="fuel" refreshMs={60 * 60 * 1000} />,
+        <FinancialStressPanel key="fred" refreshMs={60 * 60 * 1000} />,
+        <PowerOutagesPanel key="outages" refreshMs={5 * 60 * 1000} />,
+      ],
+    },
+    {
+      label: "INTERNET & COMMS",
+      panels: [
+        <InternetHealthPanel key="cf" refreshMs={15 * 60 * 1000} />,
       ],
     },
   ];
