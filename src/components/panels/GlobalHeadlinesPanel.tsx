@@ -31,6 +31,8 @@ const tagStyle: Record<Tag, string> = {
   VIOLENCE: "border-severity-severe/40 bg-severity-severe/15 text-severity-severe",
   PROTEST: "border-severity-moderate/40 bg-severity-moderate/15 text-severity-moderate",
   UNREST: "border-severity-moderate/40 bg-severity-moderate/15 text-severity-moderate",
+  DISASTER: "border-severity-moderate/40 bg-severity-moderate/15 text-severity-moderate",
+  ECONOMIC: "border-severity-low/40 bg-severity-low/15 text-severity-low",
   OTHER: "border-border bg-inset text-dim",
 };
 
