@@ -19,4 +19,5 @@ Visuals: Recharts for panels. LogoMark (mascot) for Login/404, LogoWordmark (SVG
 - [Deployment Strategy](mem://architecture/deployment-strategy) — Supabase V1 to self-hosted Raspberry Pi migration path
 - [API Security](mem://architecture/api-security-model) — Management and proxying of third-party API keys via Edge Functions
 - [Dashboard Panels](mem://features/dashboard-panels) — Specifications for the 8 live dashboard panels and visualizations
+- [New Panels Phase 2](mem://features/new-panels-phase-2) — 7 added panels (radar, HWO, scanner, fuel, FRED, power outages, Cloudflare Radar) in 3 new rows
 - [Historical Baselines (PARKED)](mem://future-enhancements/historical-baselines) — 30-day rolling averages for elevated-vs-norm context
