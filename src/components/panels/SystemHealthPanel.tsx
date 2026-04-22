@@ -5,15 +5,33 @@ import { formatDistanceToNow, intervalToDuration, formatDuration } from "date-fn
 import { useQueryClient } from "@tanstack/react-query";
 import { Wifi, WifiOff } from "lucide-react";
 
-const SOURCES: { key: string; label: string }[] = [
-  { key: "weather", label: "NWS Weather" },
-  { key: "alerts-local", label: "NWS Alerts" },
-  { key: "alerts-national", label: "NWS National" },
-  { key: "earthquakes-week", label: "USGS" },
-  { key: "kp-index", label: "NOAA SWPC" },
-  { key: "airnow", label: "EPA AirNow" },
-  { key: "gdacs", label: "GDACS" },
-  { key: "gdelt", label: "GDELT" },
+// Each entry maps a human-readable label to one or more React-Query keys.
+// `keys` lets a single row aggregate freshness across keyed variants (e.g. lat/lng).
+const SOURCES: { label: string; keys: string[] }[] = [
+  // Local weather + alerts
+  { label: "NWS Weather", keys: ["weather"] },
+  { label: "NWS Alerts (Local)", keys: ["alerts-local"] },
+  { label: "NWS Alerts (National)", keys: ["alerts-national"] },
+  { label: "NWS Hazardous Outlook", keys: ["nws-hwo"] },
+  // Earth + space hazards
+  { label: "USGS Earthquakes", keys: ["earthquakes-week"] },
+  { label: "NOAA SWPC (Kp)", keys: ["kp-index"] },
+  { label: "NASA (NEO/EONET)", keys: ["nasa"] },
+  { label: "GDACS Disasters", keys: ["gdacs"] },
+  // Air + environment
+  { label: "EPA AirNow", keys: ["airnow"] },
+  // Geopolitics + news
+  { label: "GDELT (Conflict Pulse)", keys: ["gdelt"] },
+  { label: "GDELT Headlines", keys: ["gdelt-headlines"] },
+  { label: "News Feed", keys: ["news-feed"] },
+  // Energy + grid
+  { label: "EIA Grid (PJM)", keys: ["eia-grid"] },
+  { label: "EIA Fuel Prices", keys: ["eia-fuel"] },
+  { label: "Power Outages (PA)", keys: ["power-outages"] },
+  // Markets
+  { label: "FRED Financial Stress", keys: ["fred-stress"] },
+  // Internet health
+  { label: "Cloudflare Radar", keys: ["cloudflare-radar"] },
 ];
 
 export const SystemHealthPanel = ({ refreshMin }: { refreshMin: number }) => {
@@ -36,7 +54,11 @@ export const SystemHealthPanel = ({ refreshMin }: { refreshMin: number }) => {
   }, []);
 
   const sourceStatus = SOURCES.map((s) => {
-    const queries = qc.getQueryCache().findAll({ queryKey: [s.key] });
+    // Aggregate across all queries whose key starts with any of the configured keys
+    // (e.g. ["weather", lat, lng] still matches ["weather"]).
+    const queries = s.keys.flatMap((k) =>
+      qc.getQueryCache().findAll({ queryKey: [k], exact: false }),
+    );
     const latest = queries.reduce((max, q) => Math.max(max, q.state.dataUpdatedAt || 0), 0);
     const errored = queries.some((q) => q.state.status === "error");
     return { ...s, latest, errored };
@@ -76,29 +98,31 @@ export const SystemHealthPanel = ({ refreshMin }: { refreshMin: number }) => {
         {/* Source table */}
         <div className="space-y-1">
           <div className="font-mono text-[10px] uppercase tracking-wider text-dim mb-1">Data sources</div>
-          {sourceStatus.map((s) => (
-            <div
-              key={s.key}
-              className="flex items-center justify-between py-1 border-b border-border/40 last:border-0"
-            >
-              <div className="flex items-center gap-2">
-                <span
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{
-                    background: s.errored
-                      ? "hsl(var(--severity-critical))"
-                      : s.latest
-                        ? "hsl(var(--severity-low))"
-                        : "hsl(var(--dim))",
-                  }}
-                />
-                <span className="font-mono text-xs text-foreground">{s.label}</span>
+          <div className="max-h-[420px] overflow-y-auto pr-1 -mr-1 scroll-thin">
+            {sourceStatus.map((s) => (
+              <div
+                key={s.label}
+                className="flex items-center justify-between py-1 border-b border-border/40 last:border-0"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span
+                    className="h-1.5 w-1.5 rounded-full shrink-0"
+                    style={{
+                      background: s.errored
+                        ? "hsl(var(--severity-critical))"
+                        : s.latest
+                          ? "hsl(var(--severity-low))"
+                          : "hsl(var(--dim))",
+                    }}
+                  />
+                  <span className="font-mono text-xs text-foreground truncate">{s.label}</span>
+                </div>
+                <span className="font-mono text-[10px] text-dim shrink-0 ml-2">
+                  {s.latest ? formatDistanceToNow(new Date(s.latest), { addSuffix: true }) : "no data"}
+                </span>
               </div>
-              <span className="font-mono text-[10px] text-dim">
-                {s.latest ? formatDistanceToNow(new Date(s.latest), { addSuffix: true }) : "no data"}
-              </span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         {/* Meta */}
