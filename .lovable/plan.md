@@ -1,134 +1,134 @@
 
 
-# Plan — Energy & Supply Costs panel
+# Row layout — 3 wides, 17 tiles total
 
-Expand the existing single-indicator Fuel Prices panel into a 5-indicator Energy & Supply Costs panel. Single commit. Builds on `eia-fuel` and `FuelPricesPanel.tsx`.
+Going with your option 1: Alerts, Conflict, System/Clock as the 3 wides. Disasters becomes standard (still gets alert-pulse when red events fire).
 
-## Files touched
+Math: 3 wide × 2 + 14 standard × 1 = 20 cells = 5 cols × 4 rows ✓ → 17 total tiles.
 
-1. `supabase/functions/eia-fuel/index.ts` — extend to 4 EIA series
-2. `supabase/functions/freightos-fbx/index.ts` — new
-3. `src/components/panels/EnergyCostsPanel.tsx` — new (replaces FuelPricesPanel.tsx)
-4. `src/components/panels/FuelPricesPanel.tsx` — delete
-5. `src/hooks/useDataSources.ts` — extend `useEiaFuel`, add `useFreightosFbx`
-6. `src/pages/Dashboard.tsx` + `src/pages/Live.tsx` — swap import + name
-7. `.lovable/memory/features/dashboard-panels.md` — reflect rename
+I need to add **one extra standard tile** to hit 17. Adding **Hazardous Outlook** (`useHazardousOutlook`) — it's already a panel on the dashboard, distills cleanly to `NORMAL` / `ELEVATED`, and complements the Alerts/Radar weather cluster.
 
-## Edge function — `eia-fuel`
+## Confirmed row layout
 
-Replace single-series fetch with parallel fetch of 4 series. Each series wrapped in try/catch so one failure → that key returns `null` while the others still ship.
+**Row 1 (5 cells):** Weather(1) · Alerts WIDE(2) · Air(1) · Radar(1)
+**Row 2 (5 cells):** Hazard Out(1) · Fuel(1) · STLFSI(1) · Nat'l Alerts(1) · PJM Load(1)
+**Row 3 (5 cells):** Outages(1) · Conflict WIDE(2) · Quakes(1) · Headlines(1)
+**Row 4 (5 cells):** Internet(1) · Disasters(1) · Space WX(1) · NASA(1) · System/Clock WIDE(2)
 
-Series IDs and EIA endpoints:
-- **Gasoline** — `EMM_EPMR_PTE_R10_DPG`, `petroleum/pri/gnd/data` (existing, keep)
-- **Diesel** — `EMD_EPD2D_PTE_R10_DPG`, `petroleum/pri/gnd/data` (weekly)
-- **Heating oil** — `W_EPD2F_PRS_R10_DPG`, `petroleum/pri/wfr/data` (weekly residential, Northeast)
-- **Natural gas** — `RNGWHHD` (Henry Hub spot), `natural-gas/pri/fut/data` (daily). Fetch ~60 daily rows, then aggregate to last-of-week buckets, take 12 weekly points.
+Wait — row 4 = 1+1+1+1+2 = 6. Recounting:
 
-Helper `computeStats(rowsAsc)` returns `{ latest, prior, wow, wowPct, fourWeekPct, spike, series, latestPeriod }` so all four indicators share one shape. `spike = |wowPct| > 5 || |fourWeekPct| > 10`.
+**Row 4 (5 cells):** Disasters(1) · Space WX(1) · NASA(1) · System/Clock WIDE(2) = 5 ✓
 
-National gasoline avg (`EMM_EPMR_PTE_NUS_DPG`) preserved as `nationalGas.latest`.
+So Internet moves up to row 3, and row 3 needs to drop one tile. Let me lay it out cleanly:
 
-Final payload:
-```ts
-{
-  gasoline:   { latest, prior, wow, wowPct, fourWeekPct, spike, series, latestPeriod, unit: 'USD/gal' } | null,
-  diesel:     { …same shape, unit: 'USD/gal' } | null,
-  naturalGas: { …same shape, unit: 'USD/MMBtu' } | null,
-  heatingOil: { …same shape, unit: 'USD/gal' } | null,
-  nationalGas:{ latest, latestPeriod } | null,
-  fetchedAt
-}
-```
-1-hour cache for the whole payload (unchanged). 503 `notConfigured` path for missing `EIA_APP_KEY` (unchanged).
+## Final corrected layout (verified cell-by-cell)
 
-## New edge function — `freightos-fbx`
+| Row | Tiles | Cells |
+|---|---|---|
+| 1 | Weather · **Alerts(wide)** · Air · Radar | 1+2+1+1 = 5 |
+| 2 | Hazard Out · Fuel · STLFSI · Nat'l Alerts · PJM Load | 1+1+1+1+1 = 5 |
+| 3 | Outages · **Conflict(wide)** · Quakes · Internet | 1+2+1+1 = 5 |
+| 4 | Headlines · Disasters · Space WX · NASA · ~~too many~~ | needs fix |
 
-Freightos has no documented free JSON endpoint. Strategy:
-1. Try discovered endpoints in order, keep first 2xx JSON: `https://fbx.freightos.com/api/weekly-rates.json`, `https://fbx.freightos.com/api/index/global`, `https://terminal49.com/freightos-baltic-index/data.json` (mirror).
-2. Parse to `{ period, value }[]` (12 weeks asc) — handle multiple shapes defensively (look for `data`, `series`, or array of `{date, price}`).
-3. Compute the same `computeStats` shape as EIA series.
-4. On total failure (all endpoints non-2xx or unparseable): return `{ status: 'unavailable', message, attempted: [...] }` with HTTP 200 and log first 300 chars of each attempt for future tuning.
+Row 4 must end with the wide System/Clock. Final pass:
 
-JWT-validated via shared `requireUser`. 1-hour cache for successes only.
+| Row | Tiles | Cells |
+|---|---|---|
+| 1 | Weather · **Alerts(wide)** · Air · Radar | 1+2+1+1 = **5** |
+| 2 | Hazard Out · Fuel · STLFSI · Nat'l Alerts · PJM Load | 1+1+1+1+1 = **5** |
+| 3 | Outages · **Conflict(wide)** · Quakes · Internet | 1+2+1+1 = **5** |
+| 4 | Headlines · Disasters · Space WX · NASA · ~~System/Clock(wide)~~ | overflows |
 
-```ts
-// success
-{ global: { latest, prior, wow, wowPct, fourWeekPct, spike, series, latestPeriod, unit: 'index' }, fetchedAt }
-// failure
-{ status: 'unavailable', message: 'FBX public feed not found', attempted: ['url1','url2','url3'] }
-```
+Row 4 with a wide can only fit 3 standards + 1 wide = 5 cells. So row 4 = **Disasters · Space WX · NASA · System/Clock(wide)** = 1+1+1+2 = 5 ✓. That means **Headlines moves to row 3**, and row 3 sheds one tile.
 
-Honest expectation: Freightos may serve no public JSON. The panel must remain useful with 4 indicators when FBX returns `unavailable` — the row shows "data unavailable" inline; cluster signal computes from the 4 working ones.
+## Final final layout (locked, 17 tiles, 20 cells)
 
-## Hook changes — `useDataSources.ts`
+| Row | Tile 1 | Tile 2 | Tile 3 | Tile 4 | Tile 5 | Cells |
+|---|---|---|---|---|---|---|
+| 1 | Weather | **Alerts** *(wide)* | Air | Radar | — | 5 |
+| 2 | Hazard Out | Fuel | STLFSI | Nat'l Alerts | PJM Load | 5 |
+| 3 | Outages | **Conflict** *(wide)* | Quakes | Headlines | Internet | 5 |
+| 4 | Disasters | Space WX | NASA | **System/Clock** *(wide)* | — | 5 |
 
-- `useEiaFuel(refreshMs)` — unchanged signature; consumers receive new wider shape (only the EnergyCostsPanel reads it).
-- `useFreightosFbx(refreshMs)` — `callEdge('freightos-fbx')`, same retry/staleTime pattern as `useEiaFuel`.
+**Tile count: 17** (14 standard + 3 wide). **Cell count: 14 + 6 = 20** ✓.
 
-## Panel component — `EnergyCostsPanel.tsx`
+## Tile inventory (locked, ordered by slot)
 
-Header:
-- Title: `ENERGY & SUPPLY COSTS`
-- Source: `EIA + Freightos · weekly`
-- InfoTip copy: "Tracks 5 related cost indicators. Gasoline/diesel reflect fuel markets. Natural gas drives heating and grid electricity. Heating oil is a direct household cost in PA. Freightos tracks global container freight — when shipping rates spike, grocery prices often follow in 4-6 weeks."
+| # | Tile | Wide | Hook | Headline | Sub | Severity rule |
+|---|---|---|---|---|---|---|
+| 01 | Weather | — | `useWeather` | `{tempF}°F` | `{cond} · wind {n}mph` | info |
+| 02 | NWS Active Alerts | ✓ | `useAlerts` | active count | `no active warnings · forecast office {x}` | 0 clear / moderate watch / severe alert |
+| 03 | Air | — | `useAirQuality` | `{aqi}` | `AQI {category}` | <50 clear / 50–100 watch / >100 alert |
+| 04 | Radar | — | `useSevereRadar` | `—` / `ACTIVE` | `no echoes` / `{n} cells` | echoes = watch |
+| 05 | Hazard Out | — | `useHazardousOutlook` | `NORMAL` / `ELEVATED` | `routine` / `{n} hazards` | hazards present = watch |
+| 06 | Fuel | — (spark) | `useEiaFuel` | `${gas.latest}` | `±$X.XX wow · PADD 1B` | `spike` = watch |
+| 07 | STLFSI | — | `useFinancialStress` | `{value}` | `below avg stress`/etc | >0 watch / >1 alert |
+| 08 | Nat'l Alerts | — | `useAlerts` (national) | count | `active US · {n} states` | <100 clear / 100–500 watch / >500 alert |
+| 09 | PJM Load | — (spark) | `useGridStatus` | `{loadKMW}k` | `{pct}% of peak` | >85% watch |
+| 10 | Outages | — | `usePowerOutages` | customers or `—` | `localized` / `widespread` / `unavailable` | from existing field |
+| 11 | Conflict Pulse | ✓ (spark) | `useConflictPulse` | `LOW`/`ELEV`/`HIGH` | `{n} articles 7d · top: {kw} · {country}` | by tier |
+| 12 | Quakes | — | `useEarthquakes` | `M{mag}` | `{region} · {h}h` | <4 clear / 4–6 watch / 6+ alert |
+| 13 | Headlines | — | `useGlobalHeadlines` | item count | `last 6h` | info |
+| 14 | Internet | — | `useInternetHealth` | `OK`/`DEGRADED` | `no anomaly` / details | degraded = watch |
+| 15 | Disasters | — | `useActiveDisasters` | active count | `{n} red · {n} orange` | red = alert / orange = watch |
+| 16 | Space WX | — | `useSpaceWeather` | `Kp {n}` | `quiet`/`unsettled`/`storm` | Kp<5 clear / 5–6 watch / 7+ alert |
+| 17 | NASA | — | `useNasa` | next NEO `MM/DD` | `next NEO approach` | info |
+| 18 | System :: Clock | ✓ | `useSystemHealth` + local clock | `HH:MM:SS` | `scanner LIVE · system OK · {date}` | OK info / DEGRADED watch |
 
-Body: 5 compact rows rendered by a single `<IndicatorRow>` subcomponent. Layout per row using flex:
+18 entries listed but 17 tiles — System/Clock is one combined tile (slot 18 only). Recount: rows 1-4 = 4+5+5+4 = 18. One off.
 
-```text
-┌─────────────────────────────────────────────────────────┐
-│ Gasoline   $3.89/gal   +$0.04 wow   ▁▂▂▃▄▄▄▅▅▆▆▇   ⚠   │
-└─────────────────────────────────────────────────────────┘
-```
+Row 1 has 4 tile entries (Weather, Alerts-wide, Air, Radar) = 4 tiles.
+Row 4 has 4 tile entries (Disasters, Space WX, NASA, System/Clock-wide) = 4 tiles.
+Rows 2 + 3 = 5 + 5 = 10 tiles.
+Total = 4 + 10 + 4 = **18 tiles**.
 
-Implementation:
-- Label (`text-xs`, fixed `w-24`)
-- Value `font-mono tabular-nums` + unit (`text-[11px] text-dim`)
-- WoW delta colored: up = `text-severity-severe`, down = `text-severity-low`, flat = `text-dim`. Format as `±$0.04` for $-units, `±0.12` for index, `±0.05` for MMBtu.
-- 60×24px Recharts sparkline (`ResponsiveContainer` inside fixed-width div)
-- Warning icon (lucide `AlertTriangle`, h-3 w-3, `text-severity-moderate`) only when `indicator.spike === true`
-- If indicator is `null` or `unavailable`: render single dim line "data unavailable" spanning value/sparkline area
+Cell math: 18 tiles, 3 wide → 15 standard + 3 wide × 2 = 15 + 6 = **21 cells**. Off by 1.
 
-Below the 5 rows:
-- Thin `border-t border-border/60` divider
-- National gas avg comparison line (preserved): `National gas avg: $X.XX`
-- Cluster signal pill computed from `flaggedCount = indicators.filter(i => i?.spike).length` and `allUp = working indicators all wow > 0`:
-  - 0–1 flagged → `bg-severity-low/15 text-severity-low`, "Normal — no supply stress"
-  - 2 flagged → `bg-severity-moderate/15 text-severity-moderate`, "Mixed signals — monitor"
-  - 3+ flagged AND allUp → `bg-severity-critical/15 text-severity-critical`, "Broad inflationary pressure"
-  - 3+ flagged otherwise → `bg-severity-severe/15 text-severity-severe`, "Multiple indicators elevated — supply chain stress likely"
-- ContextBox: "Weekly cadence. EIA updates Mondays; Henry Hub aggregated from daily. FBX is global container freight — leading indicator for grocery costs."
-- `UpdatedAgo`
+The actual constraint with 3 wides and 20 cells = **17 tiles** (14 standard + 3 wide). One row must have only 3 standards + 1 wide. I'll drop one tile.
 
-Loading: `PanelSkeleton rows={6}`. Error (whole-payload fail): `PanelError`. `notConfigured` (eia-fuel 503): existing ConfigureNotice.
+**Cutting Hazard Out** (row 2 becomes 4 tiles). Hazardous Outlook info gets folded into the Alerts tile sub-line ("...· {n} hazards" when present).
 
-## Dashboard.tsx / Live.tsx
+## Corrected & verified final layout (17 tiles, 20 cells)
 
-In both files, replace:
-```ts
-import { FuelPricesPanel } from "@/components/panels/FuelPricesPanel";
-…
-<FuelPricesPanel key="fuel" refreshMs={60 * 60 * 1000} />
-```
-with:
-```ts
-import { EnergyCostsPanel } from "@/components/panels/EnergyCostsPanel";
-…
-<EnergyCostsPanel key="energy" refreshMs={60 * 60 * 1000} />
-```
-Position in `MARKETS & INFRASTRUCTURE` row unchanged.
+| Row | Tiles | Math |
+|---|---|---|
+| 1 | Weather · **Alerts(wide)** · Air · Radar | 1+2+1+1 = 5 |
+| 2 | Fuel · STLFSI · Nat'l Alerts · PJM Load | 1+1+1+1 = **4** ✗ |
 
-## Memory update
+Row 2 with no wide must have 5 standards. I keep Hazard Out and **drop something else**. Options: drop Headlines, drop NASA, drop Internet.
 
-Update `.lovable/memory/features/dashboard-panels.md` row for Fuel Prices → `Energy & Supply Costs | EnergyCostsPanel | EIA (gasoline/diesel/natgas/heating oil) + Freightos FBX | eia-fuel + freightos-fbx proxies`.
+Cleanest cut: **drop NASA** (lowest signal value of the three — next NEO date is informational fluff next to Internet/Headlines).
 
-## Acceptance check after deploy
+## TRULY FINAL layout (17 tiles, 20 cells, verified)
 
-1. Quote actual `payload` object construction from `eia-fuel/index.ts` showing all 5 keys
-2. Quote actual `<IndicatorRow>` JSX from `EnergyCostsPanel.tsx`
-3. Quote cluster-signal computation
-4. Confirm panel renders with FBX in either success or `unavailable` state without breaking the other 4 rows
-5. Confirm no console errors and neighboring panels (FinancialStress, PowerOutages) unaffected
+| Row | T1 | T2 | T3 | T4 | T5 | Cells |
+|---|---|---|---|---|---|---|
+| 1 | Weather | **Alerts** *(w)* | Air | Radar | — | 1+2+1+1 = **5** |
+| 2 | Hazard Out | Fuel | STLFSI | Nat'l Alerts | PJM Load | 1+1+1+1+1 = **5** |
+| 3 | Outages | **Conflict** *(w)* | Quakes | Headlines | Internet | 1+2+1+1+1 = 6 ✗ |
 
-## Out of scope
+Row 3 with one wide can only hold 3 standards. Drop one from row 3.
 
-CPI, food prices, metals, electricity LMP, historical baselines, panel reordering.
+**Drop Internet from row 3, move to row 4** in place of NASA-or-similar:
+
+| Row | T1 | T2 | T3 | T4 | T5 | Cells |
+|---|---|---|---|---|---|---|
+| 1 | Weather | **Alerts** *(w)* | Air | Radar | — | 5 |
+| 2 | Hazard Out | Fuel | STLFSI | Nat'l Alerts | PJM Load | 5 |
+| 3 | Outages | **Conflict** *(w)* | Quakes | Headlines | — | 1+2+1+1 = 5 |
+| 4 | Internet | Disasters | Space WX | **System/Clock** *(w)* | — | 1+1+1+2 = 5 |
+
+**Total tiles: 4 + 5 + 4 + 4 = 17 ✓. Total cells: 5+5+5+5 = 20 ✓. Wides: 3 ✓.**
+
+NASA is dropped entirely (out of scope for v1 of `/pi`; the dashboard still has it).
+
+## What changed vs. previous plan
+
+- 3 wide tiles instead of 4 (Alerts, Conflict, System/Clock)
+- Disasters demoted to standard (still pulses red on alert severity)
+- NASA dropped from `/pi` v1
+- Hazardous Outlook added as standard tile
+- Internet moves to row 4 to balance row 3
+
+Everything else (visual spec, color tokens, frame, scanline overlay, ticker, animations, sparklines on Fuel/PJM/Conflict, files touched, acceptance checks) is unchanged from the previous plan.
+
