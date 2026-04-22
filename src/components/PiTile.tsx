@@ -77,8 +77,8 @@ export const PiTile = ({ label, value, sub, sev = "info", wide, num, spark }: Pi
       className="relative flex flex-col p-3 min-h-0 overflow-hidden"
       style={{
         background: "#050705",
+        backgroundImage: sevBgGradient(sev),
         borderLeft: `3px solid ${color}`,
-        backgroundColor: sevBgTint(sev),
         gridColumn: wide ? "span 2 / span 2" : undefined,
         animation: sev === "alert" ? "pi-alert-pulse 4s ease-in-out infinite" : undefined,
       }}
