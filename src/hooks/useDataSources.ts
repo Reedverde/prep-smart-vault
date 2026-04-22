@@ -372,11 +372,21 @@ export const useNwsHwo = (lat: number, lng: number, refreshMs: number) =>
     retry: 1,
   });
 
-// ============ EIA Fuel Prices ============
+// ============ EIA Fuel Prices (gasoline, diesel, natgas, heating oil) ============
 export const useEiaFuel = (refreshMs: number) =>
   useQuery({
     queryKey: ["eia-fuel"],
     queryFn: () => callEdge("eia-fuel"),
+    refetchInterval: refreshMs,
+    staleTime: refreshMs * 0.8,
+    retry: 1,
+  });
+
+// ============ Freightos Baltic Index (global container freight) ============
+export const useFreightosFbx = (refreshMs: number) =>
+  useQuery({
+    queryKey: ["freightos-fbx"],
+    queryFn: () => callEdge("freightos-fbx"),
     refetchInterval: refreshMs,
     staleTime: refreshMs * 0.8,
     retry: 1,
