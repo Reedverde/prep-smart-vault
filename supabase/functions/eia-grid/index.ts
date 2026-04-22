@@ -1,7 +1,4 @@
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, requireUser } from '../_shared/auth.ts';
 
 // EIA API v2: region PJM demand + generation mix
 // Docs: https://www.eia.gov/opendata/documentation.php
@@ -10,6 +7,9 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
+
+  const auth = await requireUser(req);
+  if (!auth.ok) return auth.response;
 
   const apiKey = Deno.env.get('EIA_APP_KEY');
   if (!apiKey) {
@@ -46,14 +46,14 @@ Deno.serve(async (req) => {
       const mixBody = !mixRes.ok ? await mixRes.text().catch(() => '') : '';
       const isInvalidKey =
         demandBody.includes('API_KEY_INVALID') || mixBody.includes('API_KEY_INVALID');
+      console.error('eia-grid upstream failed', {
+        demand: demandRes.status,
+        mix: mixRes.status,
+        isInvalidKey,
+      });
       return new Response(
         JSON.stringify({
           error: isInvalidKey ? 'invalid_api_key' : 'upstream_failed',
-          demand: demandRes.status,
-          mix: mixRes.status,
-          hint: isInvalidKey
-            ? 'EIA_APP_KEY is invalid. Get a new key at https://www.eia.gov/opendata/register.php'
-            : undefined,
         }),
         {
           status: 502,
@@ -134,7 +134,8 @@ Deno.serve(async (req) => {
       },
     );
   } catch (err) {
-    return new Response(JSON.stringify({ error: 'internal_error', message: String(err) }), {
+    console.error('eia-grid error:', err);
+    return new Response(JSON.stringify({ error: 'internal_error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

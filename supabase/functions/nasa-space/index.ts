@@ -1,12 +1,12 @@
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, requireUser } from '../_shared/auth.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
+
+  const auth = await requireUser(req);
+  if (!auth.ok) return auth.response;
 
   const apiKey = Deno.env.get('NASA_API_KEY');
   if (!apiKey) {
@@ -77,7 +77,8 @@ Deno.serve(async (req) => {
       },
     );
   } catch (err) {
-    return new Response(JSON.stringify({ error: 'internal_error', message: String(err) }), {
+    console.error('nasa-space error:', err);
+    return new Response(JSON.stringify({ error: 'internal_error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

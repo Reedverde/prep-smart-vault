@@ -1,7 +1,22 @@
 import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const UA = "PrepPi (situational-awareness-app)";
 const nwsHeaders = { "User-Agent": UA, Accept: "application/geo+json" };
+
+// ============ Edge function helper ============
+// Sends the authenticated user's session JWT so the function's requireUser() check passes.
+// Throws when the user is not signed in — protected routes guarantee auth before queries run.
+const edgeHeaders = async (): Promise<HeadersInit> => {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  if (!token) throw new Error("not_authenticated");
+  return {
+    apikey: (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    Authorization: `Bearer ${token}`,
+  };
+};
+
 
 // ============ NWS WEATHER ============
 const cToF = (c: number | null | undefined) =>
@@ -212,12 +227,7 @@ export const useAirQuality = (
     queryFn: async () => {
       const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
       const url = `https://${projectId}.supabase.co/functions/v1/airnow-observations?lat=${lat}&lng=${lng}&distance=25`;
-      const res = await fetch(url, {
-        headers: {
-          apikey: (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${(import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-      });
+      const res = await fetch(url, { headers: await edgeHeaders() });
       if (res.status === 503) {
         return { notConfigured: true } as any;
       }
@@ -262,12 +272,7 @@ export const useGdelt = (refreshMs: number) =>
     queryFn: async () => {
       const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
       const url = `https://${projectId}.supabase.co/functions/v1/gdelt-events`;
-      const res = await fetch(url, {
-        headers: {
-          apikey: (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${(import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-      });
+      const res = await fetch(url, { headers: await edgeHeaders() });
       if (!res.ok) throw new Error("GDELT proxy failed");
       const json = await res.json();
       return json as {
@@ -290,12 +295,7 @@ export const useNasa = (refreshMs: number) =>
     queryFn: async () => {
       const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
       const url = `https://${projectId}.supabase.co/functions/v1/nasa-space`;
-      const res = await fetch(url, {
-        headers: {
-          apikey: (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${(import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-      });
+      const res = await fetch(url, { headers: await edgeHeaders() });
       if (res.status === 503) return { notConfigured: true } as any;
       if (!res.ok) throw new Error("NASA proxy failed");
       return await res.json();
@@ -312,12 +312,7 @@ export const useEiaGrid = (refreshMs: number) =>
     queryFn: async () => {
       const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
       const url = `https://${projectId}.supabase.co/functions/v1/eia-grid`;
-      const res = await fetch(url, {
-        headers: {
-          apikey: (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${(import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-      });
+      const res = await fetch(url, { headers: await edgeHeaders() });
       if (res.status === 503) return { notConfigured: true } as any;
       if (!res.ok) throw new Error("EIA proxy failed");
       return await res.json();
@@ -336,12 +331,7 @@ export const useGdeltHeadlines = (refreshMs: number) => {
     queryFn: async () => {
       const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
       const url = `https://${projectId}.supabase.co/functions/v1/gdelt-headlines`;
-      const res = await fetch(url, {
-        headers: {
-          apikey: (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${(import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-      });
+      const res = await fetch(url, { headers: await edgeHeaders() });
       if (!res.ok) throw new Error("GDELT headlines proxy failed");
       return await res.json() as {
         items: Array<{
@@ -365,12 +355,7 @@ export const useGdeltHeadlines = (refreshMs: number) => {
 const callEdge = async (fn: string, qs = '') => {
   const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
   const url = `https://${projectId}.supabase.co/functions/v1/${fn}${qs}`;
-  const res = await fetch(url, {
-    headers: {
-      apikey: (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY,
-      Authorization: `Bearer ${(import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-    },
-  });
+  const res = await fetch(url, { headers: await edgeHeaders() });
   if (res.status === 503) return { notConfigured: true } as any;
   if (!res.ok) throw new Error(`${fn} proxy failed (${res.status})`);
   return await res.json();
@@ -437,12 +422,7 @@ export const useNewsFeed = (state: string | null, refreshMs: number) =>
       const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
       const qs = state ? `?state=${encodeURIComponent(state)}` : "";
       const url = `https://${projectId}.supabase.co/functions/v1/news-feed${qs}`;
-      const res = await fetch(url, {
-        headers: {
-          apikey: (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${(import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-      });
+      const res = await fetch(url, { headers: await edgeHeaders() });
       if (res.status === 503) return { notConfigured: true } as any;
       if (!res.ok) throw new Error("News proxy failed");
       return await res.json() as { items: Array<{ source: string; title: string; url: string; publishedAt: string; description?: string }> };
