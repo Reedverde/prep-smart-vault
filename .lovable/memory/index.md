@@ -1,3 +1,6 @@
+# Memory: index.md
+Updated: now
+
 # Project Memory
 
 ## Core
@@ -15,6 +18,5 @@ Visuals: Recharts for panels. LogoMark (mascot) for Login/404, LogoWordmark (SVG
 - [Dual-Write Sync](mem://architecture/dual-write-sync) — Dual-write storage architecture for Google Drive and local Pi
 - [Deployment Strategy](mem://architecture/deployment-strategy) — Supabase V1 to self-hosted Raspberry Pi migration path
 - [API Security](mem://architecture/api-security-model) — Management and proxying of third-party API keys via Edge Functions
-- [Dashboard Panels](mem://features/dashboard-panels) — 12-panel priority-ordered 4-row grid layout with alert history and sun+gauge side-by-side
-- [Stage 5 Drive Plan](mem://features/stage-5-drive-plan) — Stage 5 Google Drive integration plan
-- [Future Enhancements](mem://future-enhancements) — Deferred Commit 4 specs (BA map, Kp trend)
+- [Dashboard Panels](mem://features/dashboard-panels) — Specifications for the 8 live dashboard panels and visualizations
+- [Historical Baselines (PARKED)](mem://future-enhancements/historical-baselines) — 30-day rolling averages for elevated-vs-norm context
