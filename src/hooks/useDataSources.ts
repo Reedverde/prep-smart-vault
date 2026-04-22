@@ -1,7 +1,22 @@
 import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const UA = "PrepPi (situational-awareness-app)";
 const nwsHeaders = { "User-Agent": UA, Accept: "application/geo+json" };
+
+// ============ Edge function helper ============
+// Sends the authenticated user's session JWT so the function's requireUser() check passes.
+// Throws when the user is not signed in — protected routes guarantee auth before queries run.
+const edgeHeaders = async (): Promise<HeadersInit> => {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  if (!token) throw new Error("not_authenticated");
+  return {
+    apikey: (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    Authorization: `Bearer ${token}`,
+  };
+};
+
 
 // ============ NWS WEATHER ============
 const cToF = (c: number | null | undefined) =>
