@@ -503,8 +503,8 @@ const Pi = () => {
           to { transform: translateX(-100%) }
         }
         @keyframes pi-alert-pulse {
-          0%, 100% { background-color: rgba(255, 107, 94, 0.04) }
-          50% { background-color: rgba(255, 107, 94, 0.14) }
+          0%, 100% { border-left-color: #ff6b5e }
+          50% { border-left-color: #ff8d83 }
         }
       `}</style>
       <div
