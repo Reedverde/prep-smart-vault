@@ -1,81 +1,97 @@
 
 
-# Plan — NASA Space: tell me what it means
+# Plan — Tablet (md) layout: continuous 2-col flow
 
-Single panel edit. Add an interpretation header + fix the misleading "CLOSE" badge + tighten labels. No new data, no API changes.
+Layout-only fix in `src/pages/Dashboard.tsx`. Going with **Option A**: collapse the 4 row-grids into a single 2-col grid at `md`, restore the 4 separate row-grids at `xl`. Row labels become full-width section headers at `md` so the logical groupings stay readable.
 
-## Problem
+## Approach
 
-The panel shows raw counts (0 flares, 34 CMEs, 5 NEOs at 0.27–0.68 LD) and slaps a red **CLOSE** badge on every NEO under 1 Lunar Distance. That makes a totally normal week look like an asteroid emergency. There is no plain-English verdict telling you whether to care.
+Tailwind doesn't let one element be "4 separate grids at xl, 1 grid at md." So we render **both** structures and toggle visibility by breakpoint:
 
-## Part 1 — "Status Today" verdict block (top of panel)
+- **`xl` and up**: the existing 4-row-grid structure (3 cols, `auto-rows-fr` per row) — unchanged.
+- **`md` to `xl-1`**: a single flat 2-col grid containing all 12 panels in reading order, with row labels as `col-span-2` section headers between groups.
+- **`<md`**: the same flat structure collapses to 1 column (the labels still render; they're cheap and helpful on mobile too since we already render one panel per "row" anyway — but per spec mobile is "unchanged," so we'll keep labels gated by `?debug=rows` like today).
 
-Add a compact summary box above the two metric tiles that reads the data and renders **one sentence + one color** answering "should I care right now?"
+Wrap each structure in a container with `hidden xl:block` / `xl:hidden` to swap them at the breakpoint. Panels are stateless components reading from hooks, so rendering them in two trees has no behavioral cost — React mounts only the visible one's effects per breakpoint? Actually both trees mount. To avoid double-fetching, we keep ONE tree and swap the grid CSS instead.
 
-Logic (computed in the component):
+**Better approach**: render panels once, in a single flat list, and use CSS to switch between "4 separate 3-col grids" at xl and "one 2-col grid" at md. This is doable with `display: contents` on row wrappers at md (so children promote to the parent grid) and normal grid behavior at xl.
 
-- **Flare verdict** — based on strongest class in last 7d:
-  - none / A / B → "Sun is quiet"
-  - C-class → "Background activity, no impacts"
-  - M-class → "Moderate flares — possible brief radio blackouts"
-  - X-class → "Strong flare(s) — GPS/HF radio disruption likely"
-- **CME verdict** — count thresholds:
-  - 0–10 → "Low CME activity"
-  - 11–25 → "Typical CME activity"
-  - 26+ → "Elevated CME activity — watch Space Weather panel for Kp"
-- **NEO verdict** — closest miss distance:
-  - min > 5 LD → "No notably close passes"
-  - 1–5 LD → "Routine close passes (well outside Moon's orbit)"
-  - 0.05–1 LD → "Close pass inside lunar orbit — tracked, no impact risk"
-  - < 0.05 LD (≈20,000 km) → "Very close pass — within geosynchronous orbit altitude"
-
-Rendered as:
-
-```
-TODAY'S READ
-☀ Sun: quiet           ·  no flares above background
-🌬 CMEs: typical (34)  ·  watch Kp if Earth-directed
-☄ Asteroids: routine   ·  closest 0.27 LD (~104,000 km), no risk
+```text
+<div class="xl:grid xl:grid-cols-3 xl:gap-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+  <RowLabel>LOCAL</RowLabel>                    // col-span-full at md, hidden at xl
+  <div class="contents xl:grid xl:col-span-3 xl:grid-cols-3 xl:auto-rows-fr xl:gap-4 xl:mb-4">
+    <Weather/> <Alerts/> <AirQuality/>
+  </div>
+  ...repeat for 4 groups
+</div>
 ```
 
-Each row colored low/moderate/severe/critical via existing severity tokens. Uses existing `font-mono` and color classes — no new design tokens.
+Wait — `display: contents` + nested `grid` toggle is brittle across browsers for grid-row equalization. Cleaner: use the **dual-render approach** but mount panels only once via a shared list.
 
-## Part 2 — Fix the misleading CLOSE badge
+## Final implementation
 
-Replace the single red `< 1 LD = CLOSE` badge with a 3-tier system that matches actual risk:
+Build the panel list once as an array of `{ label, panels: [JSX, JSX, JSX] }`. Then render two trees, one visible per breakpoint:
 
-- `< 0.05 LD` (inside geosynchronous orbit) → red **VERY CLOSE** badge
-- `0.05–1 LD` (inside lunar orbit) → amber **INSIDE LUNAR** badge
-- `1–5 LD` → no badge, just the distance
-- `> 5 LD` → dim text, no badge
+```tsx
+const groups = [
+  { label: "LOCAL", panels: [<WeatherPanel.../>, <AlertsPanel.../>, <AirQualityPanel.../>] },
+  { label: "NEWS + NATIONAL", panels: [<GlobalHeadlinesPanel.../>, <NationalPanel.../>, <GridStatusPanel.../>] },
+  { label: "WORLD", panels: [<EarthquakesPanel.../>, <ActiveDisastersPanel.../>, <ConflictPulsePanel.../>] },
+  { label: "SPACE + SYSTEM", panels: [<SpaceWeatherPanel.../>, <NasaPanel.../>, <SystemHealthPanel.../>] },
+];
+```
 
-Also add a km readout next to LD (e.g. `0.27 LD · 104,000 km`) so the number is tangible. Most users don't internalize "Lunar Distance" but do internalize kilometers.
+This DOES double-mount panels (each panel JSX expression evaluates once but is rendered in both trees). To avoid that, use a CSS-only toggle on a single tree.
 
-## Part 3 — Tighten the metric tiles
+**Cleanest single-tree solution** — `display: contents` IS reliable for our case (we don't need row equalization at md, only at xl):
 
-- "Solar Flares (7d)" tile: when count is 0, replace the bare `0` with `0` + small dim text "background only" so it doesn't look broken / missing data.
-- "CMEs (7d)" tile: add a small dim qualifier underneath: `low` / `typical` / `elevated` based on the same thresholds as the verdict.
+```tsx
+// Outer wrapper: behaves as 1-col on mobile, 2-col grid at md, NOT a grid at xl (block)
+<div className="grid grid-cols-1 md:grid-cols-2 xl:block gap-4 xl:gap-0">
+  {groups.map(g => (
+    <>
+      {/* Label: spans both cols at md, hidden at xl unless debug */}
+      <RowLabel className="md:col-span-2 xl:hidden">{g.label}</RowLabel>
+      <DebugRowLabel className="hidden xl:block">{g.label}</DebugRowLabel>
+      {/* Row wrapper: contents at md (children flow into outer grid), 3-col grid at xl */}
+      <div className="contents xl:grid xl:grid-cols-3 xl:gap-4 xl:auto-rows-fr xl:mb-4">
+        {g.panels}
+      </div>
+    </>
+  ))}
+</div>
+```
 
-## Part 4 — Section headers with intent
+At `md`: the inner `div` is `display: contents`, so the 3 panel children promote into the outer 2-col grid, flowing continuously. The label sits as a `col-span-2` header before each group's panels.
 
-- Rename `NEAR-EARTH APPROACHES` → `CLOSEST PASSES THIS WEEK` (clearer that it's a top-5 sorted list, not "incoming threats").
-- Keep the existing scrollable "About" block at the bottom unchanged — it's the reference; the new top block is the "right now" verdict.
+At `xl`: the outer `div` is `block`, the inner `div` becomes a 3-col grid with `auto-rows-fr` for equal heights — exactly today's behavior. Labels render only when `?debug=rows`.
+
+At `<md` (mobile): outer is 1-col grid, `display: contents` still works (children stack vertically), labels appear before each group as section headers (or stay hidden — keeping current behavior of debug-only).
+
+## Row label behavior
+
+- **Desktop (xl)**: hidden unless `?debug=rows` (current behavior preserved)
+- **Tablet (md to xl-1)**: always shown as `col-span-2` section headers — gives the user the logical grouping back since they no longer get visual row breaks
+- **Mobile (<md)**: always shown as full-width section headers — same reasoning; helpful navigation
+
+Two label components: `<DesktopDebugLabel>` (hidden xl:block, debug-gated) and `<MobileTabletLabel>` (block xl:hidden, always shown). Same text, different visibility rules.
 
 ## Files touched
 
-- `src/components/panels/NasaPanel.tsx` — add verdict block, replace CLOSE badge logic, tighten tile copy, rename section header
+- `src/pages/Dashboard.tsx` — restructure into a single `groups` array + dual-mode wrapper using `display: contents` toggle
+
+No changes to any panel component, no changes to PageContainer, no new CSS tokens.
 
 ## Acceptance
 
-- [ ] Top of panel shows a 3-line "Today's Read" with sun / CMEs / asteroid verdicts in plain English
-- [ ] NEO badges are tiered: VERY CLOSE (red, <0.05 LD), INSIDE LUNAR (amber, 0.05–1 LD), none above 1 LD
-- [ ] NEO rows show both LD and km
-- [ ] Solar Flares tile shows "background only" when count is 0
-- [ ] CMEs tile shows low/typical/elevated qualifier
-- [ ] "About" reference block at bottom still present and unchanged
+- [ ] Desktop (≥1280px / xl): identical to today — 4 rows × 3 cols, `auto-rows-fr` per row, labels only with `?debug=rows`
+- [ ] Tablet (768–1279px / md): all 12 panels flow as continuous pairs in a single 2-col grid, group labels appear as full-width headers between groups
+- [ ] Mobile (<768px): single column stack with group labels as section headers
+- [ ] Panel reading order top-to-bottom matches: Weather → Alerts → AirQuality → GlobalHeadlines → National → GridStatus → Earthquakes → ActiveDisasters → ConflictPulse → SpaceWeather → NASA → SystemHealth
+- [ ] No double-fetching (panels mount once)
 - [ ] No console errors
 
 ## Out of scope
 
-Forecast of upcoming flares · Earth-directed CME filtering (DONKI doesn't reliably tag this) · Adding new data sources · Changes to Space Weather panel
+Panel internals · row equalization at md (panels size to their content, not equal heights — acceptable per spec) · changing the xl breakpoint value · replacing the 7" Pi display layout with a custom kiosk mode
 
