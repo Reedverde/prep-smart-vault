@@ -83,14 +83,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Trimmed query — GDELT doc 2.0 has an undocumented length cap (~250 chars effective).
-    // 23 single-word terms, no quoted phrases. Phrase-precision lost on a few items
-    // (e.g. "drone strike" → "airstrike", "trade war" → "tariff") but feed actually returns results.
-    const query =
-      '(war OR conflict OR protest OR invasion OR coup OR sanctions OR ceasefire OR ' +
-      'election OR diplomatic OR summit OR cyberattack OR ransomware OR breach OR ' +
-      'terrorism OR bombing OR missile OR airstrike OR blockade OR embargo OR ' +
-      'recession OR inflation OR tariff OR OPEC) sourcelang:english';
+    // GDELT doc 2.0 enforces an undocumented OR-term cap — empirically ~7 terms.
+    // Anything more triggers "Your query was too short or too long".
+    // We pick the highest-signal situational-awareness keywords. Classification
+    // downstream catches related terms in titles even when not in the query.
+    const query = '(war OR conflict OR cyberattack OR terrorism OR sanctions OR protest OR coup) sourcelang:english';
     const url =
       'https://api.gdeltproject.org/api/v2/doc/doc?query=' +
       encodeURIComponent(query) +
