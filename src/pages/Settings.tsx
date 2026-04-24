@@ -22,8 +22,10 @@ import {
 } from "@/components/ui/dialog";
 import { useUserSettings, UserSettings } from "@/hooks/useUserSettings";
 import { useAuth } from "@/hooks/useAuth";
+import { useGeolocation } from "@/hooks/useGeolocation";
+import { reverseGeocode, detectBrowserTimezone } from "@/lib/geocode";
 import { toast } from "sonner";
-import { Loader2, MapPin, LogOut } from "lucide-react";
+import { Loader2, MapPin, LogOut, Crosshair } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -89,6 +91,51 @@ const LocationSection = ({
   const [name, setName] = useState(settings.location_name);
   const [lat, setLat] = useState(String(settings.latitude));
   const [lng, setLng] = useState(String(settings.longitude));
+  const { getCurrentPosition, loading: geoLoading } = useGeolocation();
+  const [detecting, setDetecting] = useState(false);
+
+  const useCurrentLocation = async (autoSave: boolean) => {
+    try {
+      setDetecting(true);
+      const coords = await getCurrentPosition();
+      const latN = coords.latitude;
+      const lngN = coords.longitude;
+      setLat(latN.toFixed(6));
+      setLng(lngN.toFixed(6));
+
+      let resolvedName = `${latN.toFixed(3)}, ${lngN.toFixed(3)}`;
+      try {
+        const geo = await reverseGeocode(latN, lngN);
+        if (geo.name) resolvedName = geo.name;
+      } catch {
+        // Non-fatal — keep coords as the name fallback
+      }
+      setName(resolvedName);
+
+      const tz = detectBrowserTimezone();
+
+      if (autoSave) {
+        const patch: Partial<UserSettings> = {
+          location_name: resolvedName,
+          latitude: latN,
+          longitude: lngN,
+        };
+        if (tz) patch.timezone = tz;
+        const { error } = await update(patch);
+        if (error) toast.error(error.message);
+        else {
+          toast.success(`Location set to ${resolvedName}`);
+          setOpen(false);
+        }
+      } else {
+        toast.success(`Detected ${resolvedName}`);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Could not detect location");
+    } finally {
+      setDetecting(false);
+    }
+  };
 
   const save = async () => {
     const latN = parseFloat(lat);
@@ -125,48 +172,77 @@ const LocationSection = ({
                 {settings.latitude.toFixed(4)}, {settings.longitude.toFixed(4)}
               </div>
             </div>
-            <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="font-mono text-xs uppercase">
-                  Change
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle className="font-mono uppercase tracking-wider text-sm">
-                    Update Location
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-3">
-                  <div className="space-y-1.5">
-                    <Label className="font-mono text-[10px] uppercase tracking-wider text-dim">
-                      Name
-                    </Label>
-                    <Input value={name} onChange={(e) => setName(e.target.value)} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="font-mono text-[10px] uppercase tracking-wider text-dim">
-                        Latitude
-                      </Label>
-                      <Input value={lat} onChange={(e) => setLat(e.target.value)} />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="font-mono text-[10px] uppercase tracking-wider text-dim">
-                        Longitude
-                      </Label>
-                      <Input value={lng} onChange={(e) => setLng(e.target.value)} />
-                    </div>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="ghost" onClick={() => setOpen(false)}>
-                    Cancel
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="font-mono text-xs uppercase"
+                onClick={() => useCurrentLocation(true)}
+                disabled={detecting || geoLoading}
+              >
+                {detecting || geoLoading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Crosshair className="h-3.5 w-3.5" />
+                )}
+                Use my location
+              </Button>
+              <Dialog open={open} onOpenChange={setOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="font-mono text-xs uppercase">
+                    Edit manually
                   </Button>
-                  <Button onClick={save}>Save</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="font-mono uppercase tracking-wider text-sm">
+                      Update Location
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-3">
+                    <Button
+                      variant="outline"
+                      className="w-full font-mono text-xs uppercase"
+                      onClick={() => useCurrentLocation(false)}
+                      disabled={detecting || geoLoading}
+                    >
+                      {detecting || geoLoading ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Crosshair className="h-3.5 w-3.5" />
+                      )}
+                      Detect current location
+                    </Button>
+                    <div className="space-y-1.5">
+                      <Label className="font-mono text-[10px] uppercase tracking-wider text-dim">
+                        Name
+                      </Label>
+                      <Input value={name} onChange={(e) => setName(e.target.value)} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="font-mono text-[10px] uppercase tracking-wider text-dim">
+                          Latitude
+                        </Label>
+                        <Input value={lat} onChange={(e) => setLat(e.target.value)} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="font-mono text-[10px] uppercase tracking-wider text-dim">
+                          Longitude
+                        </Label>
+                        <Input value={lng} onChange={(e) => setLng(e.target.value)} />
+                      </div>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="ghost" onClick={() => setOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={save}>Save</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         </div>
 
