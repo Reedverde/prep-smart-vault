@@ -22,8 +22,10 @@ import {
 } from "@/components/ui/dialog";
 import { useUserSettings, UserSettings } from "@/hooks/useUserSettings";
 import { useAuth } from "@/hooks/useAuth";
+import { useGeolocation } from "@/hooks/useGeolocation";
+import { reverseGeocode, detectBrowserTimezone } from "@/lib/geocode";
 import { toast } from "sonner";
-import { Loader2, MapPin, LogOut } from "lucide-react";
+import { Loader2, MapPin, LogOut, Crosshair } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -89,6 +91,51 @@ const LocationSection = ({
   const [name, setName] = useState(settings.location_name);
   const [lat, setLat] = useState(String(settings.latitude));
   const [lng, setLng] = useState(String(settings.longitude));
+  const { getCurrentPosition, loading: geoLoading } = useGeolocation();
+  const [detecting, setDetecting] = useState(false);
+
+  const useCurrentLocation = async (autoSave: boolean) => {
+    try {
+      setDetecting(true);
+      const coords = await getCurrentPosition();
+      const latN = coords.latitude;
+      const lngN = coords.longitude;
+      setLat(latN.toFixed(6));
+      setLng(lngN.toFixed(6));
+
+      let resolvedName = `${latN.toFixed(3)}, ${lngN.toFixed(3)}`;
+      try {
+        const geo = await reverseGeocode(latN, lngN);
+        if (geo.name) resolvedName = geo.name;
+      } catch {
+        // Non-fatal — keep coords as the name fallback
+      }
+      setName(resolvedName);
+
+      const tz = detectBrowserTimezone();
+
+      if (autoSave) {
+        const patch: Partial<UserSettings> = {
+          location_name: resolvedName,
+          latitude: latN,
+          longitude: lngN,
+        };
+        if (tz) patch.timezone = tz;
+        const { error } = await update(patch);
+        if (error) toast.error(error.message);
+        else {
+          toast.success(`Location set to ${resolvedName}`);
+          setOpen(false);
+        }
+      } else {
+        toast.success(`Detected ${resolvedName}`);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Could not detect location");
+    } finally {
+      setDetecting(false);
+    }
+  };
 
   const save = async () => {
     const latN = parseFloat(lat);
