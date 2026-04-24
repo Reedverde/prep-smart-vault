@@ -172,48 +172,77 @@ const LocationSection = ({
                 {settings.latitude.toFixed(4)}, {settings.longitude.toFixed(4)}
               </div>
             </div>
-            <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="font-mono text-xs uppercase">
-                  Change
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle className="font-mono uppercase tracking-wider text-sm">
-                    Update Location
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-3">
-                  <div className="space-y-1.5">
-                    <Label className="font-mono text-[10px] uppercase tracking-wider text-dim">
-                      Name
-                    </Label>
-                    <Input value={name} onChange={(e) => setName(e.target.value)} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="font-mono text-[10px] uppercase tracking-wider text-dim">
-                        Latitude
-                      </Label>
-                      <Input value={lat} onChange={(e) => setLat(e.target.value)} />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="font-mono text-[10px] uppercase tracking-wider text-dim">
-                        Longitude
-                      </Label>
-                      <Input value={lng} onChange={(e) => setLng(e.target.value)} />
-                    </div>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="ghost" onClick={() => setOpen(false)}>
-                    Cancel
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="font-mono text-xs uppercase"
+                onClick={() => useCurrentLocation(true)}
+                disabled={detecting || geoLoading}
+              >
+                {detecting || geoLoading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Crosshair className="h-3.5 w-3.5" />
+                )}
+                Use my location
+              </Button>
+              <Dialog open={open} onOpenChange={setOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="font-mono text-xs uppercase">
+                    Edit manually
                   </Button>
-                  <Button onClick={save}>Save</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="font-mono uppercase tracking-wider text-sm">
+                      Update Location
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-3">
+                    <Button
+                      variant="outline"
+                      className="w-full font-mono text-xs uppercase"
+                      onClick={() => useCurrentLocation(false)}
+                      disabled={detecting || geoLoading}
+                    >
+                      {detecting || geoLoading ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Crosshair className="h-3.5 w-3.5" />
+                      )}
+                      Detect current location
+                    </Button>
+                    <div className="space-y-1.5">
+                      <Label className="font-mono text-[10px] uppercase tracking-wider text-dim">
+                        Name
+                      </Label>
+                      <Input value={name} onChange={(e) => setName(e.target.value)} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="font-mono text-[10px] uppercase tracking-wider text-dim">
+                          Latitude
+                        </Label>
+                        <Input value={lat} onChange={(e) => setLat(e.target.value)} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="font-mono text-[10px] uppercase tracking-wider text-dim">
+                          Longitude
+                        </Label>
+                        <Input value={lng} onChange={(e) => setLng(e.target.value)} />
+                      </div>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="ghost" onClick={() => setOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={save}>Save</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         </div>
 
