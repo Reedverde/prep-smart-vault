@@ -445,21 +445,26 @@ const Pi = () => {
     sev: PiSeverity;
     wide?: boolean;
     spark?: number[];
+    bgImage?: string;
     num: string;
   }> = [
+    // Row 1: Weather · Alerts(w) · Conflict(w) [pip-boy art]
     { ...weatherTile, num: "01" },
     { ...alertsTile, num: "02" },
-    { ...airTile, num: "03" },
-    { ...radarTile, num: "04" },
+    { ...conflictTile, num: "11" },
+    // Row 2
     { ...hwoTile, num: "05" },
     { ...fuelTile, num: "06" },
     { ...stressTile, num: "07" },
     { ...natTile, num: "08" },
     { ...gridTile, num: "09" },
+    // Row 3
     { ...outagesTile, num: "10" },
-    { ...conflictTile, num: "11" },
+    { ...airTile, num: "03" },
+    { ...radarTile, num: "04" },
     { ...quakesTile, num: "12" },
     { ...headlinesTile, num: "13" },
+    // Row 4
     { ...internetTile, num: "14" },
     { ...disastersTile, num: "15" },
     { ...spaceTile, num: "16" },
