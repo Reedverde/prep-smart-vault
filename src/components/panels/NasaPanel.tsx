@@ -29,6 +29,9 @@ const kmFromLd = (ld: number) => {
 export const NasaPanel = ({ refreshMs }: { refreshMs: number }) => {
   const { data, isLoading, error, refetch, isFetching, dataUpdatedAt } = useNasa(refreshMs);
   const notConfigured = data && (data as any).notConfigured;
+  const [sunFailed, setSunFailed] = useState(false);
+  const sunBucket = useMemo(() => Math.floor(Date.now() / (10 * 60 * 1000)), [dataUpdatedAt]);
+  const sunSrc = `https://sdo.gsfc.nasa.gov/assets/img/latest/latest_512_0193.jpg?b=${sunBucket}`;
 
   const flares = data?.donki?.flares ?? [];
   const cmes = data?.donki?.cmes ?? [];
