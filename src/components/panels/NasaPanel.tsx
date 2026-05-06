@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import { Panel } from "@/components/Panel";
 import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo } from "@/components/PanelKit";
 import { useNasa } from "@/hooks/useDataSources";
@@ -28,6 +29,9 @@ const kmFromLd = (ld: number) => {
 export const NasaPanel = ({ refreshMs }: { refreshMs: number }) => {
   const { data, isLoading, error, refetch, isFetching, dataUpdatedAt } = useNasa(refreshMs);
   const notConfigured = data && (data as any).notConfigured;
+  const [sunFailed, setSunFailed] = useState(false);
+  const sunBucket = useMemo(() => Math.floor(Date.now() / (10 * 60 * 1000)), [dataUpdatedAt]);
+  const sunSrc = `https://sdo.gsfc.nasa.gov/assets/img/latest/latest_512_0193.jpg?b=${sunBucket}`;
 
   const flares = data?.donki?.flares ?? [];
   const cmes = data?.donki?.cmes ?? [];
@@ -120,23 +124,43 @@ export const NasaPanel = ({ refreshMs }: { refreshMs: number }) => {
         <div className="space-y-3">
           {/* Today's Read — verdict block */}
           <div className="rounded-md bg-inset border border-border/60 p-3">
-            <div className="font-mono text-[10px] uppercase tracking-wider text-foreground mb-2">Today's Read</div>
-            <div className="space-y-1.5 font-mono text-xs">
-              <div className="flex items-baseline gap-2">
-                <span className="text-dim w-20 shrink-0">☀ Sun:</span>
-                <span className={`${toneClass[flareVerdict.tone]} font-semibold`}>{flareVerdict.label}</span>
-                <span className="text-dim truncate">· {flareVerdict.detail}</span>
+            <div className="flex items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="font-mono text-[10px] uppercase tracking-wider text-foreground mb-2">Today's Read</div>
+                <div className="space-y-1.5 font-mono text-xs">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-dim w-20 shrink-0">☀ Sun:</span>
+                    <span className={`${toneClass[flareVerdict.tone]} font-semibold`}>{flareVerdict.label}</span>
+                    <span className="text-dim truncate">· {flareVerdict.detail}</span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-dim w-20 shrink-0">🌬 CMEs:</span>
+                    <span className={`${toneClass[cmeVerdict.tone]} font-semibold`}>{cmeVerdict.label}</span>
+                    <span className="text-dim truncate">· {cmeVerdict.detail}</span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-dim w-20 shrink-0">☄ Asteroids:</span>
+                    <span className={`${toneClass[neoVerdict.tone]} font-semibold`}>{neoVerdict.label}</span>
+                    <span className="text-dim truncate">· {neoVerdict.detail}</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-dim w-20 shrink-0">🌬 CMEs:</span>
-                <span className={`${toneClass[cmeVerdict.tone]} font-semibold`}>{cmeVerdict.label}</span>
-                <span className="text-dim truncate">· {cmeVerdict.detail}</span>
-              </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-dim w-20 shrink-0">☄ Asteroids:</span>
-                <span className={`${toneClass[neoVerdict.tone]} font-semibold`}>{neoVerdict.label}</span>
-                <span className="text-dim truncate">· {neoVerdict.detail}</span>
-              </div>
+              {!sunFailed && (
+                <div className="flex flex-col items-center gap-1 shrink-0">
+                  <img
+                    src={sunSrc}
+                    alt="Live image of the Sun, NASA SDO 193 Ångström channel"
+                    width={80}
+                    height={80}
+                    onError={() => setSunFailed(true)}
+                    className="rounded-full border border-border/60 bg-inset"
+                    style={{ width: 80, height: 80, objectFit: "cover" }}
+                  />
+                  <div className="font-mono text-[9px] uppercase tracking-wider text-dim">
+                    SDO · 193Å
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

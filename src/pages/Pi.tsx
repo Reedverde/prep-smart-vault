@@ -3,10 +3,12 @@
 // (no edge function changes). 5×4 tile grid with 3 wide tiles + corner-bracketed
 // frame, scrolling ticker, and CRT scanline overlay — locked to mockup spec.
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, type ReactNode } from "react";
 import { format } from "date-fns";
 import { PublicTopNav } from "@/components/PublicTopNav";
 import { PiTile, type PiSeverity } from "@/components/PiTile";
+import { WeatherIcon, iconForForecast } from "@/components/WeatherIcon";
+import { getMoonPhase } from "@/lib/moonPhase";
 import pipboy from "@/assets/pipboy.jpg";
 import {
   useWeather,
@@ -81,11 +83,17 @@ const Pi = () => {
     if (windUnit && windUnit.includes("m_s-1")) return Math.round(windKph * 2.23694);
     return Math.round(windKph * 0.621371);
   })();
+  const isDay = weather.data?.period?.isDaytime ?? true;
+  const wxVariant = iconForForecast(cond, isDay);
+  const moon = getMoonPhase();
   const weatherTile = {
     label: "WEATHER · LOCAL",
     value: tempF != null ? `${Math.round(tempF)}°F` : "—",
-    sub: windMph != null ? `${cond.toLowerCase()} · wind ${windMph}mph` : cond.toLowerCase(),
+    sub:
+      (windMph != null ? `${cond.toLowerCase()} · wind ${windMph}mph` : cond.toLowerCase()) +
+      ` · ${moon.emoji} ${moon.illumination}%`,
     sev: "info" as PiSeverity,
+    icon: <WeatherIcon variant={wxVariant} size={32} />,
   };
 
   // 02 NWS Active Alerts (wide)
@@ -446,6 +454,7 @@ const Pi = () => {
     wide?: boolean;
     spark?: number[];
     bgImage?: string;
+    icon?: ReactNode;
     num: string;
   }> = [
     // Row 1: Weather · Alerts(w) · Conflict(w) [pip-boy art]
@@ -635,6 +644,7 @@ const Pi = () => {
                 num={t.num}
                 spark={t.spark}
                 bgImage={t.bgImage}
+                icon={t.icon}
               />
             ))}
           </div>
