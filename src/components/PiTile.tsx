@@ -74,7 +74,7 @@ const buildSparkPoints = (data: number[]): string => {
     .join(" ");
 };
 
-export const PiTile = ({ label, value, sub, sev = "info", wide, num, spark, bgImage, icon }: PiTileProps) => {
+export const PiTile = ({ label, value, sub, sev = "info", wide, num, spark, bgImage, icon, viz }: PiTileProps) => {
   const color = sevColorVar(sev);
   const valueSize = wide ? 72 : 52;
   const valueWeight = wide ? 200 : 250;
