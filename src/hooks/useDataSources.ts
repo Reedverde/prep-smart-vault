@@ -8,11 +8,11 @@ const nwsHeaders = { "User-Agent": UA, Accept: "application/geo+json" };
 // Sends the authenticated user's session JWT so the function's requireUser() check passes.
 // Throws when the user is not signed in — protected routes guarantee auth before queries run.
 const edgeHeaders = async (): Promise<HeadersInit> => {
+  const anonKey = (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY;
   const { data: { session } } = await supabase.auth.getSession();
-  const token = session?.access_token;
-  if (!token) throw new Error("not_authenticated");
+  const token = session?.access_token ?? anonKey;
   return {
-    apikey: (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    apikey: anonKey,
     Authorization: `Bearer ${token}`,
   };
 };
