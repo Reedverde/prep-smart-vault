@@ -488,11 +488,23 @@ const Pi = () => {
   ).length;
   const disasterSev: PiSeverity =
     redCount > 0 ? "alert" : orangeCount > 0 ? "watch" : "clear";
+  const greenCount = Math.max(0, gdacsArr.length - redCount - orangeCount);
   const disastersTile = {
     label: "DISASTERS · GLOBAL",
     value: String(gdacsArr.length),
     sub: `${redCount} red · ${orangeCount} orange · gdacs`,
     sev: disasterSev,
+    viz: gdacsArr.length > 0 ? (
+      <PiStackedBar
+        width={70}
+        height={10}
+        segments={[
+          { value: redCount, color: PI_COLORS.RED },
+          { value: orangeCount, color: PI_COLORS.AMBER },
+          { value: greenCount, color: PI_COLORS.GREEN },
+        ]}
+      />
+    ) : undefined,
   };
 
   // 16 Space Weather (Kp)
