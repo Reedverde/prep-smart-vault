@@ -454,6 +454,7 @@ const Pi = () => {
     wide?: boolean;
     spark?: number[];
     bgImage?: string;
+    icon?: React.ReactNode;
     num: string;
   }> = [
     // Row 1: Weather · Alerts(w) · Conflict(w) [pip-boy art]
