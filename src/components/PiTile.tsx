@@ -25,6 +25,8 @@ export type PiTileProps = {
   bgImage?: string;
   /** Optional decorative icon node (rendered top-right of the tile body) */
   icon?: ReactNode;
+  /** Optional small visualization rendered just below the value */
+  viz?: ReactNode;
 };
 
 const sevColorVar = (sev: PiSeverity): string => {
@@ -72,7 +74,7 @@ const buildSparkPoints = (data: number[]): string => {
     .join(" ");
 };
 
-export const PiTile = ({ label, value, sub, sev = "info", wide, num, spark, bgImage, icon }: PiTileProps) => {
+export const PiTile = ({ label, value, sub, sev = "info", wide, num, spark, bgImage, icon, viz }: PiTileProps) => {
   const color = sevColorVar(sev);
   const valueSize = wide ? 72 : 52;
   const valueWeight = wide ? 200 : 250;
@@ -166,6 +168,13 @@ export const PiTile = ({ label, value, sub, sev = "info", wide, num, spark, bgIm
       >
         {value}
       </div>
+
+      {/* Optional viz strip */}
+      {viz && (
+        <div className="mt-2" style={{ color, lineHeight: 0 }}>
+          {viz}
+        </div>
+      )}
 
       {/* Sub-line */}
       {sub && (

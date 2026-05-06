@@ -8,6 +8,15 @@ import { format } from "date-fns";
 import { PublicTopNav } from "@/components/PublicTopNav";
 import { PiTile, type PiSeverity } from "@/components/PiTile";
 import { WeatherIcon, iconForForecast } from "@/components/WeatherIcon";
+import {
+  PiDial,
+  PiSegmentedBar,
+  PiCenteredBar,
+  PiFillBar,
+  PiStackedBar,
+  PiHeatStrip,
+  PI_COLORS,
+} from "@/components/PiViz";
 import { getMoonPhase } from "@/lib/moonPhase";
 import pipboy from "@/assets/pipboy.jpg";
 import {
@@ -139,6 +148,19 @@ const Pi = () => {
     value: maxAqi != null ? String(maxAqi) : "—",
     sub: `AQI · ${aqiCat}`,
     sev: aqiSev,
+    viz: (
+      <PiDial
+        value={maxAqi}
+        min={0}
+        max={300}
+        zones={[
+          { from: 0, to: 50, color: PI_COLORS.GREEN },
+          { from: 50, to: 100, color: PI_COLORS.AMBER },
+          { from: 100, to: 150, color: "#ff8c42" },
+          { from: 150, to: 300, color: PI_COLORS.RED },
+        ]}
+      />
+    ),
   };
 
   // 04 Severe Radar — no live cell-count hook; show static "live" indicator.
@@ -160,11 +182,23 @@ const Pi = () => {
         : hwoRisk === "clear"
           ? "clear"
           : "info";
+  const hwoLevel = hwoRisk === "high" ? 2 : hwoRisk === "elevated" || hwoRisk === "watch" ? 1 : hwoRisk === "clear" ? 0 : -1;
   const hwoTile = {
     label: "HAZARD OUTLOOK · 7D",
     value: hwoRisk ? hwoRisk.toUpperCase() : "—",
     sub: hwoData?.office ? `nws ${hwoData.office} · routine cycle` : "awaiting outlook",
     sev: hwoSev,
+    viz: hwoLevel >= 0 ? (
+      <PiSegmentedBar
+        width={70}
+        height={10}
+        cells={[
+          { color: PI_COLORS.GREEN, lit: hwoLevel === 0 },
+          { color: PI_COLORS.AMBER, lit: hwoLevel >= 1 },
+          { color: PI_COLORS.RED, lit: hwoLevel >= 2 },
+        ]}
+      />
+    ) : undefined,
   };
 
   // 06 Fuel (gasoline) + sparkline
@@ -202,16 +236,24 @@ const Pi = () => {
     value: stlfsi != null ? stlfsi.toFixed(2) : "—",
     sub: `${stressLabel} · stlfsi weekly`,
     sev: stressSev,
+    viz: <PiCenteredBar value={stlfsi} min={-2} max={2} sev={stressSev} width={70} />,
   };
 
   // 08 National Alerts
   const natFeatures = natAlerts.data || [];
   const natCount = natFeatures.length;
   const natStates = new Set<string>();
+  const natByEvent: Record<string, number> = {};
   natFeatures.forEach((f: any) => {
     const codes = (f.properties?.geocode?.SAME || []).map((c: string) => c.slice(0, 2));
     codes.forEach((c: string) => natStates.add(c));
+    const e = f.properties?.event;
+    if (e) natByEvent[e] = (natByEvent[e] || 0) + 1;
   });
+  const natTopEvents = Object.entries(natByEvent)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+  const natMaxEvent = natTopEvents[0]?.[1] || 1;
   const natSev: PiSeverity =
     natCount === 0 ? "clear" : natCount < 100 ? "clear" : natCount < 500 ? "watch" : "alert";
   const natTile = {
@@ -219,6 +261,14 @@ const Pi = () => {
     value: natCount.toLocaleString(),
     sub: `active us · ${natStates.size} states`,
     sev: natSev,
+    viz: natTopEvents.length > 0 ? (
+      <PiHeatStrip
+        width={70}
+        height={12}
+        cells={natTopEvents.map(([, c]) => ({ intensity: c / natMaxEvent }))}
+        baseColor={natSev === "alert" ? PI_COLORS.RED : natSev === "watch" ? PI_COLORS.AMBER : PI_COLORS.GREEN}
+      />
+    ) : undefined,
   };
 
   // 09 PJM Grid Load + sparkline
@@ -236,6 +286,7 @@ const Pi = () => {
     sub: gridPct != null ? `${gridPct.toFixed(0)}% of 7d peak` : "mw · pjm rto",
     sev: gridSev,
     spark: gridSeries.slice(-12),
+    viz: gridPct != null ? <PiFillBar pct={gridPct} sev={gridSev} width={70} /> : undefined,
   };
 
   // 10 Power Outages
@@ -250,6 +301,13 @@ const Pi = () => {
       : outageSeverity === "localized"
         ? "watch"
         : "clear";
+  const outageLevel = outageUnavail
+    ? -1
+    : outageSeverity === "widespread"
+      ? 2
+      : outageSeverity === "localized"
+        ? 1
+        : 0;
   const outagesTile = {
     label: "POWER OUTAGES · PA",
     value: outageUnavail ? "—" : outageCust != null ? outageCust.toLocaleString() : "0",
@@ -261,6 +319,17 @@ const Pi = () => {
           ? "localized · firstenergy"
           : "all clear · firstenergy",
     sev: outageSev,
+    viz: outageLevel >= 0 ? (
+      <PiSegmentedBar
+        width={70}
+        height={10}
+        cells={[
+          { color: PI_COLORS.GREEN, lit: outageLevel === 0 },
+          { color: PI_COLORS.AMBER, lit: outageLevel >= 1 },
+          { color: PI_COLORS.RED, lit: outageLevel >= 2 },
+        ]}
+      />
+    ) : undefined,
   };
 
   // 11 Conflict Pulse (wide) + sparkline
@@ -298,6 +367,13 @@ const Pi = () => {
   const conflictSpark: number[] = conflictData?.byRegion
     ? (Object.values(conflictData.byRegion) as number[]).slice(0, 12)
     : [];
+  // Region heat strip — top regions by article count
+  const conflictRegionEntries: [string, number][] = conflictData?.byRegion
+    ? (Object.entries(conflictData.byRegion as Record<string, number>) as [string, number][])
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6)
+    : [];
+  const conflictRegionMax = conflictRegionEntries[0]?.[1] || 1;
   const conflictTile = {
     label: "CONFLICT PULSE · 7D",
     value: conflictLabelTxt,
@@ -309,6 +385,14 @@ const Pi = () => {
     wide: true,
     spark: conflictSpark,
     bgImage: pipboy,
+    viz: conflictRegionEntries.length > 0 ? (
+      <PiHeatStrip
+        width={140}
+        height={14}
+        cells={conflictRegionEntries.map(([, c]) => ({ intensity: c / conflictRegionMax }))}
+        baseColor={conflictSev === "alert" ? PI_COLORS.RED : conflictSev === "watch" ? PI_COLORS.AMBER : PI_COLORS.GREEN}
+      />
+    ) : undefined,
   };
 
   // 12 Earthquakes
@@ -338,6 +422,18 @@ const Pi = () => {
         ? `${largestPlace.toLowerCase()}${largestHrsAgo != null ? ` · ${largestHrsAgo}h` : ""}`
         : `${quakesArr.length} events · usgs`,
     sev: quakeSev,
+    viz: (
+      <PiDial
+        value={largestMag}
+        min={0}
+        max={9}
+        zones={[
+          { from: 0, to: 4, color: PI_COLORS.GREEN },
+          { from: 4, to: 6, color: PI_COLORS.AMBER },
+          { from: 6, to: 9, color: PI_COLORS.RED },
+        ]}
+      />
+    ),
   };
 
   // 13 Headlines
@@ -377,6 +473,9 @@ const Pi = () => {
         ? `us traffic ${trafficDelta > 0 ? "+" : ""}${trafficDelta.toFixed(1)}% vs 7d`
         : "cloudflare radar",
     sev: internetSev,
+    viz: !internetUnconfigured && trafficDelta != null ? (
+      <PiCenteredBar value={trafficDelta} min={-30} max={30} sev={internetSev} width={70} />
+    ) : undefined,
   };
 
   // 15 Disasters (standard width — pulses on red)
@@ -389,11 +488,23 @@ const Pi = () => {
   ).length;
   const disasterSev: PiSeverity =
     redCount > 0 ? "alert" : orangeCount > 0 ? "watch" : "clear";
+  const greenCount = Math.max(0, gdacsArr.length - redCount - orangeCount);
   const disastersTile = {
     label: "DISASTERS · GLOBAL",
     value: String(gdacsArr.length),
     sub: `${redCount} red · ${orangeCount} orange · gdacs`,
     sev: disasterSev,
+    viz: gdacsArr.length > 0 ? (
+      <PiStackedBar
+        width={70}
+        height={10}
+        segments={[
+          { value: redCount, color: PI_COLORS.RED },
+          { value: orangeCount, color: PI_COLORS.AMBER },
+          { value: greenCount, color: PI_COLORS.GREEN },
+        ]}
+      />
+    ) : undefined,
   };
 
   // 16 Space Weather (Kp)
@@ -416,6 +527,16 @@ const Pi = () => {
     value: latestKp != null ? `Kp ${latestKp.toFixed(0)}` : "—",
     sub: `${kpLabel} · noaa swpc`,
     sev: kpSev,
+    viz: latestKp != null ? (
+      <PiSegmentedBar
+        width={90}
+        height={10}
+        cells={Array.from({ length: 9 }, (_, i) => ({
+          color: i < 4 ? PI_COLORS.GREEN : i < 6 ? PI_COLORS.AMBER : PI_COLORS.RED,
+          lit: i <= Math.round(latestKp),
+        }))}
+      />
+    ) : undefined,
   };
 
   // 17 System / Clock (wide)
@@ -455,6 +576,7 @@ const Pi = () => {
     spark?: number[];
     bgImage?: string;
     icon?: ReactNode;
+    viz?: ReactNode;
     num: string;
   }> = [
     // Row 1: Weather · Alerts(w) · Conflict(w) [pip-boy art]
@@ -645,6 +767,7 @@ const Pi = () => {
                 spark={t.spark}
                 bgImage={t.bgImage}
                 icon={t.icon}
+                viz={t.viz}
               />
             ))}
           </div>
