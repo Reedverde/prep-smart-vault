@@ -7,6 +7,7 @@ import { useEffect, useState, useMemo } from "react";
 import { format } from "date-fns";
 import { PublicTopNav } from "@/components/PublicTopNav";
 import { PiTile, type PiSeverity } from "@/components/PiTile";
+import pipboy from "@/assets/pipboy.jpg";
 import {
   useWeather,
   useLocalAlerts,
