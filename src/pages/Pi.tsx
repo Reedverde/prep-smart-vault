@@ -182,11 +182,23 @@ const Pi = () => {
         : hwoRisk === "clear"
           ? "clear"
           : "info";
+  const hwoLevel = hwoRisk === "high" ? 2 : hwoRisk === "elevated" || hwoRisk === "watch" ? 1 : hwoRisk === "clear" ? 0 : -1;
   const hwoTile = {
     label: "HAZARD OUTLOOK · 7D",
     value: hwoRisk ? hwoRisk.toUpperCase() : "—",
     sub: hwoData?.office ? `nws ${hwoData.office} · routine cycle` : "awaiting outlook",
     sev: hwoSev,
+    viz: hwoLevel >= 0 ? (
+      <PiSegmentedBar
+        width={70}
+        height={10}
+        cells={[
+          { color: PI_COLORS.GREEN, lit: hwoLevel === 0 },
+          { color: PI_COLORS.AMBER, lit: hwoLevel >= 1 },
+          { color: PI_COLORS.RED, lit: hwoLevel >= 2 },
+        ]}
+      />
+    ) : undefined,
   };
 
   // 06 Fuel (gasoline) + sparkline
