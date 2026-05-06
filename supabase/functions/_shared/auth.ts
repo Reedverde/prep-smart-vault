@@ -26,14 +26,21 @@ export const requireUser = async (req: Request): Promise<AuthResult> => {
 
   const token = authHeader.slice('Bearer '.length).trim();
 
-  // Allow anonymous kiosk access: if the bearer token matches the project's
-  // publishable/anon key, treat the caller as an unauthenticated public client.
-  // These endpoints only proxy public third-party data, so this is safe.
+  // Allow anonymous kiosk access: accept the project's publishable/anon key
+  // (either as the raw key or as a JWT whose role is "anon"). These endpoints
+  // only proxy public third-party data, so anonymous reads are safe.
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
   const publishableKey = Deno.env.get('SUPABASE_PUBLISHABLE_KEY') ?? '';
   if (token && (token === anonKey || token === publishableKey)) {
     return { ok: true, userId: 'anonymous' };
   }
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1] ?? ''));
+    if (payload?.role === 'anon') {
+      return { ok: true, userId: 'anonymous' };
+    }
+  } catch (_) { /* fall through to user check */ }
+
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
