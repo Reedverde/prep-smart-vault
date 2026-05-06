@@ -21,6 +21,8 @@ export type PiTileProps = {
   spark?: number[];
   /** Optional decorative background image URL (rendered faintly behind content) */
   bgImage?: string;
+  /** Optional decorative icon node (rendered top-right of the tile body) */
+  icon?: React.ReactNode;
 };
 
 const sevColorVar = (sev: PiSeverity): string => {
@@ -68,7 +70,7 @@ const buildSparkPoints = (data: number[]): string => {
     .join(" ");
 };
 
-export const PiTile = ({ label, value, sub, sev = "info", wide, num, spark, bgImage }: PiTileProps) => {
+export const PiTile = ({ label, value, sub, sev = "info", wide, num, spark, bgImage, icon }: PiTileProps) => {
   const color = sevColorVar(sev);
   const valueSize = wide ? 72 : 52;
   const valueWeight = wide ? 200 : 250;
@@ -114,6 +116,11 @@ export const PiTile = ({ label, value, sub, sev = "info", wide, num, spark, bgIm
           {label}
         </div>
         <div className="flex items-start gap-2 shrink-0">
+          {icon && (
+            <div style={{ color, lineHeight: 0 }} aria-hidden>
+              {icon}
+            </div>
+          )}
           {spark && spark.length > 1 && (
             <svg
               width={44}
