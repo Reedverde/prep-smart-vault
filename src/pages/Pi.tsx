@@ -608,21 +608,7 @@ const Pi = () => {
               />
             </div>
             <div>NODE 001 · {LOCATION.name} · LIVE</div>
-            <div className="flex items-center gap-3" style={{ color: "var(--pi-text)" }}>
-              <img
-                src={pipboy}
-                alt=""
-                title="STAT! VAULT-TEC APPROVED"
-                style={{
-                  height: 22,
-                  width: "auto",
-                  opacity: 0.75,
-                  mixBlendMode: "screen",
-                  filter: "drop-shadow(0 0 4px #7de38a)",
-                }}
-              />
-              <span>{headerClock}</span>
-            </div>
+            <div style={{ color: "var(--pi-text)" }}>{headerClock}</div>
           </div>
 
           {/* Tile grid */}
