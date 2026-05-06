@@ -473,6 +473,9 @@ const Pi = () => {
         ? `us traffic ${trafficDelta > 0 ? "+" : ""}${trafficDelta.toFixed(1)}% vs 7d`
         : "cloudflare radar",
     sev: internetSev,
+    viz: !internetUnconfigured && trafficDelta != null ? (
+      <PiCenteredBar value={trafficDelta} min={-30} max={30} sev={internetSev} width={70} />
+    ) : undefined,
   };
 
   // 15 Disasters (standard width — pulses on red)
