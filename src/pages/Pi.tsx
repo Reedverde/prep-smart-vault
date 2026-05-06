@@ -148,6 +148,19 @@ const Pi = () => {
     value: maxAqi != null ? String(maxAqi) : "—",
     sub: `AQI · ${aqiCat}`,
     sev: aqiSev,
+    viz: (
+      <PiDial
+        value={maxAqi}
+        min={0}
+        max={300}
+        zones={[
+          { from: 0, to: 50, color: PI_COLORS.GREEN },
+          { from: 50, to: 100, color: PI_COLORS.AMBER },
+          { from: 100, to: 150, color: "#ff8c42" },
+          { from: 150, to: 300, color: PI_COLORS.RED },
+        ]}
+      />
+    ),
   };
 
   // 04 Severe Radar — no live cell-count hook; show static "live" indicator.
