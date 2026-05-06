@@ -2,6 +2,8 @@
 // All styling uses scoped CSS variables (--pi-*) defined on the /pi root,
 // so colors don't leak into the rest of the app's design system.
 
+import type { ReactNode } from "react";
+
 export type PiSeverity = "clear" | "watch" | "alert" | "info";
 
 export type PiTileProps = {
@@ -22,7 +24,7 @@ export type PiTileProps = {
   /** Optional decorative background image URL (rendered faintly behind content) */
   bgImage?: string;
   /** Optional decorative icon node (rendered top-right of the tile body) */
-  icon?: React.ReactNode;
+  icon?: ReactNode;
 };
 
 const sevColorVar = (sev: PiSeverity): string => {
