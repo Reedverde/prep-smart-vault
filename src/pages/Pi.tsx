@@ -243,10 +243,17 @@ const Pi = () => {
   const natFeatures = natAlerts.data || [];
   const natCount = natFeatures.length;
   const natStates = new Set<string>();
+  const natByEvent: Record<string, number> = {};
   natFeatures.forEach((f: any) => {
     const codes = (f.properties?.geocode?.SAME || []).map((c: string) => c.slice(0, 2));
     codes.forEach((c: string) => natStates.add(c));
+    const e = f.properties?.event;
+    if (e) natByEvent[e] = (natByEvent[e] || 0) + 1;
   });
+  const natTopEvents = Object.entries(natByEvent)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+  const natMaxEvent = natTopEvents[0]?.[1] || 1;
   const natSev: PiSeverity =
     natCount === 0 ? "clear" : natCount < 100 ? "clear" : natCount < 500 ? "watch" : "alert";
   const natTile = {
@@ -254,6 +261,14 @@ const Pi = () => {
     value: natCount.toLocaleString(),
     sub: `active us · ${natStates.size} states`,
     sev: natSev,
+    viz: natTopEvents.length > 0 ? (
+      <PiHeatStrip
+        width={70}
+        height={12}
+        cells={natTopEvents.map(([, c]) => ({ intensity: c / natMaxEvent }))}
+        baseColor={natSev === "alert" ? PI_COLORS.RED : natSev === "watch" ? PI_COLORS.AMBER : PI_COLORS.GREEN}
+      />
+    ) : undefined,
   };
 
   // 09 PJM Grid Load + sparkline
