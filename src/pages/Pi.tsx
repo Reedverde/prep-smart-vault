@@ -527,6 +527,16 @@ const Pi = () => {
     value: latestKp != null ? `Kp ${latestKp.toFixed(0)}` : "—",
     sub: `${kpLabel} · noaa swpc`,
     sev: kpSev,
+    viz: latestKp != null ? (
+      <PiSegmentedBar
+        width={90}
+        height={10}
+        cells={Array.from({ length: 9 }, (_, i) => ({
+          color: i < 4 ? PI_COLORS.GREEN : i < 6 ? PI_COLORS.AMBER : PI_COLORS.RED,
+          lit: i <= Math.round(latestKp),
+        }))}
+      />
+    ) : undefined,
   };
 
   // 17 System / Clock (wide)
