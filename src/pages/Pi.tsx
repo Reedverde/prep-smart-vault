@@ -300,6 +300,7 @@ const Pi = () => {
     sev: conflictSev,
     wide: true,
     spark: conflictSpark,
+    bgImage: pipboy,
   };
 
   // 12 Earthquakes
