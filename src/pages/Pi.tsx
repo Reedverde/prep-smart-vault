@@ -767,6 +767,7 @@ const Pi = () => {
                 spark={t.spark}
                 bgImage={t.bgImage}
                 icon={t.icon}
+                viz={t.viz}
               />
             ))}
           </div>
