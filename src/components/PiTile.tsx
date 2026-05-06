@@ -25,6 +25,8 @@ export type PiTileProps = {
   bgImage?: string;
   /** Optional decorative icon node (rendered top-right of the tile body) */
   icon?: ReactNode;
+  /** Optional small visualization rendered just below the value */
+  viz?: ReactNode;
 };
 
 const sevColorVar = (sev: PiSeverity): string => {
