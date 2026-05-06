@@ -644,6 +644,7 @@ const Pi = () => {
                 num={t.num}
                 spark={t.spark}
                 bgImage={t.bgImage}
+                icon={t.icon}
               />
             ))}
           </div>
