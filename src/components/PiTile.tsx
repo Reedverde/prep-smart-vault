@@ -19,6 +19,8 @@ export type PiTileProps = {
   num?: string;
   /** Optional sparkline data points (last ~12 values, unnormalized) */
   spark?: number[];
+  /** Optional decorative background image URL (rendered faintly behind content) */
+  bgImage?: string;
 };
 
 const sevColorVar = (sev: PiSeverity): string => {
