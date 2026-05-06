@@ -300,6 +300,7 @@ const Pi = () => {
     sev: conflictSev,
     wide: true,
     spark: conflictSpark,
+    bgImage: pipboy,
   };
 
   // 12 Earthquakes
@@ -444,21 +445,26 @@ const Pi = () => {
     sev: PiSeverity;
     wide?: boolean;
     spark?: number[];
+    bgImage?: string;
     num: string;
   }> = [
+    // Row 1: Weather · Alerts(w) · Conflict(w) [pip-boy art]
     { ...weatherTile, num: "01" },
     { ...alertsTile, num: "02" },
-    { ...airTile, num: "03" },
-    { ...radarTile, num: "04" },
+    { ...conflictTile, num: "11" },
+    // Row 2
     { ...hwoTile, num: "05" },
     { ...fuelTile, num: "06" },
     { ...stressTile, num: "07" },
     { ...natTile, num: "08" },
     { ...gridTile, num: "09" },
+    // Row 3
     { ...outagesTile, num: "10" },
-    { ...conflictTile, num: "11" },
+    { ...airTile, num: "03" },
+    { ...radarTile, num: "04" },
     { ...quakesTile, num: "12" },
     { ...headlinesTile, num: "13" },
+    // Row 4
     { ...internetTile, num: "14" },
     { ...disastersTile, num: "15" },
     { ...spaceTile, num: "16" },
@@ -602,21 +608,7 @@ const Pi = () => {
               />
             </div>
             <div>NODE 001 · {LOCATION.name} · LIVE</div>
-            <div className="flex items-center gap-3" style={{ color: "var(--pi-text)" }}>
-              <img
-                src={pipboy}
-                alt=""
-                title="STAT! VAULT-TEC APPROVED"
-                style={{
-                  height: 22,
-                  width: "auto",
-                  opacity: 0.75,
-                  mixBlendMode: "screen",
-                  filter: "drop-shadow(0 0 4px #7de38a)",
-                }}
-              />
-              <span>{headerClock}</span>
-            </div>
+            <div style={{ color: "var(--pi-text)" }}>{headerClock}</div>
           </div>
 
           {/* Tile grid */}
@@ -642,6 +634,7 @@ const Pi = () => {
                 wide={t.wide}
                 num={t.num}
                 spark={t.spark}
+                bgImage={t.bgImage}
               />
             ))}
           </div>
