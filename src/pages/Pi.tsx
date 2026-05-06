@@ -3,7 +3,7 @@
 // (no edge function changes). 5×4 tile grid with 3 wide tiles + corner-bracketed
 // frame, scrolling ticker, and CRT scanline overlay — locked to mockup spec.
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, type ReactNode } from "react";
 import { format } from "date-fns";
 import { PublicTopNav } from "@/components/PublicTopNav";
 import { PiTile, type PiSeverity } from "@/components/PiTile";
@@ -454,7 +454,7 @@ const Pi = () => {
     wide?: boolean;
     spark?: number[];
     bgImage?: string;
-    icon?: React.ReactNode;
+    icon?: ReactNode;
     num: string;
   }> = [
     // Row 1: Weather · Alerts(w) · Conflict(w) [pip-boy art]
