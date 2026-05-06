@@ -1,0 +1,492 @@
+/* /pi HUD console — scoped tokens, keyframes, and chrome utilities.
+   All selectors live under .pi-root so nothing leaks to /dashboard or /live. */
+
+.pi-root {
+  --bg-deep: #020503;
+  --bg: #050a07;
+  --tile: #0a120d;
+  --tile-2: #0d1812;
+  --chrome: #1a2d1f;
+  --chrome-2: #2a4030;
+  --chrome-bright: #4a6a52;
+  --green: #8fff7a;
+  --green-deep: #4ad968;
+  --green-glow: rgba(143, 255, 122, 0.4);
+  --green-soft: rgba(143, 255, 122, 0.15);
+  --yellow: #ffd84d;
+  --yellow-glow: rgba(255, 216, 77, 0.4);
+  --orange: #ff9d3a;
+  --orange-glow: rgba(255, 157, 58, 0.4);
+  --red: #ff4d6d;
+  --red-glow: rgba(255, 77, 109, 0.5);
+  --purple: #b794ff;
+  --purple-glow: rgba(183, 148, 255, 0.4);
+  --blue: #5cc8ff;
+  --blue-glow: rgba(92, 200, 255, 0.4);
+  --text: #d8f5d2;
+  --dim: #6a8a70;
+  --faint: #2d4030;
+
+  position: fixed;
+  inset: 0;
+  height: 100vh;
+  width: 100vw;
+  background: var(--bg-deep);
+  color: var(--text);
+  font-family: "Rajdhani", system-ui, sans-serif;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============ Keyframes ============ */
+@keyframes pi-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.55; transform: scale(1.18); }
+}
+@keyframes pi-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+@keyframes pi-radarspin {
+  to { transform: rotate(360deg); }
+}
+@keyframes pi-pinpulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.4; transform: scale(1.6); }
+}
+@keyframes pi-alertpulse {
+  0%, 100% { box-shadow: inset 0 0 0 1px var(--red), inset 0 0 18px rgba(255,77,109,0.15); }
+  50%      { box-shadow: inset 0 0 0 1px var(--red), inset 0 0 28px rgba(255,77,109,0.45); }
+}
+@keyframes pi-tickermove {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ============ Frame chrome ============ */
+.pi-root .pi-frame {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin: 8px;
+  border: 1px solid var(--chrome-2);
+  background: var(--bg);
+}
+
+/* 4 green corner brackets — ::before / ::after for top-left/top-right,
+   <i> spans for bottom corners. */
+.pi-root .pi-frame::before,
+.pi-root .pi-frame::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+  filter: drop-shadow(0 0 4px var(--green-glow));
+  z-index: 3;
+}
+.pi-root .pi-frame::before {
+  top: -2px; left: -2px;
+  border-top: 2px solid var(--green);
+  border-left: 2px solid var(--green);
+}
+.pi-root .pi-frame::after {
+  top: -2px; right: -2px;
+  border-top: 2px solid var(--green);
+  border-right: 2px solid var(--green);
+}
+.pi-root .pi-corner-bl,
+.pi-root .pi-corner-br {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+  filter: drop-shadow(0 0 4px var(--green-glow));
+  z-index: 3;
+}
+.pi-root .pi-corner-bl {
+  bottom: -2px; left: -2px;
+  border-bottom: 2px solid var(--green);
+  border-left: 2px solid var(--green);
+}
+.pi-root .pi-corner-br {
+  bottom: -2px; right: -2px;
+  border-bottom: 2px solid var(--green);
+  border-right: 2px solid var(--green);
+}
+
+/* Scanline overlay — absolute inside .pi-root, not fixed. */
+.pi-root .pi-scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0 3px,
+    rgba(0, 0, 0, 0.18) 3px 4px
+  );
+}
+
+/* ============ Top strip ============ */
+.pi-root .pi-topstrip {
+  flex-shrink: 0;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--chrome);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--dim);
+  text-transform: uppercase;
+  gap: 12px;
+}
+.pi-root .pi-brand {
+  font-family: "Orbitron", sans-serif;
+  font-weight: 800;
+  font-size: 12px;
+  color: var(--green);
+  letter-spacing: 0.2em;
+  text-shadow: 0 0 8px var(--green-glow);
+}
+.pi-root .pi-glyph {
+  position: relative;
+  width: 16px; height: 16px;
+  border: 1px solid var(--green);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+}
+.pi-root .pi-glyph::before {
+  content: "";
+  width: 8px; height: 8px;
+  border: 1px solid var(--green);
+  border-radius: 50%;
+}
+.pi-root .pi-glyph::after {
+  content: "";
+  position: absolute;
+  width: 4px; height: 4px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: pi-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 6px var(--green-glow);
+}
+.pi-root .pi-cursor {
+  display: inline-block;
+  width: 8px; height: 14px;
+  background: var(--green);
+  margin-left: 6px;
+  animation: pi-blink 1s steps(2) infinite;
+  box-shadow: 0 0 6px var(--green-glow);
+  vertical-align: middle;
+}
+.pi-root .pi-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--green);
+}
+.pi-root .pi-live-dot {
+  width: 6px; height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: pi-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 6px var(--green-glow);
+}
+.pi-root .pi-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: var(--dim);
+}
+.pi-root .pi-meta .pi-clocknow { color: var(--text); }
+
+/* ============ Grid ============ */
+.pi-root .pi-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: 4px;
+  padding: 4px;
+}
+
+/* ============ Tile ============ */
+.pi-root .pi-tile {
+  position: relative;
+  background: linear-gradient(135deg, var(--tile), var(--bg));
+  border: 1px solid var(--chrome);
+  display: flex;
+  flex-direction: column;
+  padding: 6px 8px;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  font-family: "Rajdhani", sans-serif;
+}
+.pi-root .pi-tile-inner {
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(143, 255, 122, 0.06);
+  pointer-events: none;
+}
+/* 4 corner accents (8x8) */
+.pi-root .pi-tile-corner {
+  position: absolute;
+  width: 8px; height: 8px;
+  pointer-events: none;
+  filter: drop-shadow(0 0 3px var(--green-glow));
+}
+.pi-root .pi-tile-corner.tl { top: 1px; left: 1px; border-top: 1px solid var(--green); border-left: 1px solid var(--green); }
+.pi-root .pi-tile-corner.tr { top: 1px; right: 1px; border-top: 1px solid var(--green); border-right: 1px solid var(--green); }
+.pi-root .pi-tile-corner.bl { bottom: 1px; left: 1px; border-bottom: 1px solid var(--green); border-left: 1px solid var(--green); }
+.pi-root .pi-tile-corner.br { bottom: 1px; right: 1px; border-bottom: 1px solid var(--green); border-right: 1px solid var(--green); }
+
+.pi-root .pi-tile[data-sev="yellow"]  { border-color: var(--yellow); }
+.pi-root .pi-tile[data-sev="yellow"]  .pi-tile-corner { border-color: var(--yellow); filter: drop-shadow(0 0 3px var(--yellow-glow)); }
+.pi-root .pi-tile[data-sev="orange"]  { border-color: var(--orange); }
+.pi-root .pi-tile[data-sev="orange"]  .pi-tile-corner { border-color: var(--orange); filter: drop-shadow(0 0 3px var(--orange-glow)); }
+.pi-root .pi-tile[data-sev="red"]     { border-color: var(--red); animation: pi-alertpulse 3s ease-in-out infinite; background: linear-gradient(135deg, rgba(255,77,109,0.08), var(--bg)); }
+.pi-root .pi-tile[data-sev="red"]     .pi-tile-corner { border-color: var(--red); filter: drop-shadow(0 0 3px var(--red-glow)); }
+.pi-root .pi-tile[data-sev="purple"]  { border-color: var(--purple); }
+.pi-root .pi-tile[data-sev="purple"]  .pi-tile-corner { border-color: var(--purple); filter: drop-shadow(0 0 3px var(--purple-glow)); }
+.pi-root .pi-tile[data-sev="blue"]    { border-color: var(--blue); }
+.pi-root .pi-tile[data-sev="blue"]    .pi-tile-corner { border-color: var(--blue); filter: drop-shadow(0 0 3px var(--blue-glow)); }
+
+.pi-root .pi-tile-header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: "Orbitron", sans-serif;
+  font-weight: 600;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--dim);
+  text-transform: uppercase;
+}
+.pi-root .pi-tile-id {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.15em;
+  color: var(--faint);
+}
+.pi-root .pi-tile-body {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+.pi-root .pi-tile-footer {
+  position: relative;
+  z-index: 2;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  color: var(--dim);
+  letter-spacing: 0.05em;
+  text-transform: lowercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Severity-driven value color */
+.pi-root .pi-tile[data-sev="green"]  .pi-value-color { color: var(--green);  text-shadow: 0 0 8px var(--green-glow); }
+.pi-root .pi-tile[data-sev="yellow"] .pi-value-color { color: var(--yellow); text-shadow: 0 0 8px var(--yellow-glow); }
+.pi-root .pi-tile[data-sev="orange"] .pi-value-color { color: var(--orange); text-shadow: 0 0 8px var(--orange-glow); }
+.pi-root .pi-tile[data-sev="red"]    .pi-value-color { color: var(--red);    text-shadow: 0 0 10px var(--red-glow); }
+.pi-root .pi-tile[data-sev="purple"] .pi-value-color { color: var(--purple); text-shadow: 0 0 8px var(--purple-glow); }
+.pi-root .pi-tile[data-sev="blue"]   .pi-value-color { color: var(--blue);   text-shadow: 0 0 8px var(--blue-glow); }
+
+/* Severity utility */
+.pi-root .pi-c-green  { color: var(--green); }
+.pi-root .pi-c-yellow { color: var(--yellow); }
+.pi-root .pi-c-orange { color: var(--orange); }
+.pi-root .pi-c-red    { color: var(--red); }
+.pi-root .pi-c-purple { color: var(--purple); }
+.pi-root .pi-c-blue   { color: var(--blue); }
+.pi-root .pi-c-dim    { color: var(--dim); }
+
+.pi-root .pi-pill {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+/* ============ Big value text ============ */
+.pi-root .pi-big {
+  font-family: "Orbitron", sans-serif;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.pi-root .pi-big-clock {
+  font-family: "Orbitron", sans-serif;
+  font-weight: 900;
+  font-size: 56px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--green);
+  text-shadow: 0 0 12px var(--green-glow);
+}
+
+/* ============ Bottom ticker ============ */
+.pi-root .pi-ticker {
+  flex-shrink: 0;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  border-top: 1px solid var(--chrome);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--green);
+  overflow: hidden;
+}
+.pi-root .pi-ticker-rec {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  height: 100%;
+  color: var(--red);
+  border-right: 1px solid var(--chrome);
+}
+.pi-root .pi-ticker-rec-dot {
+  width: 8px; height: 8px;
+  background: var(--red);
+  border-radius: 50%;
+  animation: pi-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 6px var(--red-glow);
+}
+.pi-root .pi-ticker-scroll-wrap {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+}
+.pi-root .pi-ticker-scroll {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: pi-tickermove 60s linear infinite;
+  padding-left: 12px;
+}
+.pi-root .pi-ticker-uplink {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  height: 100%;
+  color: var(--green);
+  border-left: 1px solid var(--chrome);
+}
+.pi-root .pi-bars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 12px;
+}
+.pi-root .pi-bars span {
+  display: block;
+  width: 2px;
+  background: var(--green);
+  box-shadow: 0 0 4px var(--green-glow);
+}
+.pi-root .pi-bars span:nth-child(1) { height: 4px; }
+.pi-root .pi-bars span:nth-child(2) { height: 7px; }
+.pi-root .pi-bars span:nth-child(3) { height: 10px; }
+.pi-root .pi-bars span:nth-child(4) { height: 12px; }
+
+/* ============ Radar sweep (CSS-only) ============ */
+.pi-root .pi-radar {
+  position: relative;
+  width: 88px; height: 88px;
+  border-radius: 50%;
+  border: 1px solid var(--green);
+  box-shadow: inset 0 0 12px var(--green-soft);
+}
+.pi-root .pi-radar::before,
+.pi-root .pi-radar::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(143, 255, 122, 0.25);
+}
+.pi-root .pi-radar::before { inset: 12%; }
+.pi-root .pi-radar::after  { inset: 30%; }
+.pi-root .pi-radar-cross {
+  position: absolute; inset: 0; pointer-events: none;
+}
+.pi-root .pi-radar-cross::before,
+.pi-root .pi-radar-cross::after {
+  content: "";
+  position: absolute;
+  background: rgba(143, 255, 122, 0.25);
+}
+.pi-root .pi-radar-cross::before { top: 50%; left: 0; right: 0; height: 1px; }
+.pi-root .pi-radar-cross::after  { left: 50%; top: 0; bottom: 0; width: 1px; }
+.pi-root .pi-radar-sweep {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(143, 255, 122, 0.55) 30deg,
+    transparent 60deg,
+    transparent 360deg
+  );
+  animation: pi-radarspin 4s linear infinite;
+  mix-blend-mode: screen;
+}
+.pi-root .pi-radar-center {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 4px; height: 4px;
+  background: var(--green);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 6px var(--green-glow);
+}
+
+/* ============ Globe pins ============ */
+.pi-root .pi-globe-pin {
+  position: absolute;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+.pi-root .pi-globe-pin::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: inherit;
+  opacity: 0.5;
+  animation: pi-pinpulse 2s ease-in-out infinite;
+}
