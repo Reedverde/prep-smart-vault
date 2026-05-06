@@ -286,6 +286,7 @@ const Pi = () => {
     sub: gridPct != null ? `${gridPct.toFixed(0)}% of 7d peak` : "mw · pjm rto",
     sev: gridSev,
     spark: gridSeries.slice(-12),
+    viz: gridPct != null ? <PiFillBar pct={gridPct} sev={gridSev} width={70} /> : undefined,
   };
 
   // 10 Power Outages
