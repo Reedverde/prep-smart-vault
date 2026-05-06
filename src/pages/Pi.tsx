@@ -236,6 +236,7 @@ const Pi = () => {
     value: stlfsi != null ? stlfsi.toFixed(2) : "—",
     sub: `${stressLabel} · stlfsi weekly`,
     sev: stressSev,
+    viz: <PiCenteredBar value={stlfsi} min={-2} max={2} sev={stressSev} width={70} />,
   };
 
   // 08 National Alerts
