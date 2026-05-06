@@ -94,9 +94,9 @@ export const PiTile = ({ label, value, sub, sev = "info", wide, num, spark, bgIm
             backgroundSize: "contain",
             backgroundRepeat: "no-repeat",
             backgroundPosition: "right center",
-            opacity: 0.18,
+            opacity: 0.55,
             mixBlendMode: "screen",
-            filter: "drop-shadow(0 0 6px #7de38a)",
+            filter: "brightness(1.4) drop-shadow(0 0 10px #7de38a)",
           }}
         />
       )}
