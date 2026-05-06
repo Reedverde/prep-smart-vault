@@ -1,6 +1,8 @@
 import { Panel, StatBox, ContextBox } from "@/components/Panel";
 import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo } from "@/components/PanelKit";
 import { useWeather } from "@/hooks/useDataSources";
+import { WeatherIcon, iconForForecast } from "@/components/WeatherIcon";
+import { MoonBadge } from "@/components/MoonBadge";
 
 const COMPASS = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
 const degToCompass = (deg: number | null | undefined) => {
@@ -56,6 +58,22 @@ export const WeatherPanel = ({
         <PanelError message="Could not load NWS forecast" onRetry={() => refetch()} />
       ) : (
         <div className="space-y-4">
+          {/* Pip-Boy weather icon + moon phase row */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-accent">
+              <WeatherIcon
+                variant={iconForForecast(
+                  data.observed?.shortForecast || data.period.shortForecast,
+                  data.period.isDaytime ?? true,
+                )}
+                size={64}
+              />
+            </div>
+            <div className="text-accent">
+              <MoonBadge size={48} />
+            </div>
+          </div>
+
           {/* Big temp + condition (observed when available, else forecast period) */}
           <div className="flex items-baseline gap-3">
             <span className="font-mono text-5xl md:text-6xl font-semibold text-foreground tabular-nums">
