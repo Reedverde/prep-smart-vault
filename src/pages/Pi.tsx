@@ -301,6 +301,13 @@ const Pi = () => {
       : outageSeverity === "localized"
         ? "watch"
         : "clear";
+  const outageLevel = outageUnavail
+    ? -1
+    : outageSeverity === "widespread"
+      ? 2
+      : outageSeverity === "localized"
+        ? 1
+        : 0;
   const outagesTile = {
     label: "POWER OUTAGES · PA",
     value: outageUnavail ? "—" : outageCust != null ? outageCust.toLocaleString() : "0",
@@ -312,6 +319,17 @@ const Pi = () => {
           ? "localized · firstenergy"
           : "all clear · firstenergy",
     sev: outageSev,
+    viz: outageLevel >= 0 ? (
+      <PiSegmentedBar
+        width={70}
+        height={10}
+        cells={[
+          { color: PI_COLORS.GREEN, lit: outageLevel === 0 },
+          { color: PI_COLORS.AMBER, lit: outageLevel >= 1 },
+          { color: PI_COLORS.RED, lit: outageLevel >= 2 },
+        ]}
+      />
+    ) : undefined,
   };
 
   // 11 Conflict Pulse (wide) + sparkline
