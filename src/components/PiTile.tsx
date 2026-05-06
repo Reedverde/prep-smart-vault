@@ -169,6 +169,13 @@ export const PiTile = ({ label, value, sub, sev = "info", wide, num, spark, bgIm
         {value}
       </div>
 
+      {/* Optional viz strip */}
+      {viz && (
+        <div className="mt-2" style={{ color, lineHeight: 0 }}>
+          {viz}
+        </div>
+      )}
+
       {/* Sub-line */}
       {sub && (
         <div
