@@ -227,9 +227,12 @@ Deno.serve(async (req) => {
       });
     }
     console.error('gdelt-headlines error:', err);
-    return new Response(
-      JSON.stringify({ error: 'internal_error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-    );
+    const emptyPayload = { items: [], fetchedAt: new Date().toISOString(), degraded: true };
+    // Short-cache so we retry sooner than the normal 5-min TTL.
+    cached = { at: Date.now() - (CACHE_TTL_MS - 60_000), payload: emptyPayload };
+    return new Response(JSON.stringify(emptyPayload), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'ERROR' },
+    });
   }
 });
