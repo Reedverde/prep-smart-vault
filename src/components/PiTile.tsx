@@ -68,7 +68,7 @@ const buildSparkPoints = (data: number[]): string => {
     .join(" ");
 };
 
-export const PiTile = ({ label, value, sub, sev = "info", wide, num, spark }: PiTileProps) => {
+export const PiTile = ({ label, value, sub, sev = "info", wide, num, spark, bgImage }: PiTileProps) => {
   const color = sevColorVar(sev);
   const valueSize = wide ? 72 : 52;
   const valueWeight = wide ? 200 : 250;
@@ -85,6 +85,21 @@ export const PiTile = ({ label, value, sub, sev = "info", wide, num, spark }: Pi
         animation: sev === "alert" ? "pi-alert-pulse 4s ease-in-out infinite" : undefined,
       }}
     >
+      {bgImage && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage: `url(${bgImage})`,
+            backgroundSize: "contain",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "right center",
+            opacity: 0.18,
+            mixBlendMode: "screen",
+            filter: "drop-shadow(0 0 6px #7de38a)",
+          }}
+        />
+      )}
       {/* Top row: label + slot number */}
       <div className="flex items-start justify-between gap-2">
         <div
