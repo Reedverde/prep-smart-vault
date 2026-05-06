@@ -367,6 +367,13 @@ const Pi = () => {
   const conflictSpark: number[] = conflictData?.byRegion
     ? (Object.values(conflictData.byRegion) as number[]).slice(0, 12)
     : [];
+  // Region heat strip — top regions by article count
+  const conflictRegionEntries: [string, number][] = conflictData?.byRegion
+    ? (Object.entries(conflictData.byRegion as Record<string, number>) as [string, number][])
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6)
+    : [];
+  const conflictRegionMax = conflictRegionEntries[0]?.[1] || 1;
   const conflictTile = {
     label: "CONFLICT PULSE · 7D",
     value: conflictLabelTxt,
@@ -378,6 +385,14 @@ const Pi = () => {
     wide: true,
     spark: conflictSpark,
     bgImage: pipboy,
+    viz: conflictRegionEntries.length > 0 ? (
+      <PiHeatStrip
+        width={140}
+        height={14}
+        cells={conflictRegionEntries.map(([, c]) => ({ intensity: c / conflictRegionMax }))}
+        baseColor={conflictSev === "alert" ? PI_COLORS.RED : conflictSev === "watch" ? PI_COLORS.AMBER : PI_COLORS.GREEN}
+      />
+    ) : undefined,
   };
 
   // 12 Earthquakes
