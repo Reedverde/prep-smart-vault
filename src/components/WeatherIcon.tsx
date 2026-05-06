@@ -2,6 +2,8 @@
 // the parent decides the phosphor hue. Optional dotted grid background to
 // match the CRT aesthetic.
 
+import type { ReactNode } from "react";
+
 export type WeatherVariant =
   | "sun"
   | "clear-night"
@@ -156,7 +158,7 @@ const Wind = () => (
   </g>
 );
 
-const VARIANT_MAP: Record<WeatherVariant, React.ReactNode> = {
+const VARIANT_MAP: Record<WeatherVariant, ReactNode> = {
   sun: <Sun />,
   "clear-night": <Moon />,
   "partly-cloudy": <PartlyCloudy />,
