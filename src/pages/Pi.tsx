@@ -576,6 +576,7 @@ const Pi = () => {
     spark?: number[];
     bgImage?: string;
     icon?: ReactNode;
+    viz?: ReactNode;
     num: string;
   }> = [
     // Row 1: Weather · Alerts(w) · Conflict(w) [pip-boy art]
