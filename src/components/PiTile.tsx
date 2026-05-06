@@ -31,7 +31,7 @@ const sevColorVar = (sev: PiSeverity): string => {
       return "var(--pi-green)";
     case "info":
     default:
-      return "var(--pi-text-faint)";
+      return "var(--pi-green)";
   }
 };
 

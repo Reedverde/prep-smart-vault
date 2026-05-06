@@ -635,10 +635,10 @@ const Pi = () => {
           <div
             className="flex items-center shrink-0"
             style={{
-              height: 28,
+              height: 44,
               borderTop: "1px solid var(--pi-border)",
-              fontSize: 10,
-              letterSpacing: "0.2em",
+              fontSize: 14,
+              letterSpacing: "0.15em",
               textTransform: "uppercase",
               color: "var(--pi-text-dim)",
               fontWeight: 500,
