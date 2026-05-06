@@ -422,6 +422,18 @@ const Pi = () => {
         ? `${largestPlace.toLowerCase()}${largestHrsAgo != null ? ` · ${largestHrsAgo}h` : ""}`
         : `${quakesArr.length} events · usgs`,
     sev: quakeSev,
+    viz: (
+      <PiDial
+        value={largestMag}
+        min={0}
+        max={9}
+        zones={[
+          { from: 0, to: 4, color: PI_COLORS.GREEN },
+          { from: 4, to: 6, color: PI_COLORS.AMBER },
+          { from: 6, to: 9, color: PI_COLORS.RED },
+        ]}
+      />
+    ),
   };
 
   // 13 Headlines
