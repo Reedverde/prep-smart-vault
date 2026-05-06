@@ -8,6 +8,15 @@ import { format } from "date-fns";
 import { PublicTopNav } from "@/components/PublicTopNav";
 import { PiTile, type PiSeverity } from "@/components/PiTile";
 import { WeatherIcon, iconForForecast } from "@/components/WeatherIcon";
+import {
+  PiDial,
+  PiSegmentedBar,
+  PiCenteredBar,
+  PiFillBar,
+  PiStackedBar,
+  PiHeatStrip,
+  PI_COLORS,
+} from "@/components/PiViz";
 import { getMoonPhase } from "@/lib/moonPhase";
 import pipboy from "@/assets/pipboy.jpg";
 import {
