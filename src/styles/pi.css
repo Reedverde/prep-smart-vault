@@ -355,12 +355,12 @@
 }
 .pi-root .pi-big-clock .d {
   display: inline-block;
-  width: 0.62ch;
+  width: 1ch;
   text-align: center;
 }
 .pi-root .pi-big-clock .s {
   display: inline-block;
-  width: 0.35ch;
+  width: 0.5ch;
   text-align: center;
 }
 
