@@ -19,6 +19,7 @@ import { EnergyCostsPanel } from "@/components/panels/EnergyCostsPanel";
 import { FinancialStressPanel } from "@/components/panels/FinancialStressPanel";
 import { PowerOutagesPanel } from "@/components/panels/PowerOutagesPanel";
 import { InternetHealthPanel } from "@/components/panels/InternetHealthPanel";
+import { MoonPhasePanel } from "@/components/panels/MoonPhasePanel";
 
 // Public read-only dashboard. No auth required. Uses fixed default location.
 const PUBLIC_SETTINGS = {
