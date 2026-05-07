@@ -366,7 +366,7 @@ const Pi = () => {
             footer={`${cond.toLowerCase()} · ${windMph != null ? `${windMph}mph w` : "—"} · feels ${tempF != null ? Math.round(tempF) : "—"}°`}
             body={
               <>
-                <PiWeatherIcon size={42} />
+                <PiWeatherIcon size={72} />
                 <Big size={32} color="var(--green)" glow="var(--green-glow)">
                   {tempF != null ? `${Math.round(tempF)}°` : "—"}
                 </Big>
