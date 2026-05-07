@@ -271,6 +271,23 @@ const Pi = () => {
     timeZone: LOCATION.timezone, timeZoneName: "short",
   }).formatToParts(now).find((p) => p.type === "timeZoneName")?.value ?? "";
 
+  // Moon (computed locally, refresh hourly via clock tick is fine)
+  const moonInfo = useMemo(() => {
+    const d = new Date();
+    return {
+      phase: getMoonPhase(d),
+      times: getMoonTimes(d, LOCATION.lat, LOCATION.lng),
+    };
+  }, [Math.floor(now.getTime() / (60 * 60 * 1000))]);
+  const moonRiseStr = moonInfo.times.alwaysUp
+    ? "UP"
+    : moonInfo.times.alwaysDown
+    ? "DOWN"
+    : moonInfo.times.rise
+    ? format(moonInfo.times.rise, "HH:mm")
+    : "—";
+  const moonSetStr = moonInfo.times.set ? format(moonInfo.times.set, "HH:mm") : "—";
+
   // ============ Ticker text ============
   const ticker = useMemo(() => {
     const segs = [
