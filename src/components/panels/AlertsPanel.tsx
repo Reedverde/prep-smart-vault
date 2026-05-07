@@ -185,7 +185,7 @@ export const AlertsPanel = ({
           <p className="font-mono text-[10px] text-dim">All clear for this area</p>
         </div>
       ) : (
-        <div className="max-h-[640px] overflow-y-auto scroll-thin -mr-1 pr-1 space-y-2">
+        <div className="max-h-[320px] overflow-y-auto scroll-thin -mr-1 pr-1 space-y-2">
           {/* Active alerts */}
           {active.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-6 gap-2 text-center">

@@ -5,6 +5,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { format } from "date-fns";
 import "@/styles/pi.css";
+import { getMoonPhase } from "@/lib/moonPhase";
+import { getMoonTimes } from "@/lib/moonTimes";
 import { PiTile, type PiSeverity } from "@/components/PiTile";
 import {
   PiWeatherIcon,
@@ -67,6 +69,36 @@ const Big = ({ size, color, glow, children }: { size: number; color: string; glo
     {children}
   </span>
 );
+
+// Inline moon glyph for the kiosk tile — geometric lit fraction matching MoonBadge.
+const PiMoon = ({ size = 48, illumination, waxing }: { size?: number; illumination: number; waxing: boolean }) => {
+  const r = 22, cx = 32, cy = 32;
+  const f = illumination / 100;
+  const t = (illumination / 100) * Math.PI; // for ellipseRx use cycle angle approx
+  // Recompute via phase fraction would need phase; approximate using illumination only:
+  const ellipseRx = Math.abs(1 - 2 * f) * r;
+  const litSide = waxing ? 1 : -1;
+  let d = "";
+  if (f >= 0.99) {
+    d = `M ${cx - r} ${cy} A ${r} ${r} 0 1 1 ${cx + r} ${cy} A ${r} ${r} 0 1 1 ${cx - r} ${cy} Z`;
+  } else if (f <= 0.01) {
+    d = "";
+  } else if (f > 0.5) {
+    const sweepInner = waxing ? 0 : 1;
+    d = `M ${cx} ${cy - r} A ${r} ${r} 0 0 ${litSide > 0 ? 1 : 0} ${cx} ${cy + r} A ${ellipseRx} ${r} 0 0 ${sweepInner} ${cx} ${cy - r} Z`;
+  } else {
+    const sweepOuter = waxing ? 1 : 0;
+    const sweepInner = waxing ? 0 : 1;
+    d = `M ${cx} ${cy - r} A ${r} ${r} 0 0 ${sweepOuter} ${cx} ${cy + r} A ${ellipseRx} ${r} 0 0 ${sweepInner} ${cx} ${cy - r} Z`;
+  }
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" stroke="currentColor" fill="none" aria-hidden
+      style={{ filter: "drop-shadow(0 0 6px currentColor)" }}>
+      <circle cx={cx} cy={cy} r={r} stroke="currentColor" strokeOpacity="0.5" strokeWidth="1.5" />
+      {d && <path d={d} fill="currentColor" fillOpacity="0.9" stroke="none" />}
+    </svg>
+  );
+};
 
 const Pi = () => {
   const [now, setNow] = useState(() => new Date());
@@ -269,6 +301,23 @@ const Pi = () => {
     timeZone: LOCATION.timezone, timeZoneName: "short",
   }).formatToParts(now).find((p) => p.type === "timeZoneName")?.value ?? "";
 
+  // Moon (computed locally, refresh hourly via clock tick is fine)
+  const moonInfo = useMemo(() => {
+    const d = new Date();
+    return {
+      phase: getMoonPhase(d),
+      times: getMoonTimes(d, LOCATION.lat, LOCATION.lng),
+    };
+  }, [Math.floor(now.getTime() / (60 * 60 * 1000))]);
+  const moonRiseStr = moonInfo.times.alwaysUp
+    ? "UP"
+    : moonInfo.times.alwaysDown
+    ? "DOWN"
+    : moonInfo.times.rise
+    ? format(moonInfo.times.rise, "HH:mm")
+    : "—";
+  const moonSetStr = moonInfo.times.set ? format(moonInfo.times.set, "HH:mm") : "—";
+
   // ============ Ticker text ============
   const ticker = useMemo(() => {
     const segs = [
@@ -323,20 +372,31 @@ const Pi = () => {
               </>
             }
           />
-          <PiTile label="NWS ACTIVE ALERTS · LOCAL" num="02" wide sev={alertsSev}
-            footer="no active warnings · forecast office monitoring"
+          <PiTile label="ALERTS · LOCAL" num="02" sev={alertsSev}
+            footer={alertsCount === 0 ? "no active warnings" : `${alertsCount} active · ${officeCode}`}
             body={
-              <div style={{ display: "flex", alignItems: "center", gap: 16, width: "100%", justifyContent: "center" }}>
-                <PiShield size={56} count={alertsCount}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center" }}>
+                <PiShield size={44} count={alertsCount}
                   color={alertsSev === "red" ? "var(--red)" : alertsSev === "yellow" ? "var(--yellow)" : "var(--green)"} />
-                <table style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "var(--dim)", letterSpacing: "0.1em", borderSpacing: "10px 1px" }}>
+                <table style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "var(--dim)", letterSpacing: "0.08em", borderSpacing: "6px 0" }}>
                   <tbody>
-                    <tr><td>SEVERE</td><td className="pi-c-red" style={{ textAlign: "right" }}>{sevSevere}</td></tr>
-                    <tr><td>MODERATE</td><td className="pi-c-yellow" style={{ textAlign: "right" }}>{sevModerate}</td></tr>
-                    <tr><td>MINOR</td><td className="pi-c-green" style={{ textAlign: "right" }}>{sevMinor}</td></tr>
-                    <tr><td>OFFICE</td><td className="pi-c-green" style={{ textAlign: "right" }}>{officeCode}</td></tr>
+                    <tr><td>SEV</td><td className="pi-c-red" style={{ textAlign: "right" }}>{sevSevere}</td></tr>
+                    <tr><td>MOD</td><td className="pi-c-yellow" style={{ textAlign: "right" }}>{sevModerate}</td></tr>
+                    <tr><td>MIN</td><td className="pi-c-green" style={{ textAlign: "right" }}>{sevMinor}</td></tr>
                   </tbody>
                 </table>
+              </div>
+            }
+          />
+          <PiTile label="MOON" num="02b" sev="blue"
+            footer={`rise ${moonRiseStr} · set ${moonSetStr}`}
+            body={
+              <div style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--blue)" }}>
+                <PiMoon size={48} illumination={moonInfo.phase.illumination} waxing={moonInfo.phase.waxing} />
+                <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, lineHeight: 1.4, letterSpacing: "0.08em" }}>
+                  <div style={{ color: "var(--fg)" }}>{moonInfo.phase.name.toUpperCase()}</div>
+                  <div style={{ color: "var(--dim)" }} className="tabular-nums">{moonInfo.phase.illumination}% LIT</div>
+                </div>
               </div>
             }
           />
