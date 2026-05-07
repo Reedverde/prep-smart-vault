@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import "@/styles/pi.css";
 import { getMoonPhase } from "@/lib/moonPhase";
 import { getMoonTimes } from "@/lib/moonTimes";
+import piClockBg from "@/assets/pi-clock-bg.jpg";
 import { PiTile, type PiSeverity } from "@/components/PiTile";
 import {
   PiWeatherIcon,
