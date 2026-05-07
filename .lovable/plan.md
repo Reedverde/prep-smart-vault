@@ -1,51 +1,29 @@
 ## Goal
+Stop the big `SYSTEM :: CLOCK` digits from shifting horizontally every tick. Right now `22:20:45` is rendered in Orbitron, which is a proportional font — each digit has a different width, so the whole string nudges left/right as the seconds change.
 
-Shrink the **NWS Active Alerts · Local** panel and place a new **Moon Phase** panel beside it, sharing the middle column of the LOCAL row. Weather and Air Quality stay unchanged.
+## Approach
+Render the time with **fixed-width digit slots** so every character occupies the same horizontal space.
 
-## Layout change (Live + Pi)
+Two viable options:
 
-LOCAL row stays `xl:grid-cols-3`, but the middle slot becomes a vertical stack:
+1. **Tabular figures (lightest touch)** — add `font-variant-numeric: tabular-nums; font-feature-settings: "tnum";` to `.pi-big-clock`. Works only if Orbitron's webfont actually ships tabular figures. If it doesn't, digits will still be proportional.
 
-```text
-┌───────────┬─────────────────┬───────────┐
-│  Weather  │  Alerts (top)   │   Air     │
-│           │  Moon  (bottom) │  Quality  │
-└───────────┴─────────────────┴───────────┘
-```
+2. **Per-character fixed slot (guaranteed)** — change the clock render to wrap each character in a `<span>` with a fixed `inline-block` width (e.g. `0.62ch` for digits, `0.35ch` for the `:` separator). This is independent of the font and 100% prevents jitter while keeping the Orbitron look.
 
-- Wrap `<AlertsPanel>` and a new `<MoonPhasePanel>` in a `flex flex-col gap-4` container so they share one grid cell and split the height.
-- Alerts panel gets a tighter max-height (≈ 320 px instead of 640) so the Moon panel has room.
-- On mobile/tablet (below `xl`) the two simply stack like the rest of the panels — no special handling needed.
+Recommended: do **both** — add `tabular-nums` for free, and also wrap the digits in fixed slots so it works regardless of font support.
 
-## New component: `src/components/panels/MoonPhasePanel.tsx`
+## Changes
 
-Uses the existing `Panel` chrome and the existing `MoonBadge` SVG. Shows:
+**`src/styles/pi.css`** — `.pi-big-clock`:
+- add `font-variant-numeric: tabular-nums;`
+- add `font-feature-settings: "tnum";`
 
-- Large `MoonBadge` (size ≈ 96) with phase name + % illuminated.
-- **Tonight's moonrise / moonset** for the configured lat/lng (local time, formatted `h:mm a`).
-- Days until next **Full Moon** and next **New Moon** (small dim line, useful filler context).
-- Standard `UpdatedAgo` + `InfoTip` ("Geocentric phase. Rise/set times computed locally — no network call.").
+**New CSS** — `.pi-big-clock .d` (digit slot) and `.pi-big-clock .s` (separator slot):
+- `.d` → `display: inline-block; width: 0.62ch; text-align: center;`
+- `.s` → `display: inline-block; width: 0.35ch; text-align: center;`
 
-## Moon rise/set calculation
-
-Add a small pure helper `src/lib/moonTimes.ts` (no new deps). Algorithm:
-
-- Iterate the moon's altitude every 10 min over a 24 h window centered on local midnight using a Meeus-based moon position (RA/Dec → altitude using observer lat/lng/LST).
-- Detect zero-crossings of `(altitude − refraction)` to find rise (negative→positive) and set (positive→negative).
-- Return `{ rise: Date | null, set: Date | null, alwaysUp, alwaysDown }`.
-
-Accuracy ≈ ±2 min, fully offline, ~80 lines. Avoids adding `suncalc` so the bundle stays clean and the Pi-offline guarantee holds.
-
-## Files touched
-
-- **new** `src/lib/moonTimes.ts` — moon rise/set calc
-- **new** `src/components/panels/MoonPhasePanel.tsx` — panel using `MoonBadge` + rise/set
-- **edit** `src/pages/Live.tsx` — restructure LOCAL group to stack Alerts + Moon in middle column
-- **edit** `src/pages/Pi.tsx` — mirror the same change so the kiosk view matches
-- **edit** `src/components/panels/AlertsPanel.tsx` — reduce inner `max-h-[640px]` to `max-h-[320px]` so the shared column fits both panels evenly
+**`src/pages/Pi.tsx`** (line 607) — replace `{clockStr}` with a small inline render that splits `clockStr` into characters and wraps digits in `<span class="d">` and `:` in `<span class="s">`.
 
 ## Out of scope
-
-- No backend / edge function work (calculation is local).
-- No changes to other rows or panels.
-- No new memory entry needed (purely a visual rearrangement of existing dashboard panels).
+- The smaller `pi-clocknow` line in the meta header (also Orbitron-ish but much smaller; can apply the same fix later if it's noticeable).
+- No changes to time format, font family, color, or background.

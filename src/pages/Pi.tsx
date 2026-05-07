@@ -604,7 +604,9 @@ const Pi = () => {
             footer={`all services nominal · uptime ${errCount === 0 ? "ok" : `${errCount} feeds down`}`}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, width: "100%" }}>
-                <span className="pi-big-clock">{clockStr}</span>
+                <span className="pi-big-clock">{clockStr.split("").map((c, i) => (
+                  <span key={i} className={c === ":" ? "s" : "d"}>{c}</span>
+                ))}</span>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <span className="pi-pill pi-c-green">● SCANNER LIVE</span>
                   <span className="pi-pill pi-c-green">● SYSTEM OK</span>
