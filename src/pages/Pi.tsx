@@ -5,6 +5,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { format } from "date-fns";
 import "@/styles/pi.css";
+import { getMoonPhase } from "@/lib/moonPhase";
+import { getMoonTimes } from "@/lib/moonTimes";
 import { PiTile, type PiSeverity } from "@/components/PiTile";
 import {
   PiWeatherIcon,
