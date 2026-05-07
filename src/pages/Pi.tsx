@@ -600,7 +600,7 @@ const Pi = () => {
               </div>
             }
           />
-          <PiTile label="SYSTEM :: CLOCK" num="17" wide sev="green"
+          <PiTile label="SYSTEM :: CLOCK" num="17" wide sev="green" bgImage={piClockBg}
             footer={`all services nominal · uptime ${errCount === 0 ? "ok" : `${errCount} feeds down`}`}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, width: "100%" }}>
