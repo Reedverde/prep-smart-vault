@@ -367,7 +367,7 @@ const Pi = () => {
             body={
               <>
                 <PiWeatherIcon size={72} />
-                <Big size={32} color="var(--green)" glow="var(--green-glow)">
+                <Big size={42} color="var(--green)" glow="var(--green-glow)">
                   {tempF != null ? `${Math.round(tempF)}°` : "—"}
                 </Big>
               </>
@@ -441,7 +441,7 @@ const Pi = () => {
             footer={`padd 1b · weekly · eia`}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, width: "100%" }}>
-                <Big size={28} color="var(--green)" glow="var(--green-glow)">
+                <Big size={36} color="var(--green)" glow="var(--green-glow)">
                   {fuelLatest != null ? `$${fuelLatest.toFixed(2)}` : "—"}
                 </Big>
                 <PiGradBar pct={fuelPct ?? 0} width={140} height={9} redlinePct={80} />
@@ -473,7 +473,7 @@ const Pi = () => {
             footer={`${natStateCount} states · top: ${natTopStates || "—"}`}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", gap: 4 }}>
-                <Big size={26} color={natSev === "red" ? "var(--red)" : "var(--yellow)"}
+                <Big size={34} color={natSev === "red" ? "var(--red)" : "var(--yellow)"}
                   glow={natSev === "red" ? "var(--red-glow)" : "var(--yellow-glow)"}>
                   {natCount.toLocaleString()}
                 </Big>
@@ -487,10 +487,10 @@ const Pi = () => {
             footer={`pjm · ${gridSev === "red" ? "critical" : gridSev === "yellow" ? "elevated" : "normal"}`}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", gap: 4 }}>
-                <Big size={26} color={gridSev === "red" ? "var(--red)" : "var(--yellow)"}
+                <Big size={34} color={gridSev === "red" ? "var(--red)" : "var(--yellow)"}
                   glow={gridSev === "red" ? "var(--red-glow)" : "var(--yellow-glow)"}>
                   {gridDemand ? `${(gridDemand / 1000).toFixed(1)}k` : "—"}
-                  <span style={{ fontSize: 11, color: "var(--dim)", marginLeft: 4, fontWeight: 400 }}>MW</span>
+                  <span style={{ fontSize: 14, color: "var(--dim)", marginLeft: 4, fontWeight: 400 }}>MW</span>
                 </Big>
                 <PiGradBar pct={gridPct ?? 0} width={140} height={9} redlinePct={92} />
                 <div style={{ display: "flex", justifyContent: "space-between", width: 140, fontFamily: "JetBrains Mono, monospace", fontSize: 8, color: "var(--dim)" }}>
@@ -507,7 +507,7 @@ const Pi = () => {
             footer={`${outageSeverity || "all clear"} · firstenergy`}
             body={
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <Big size={32} color="var(--green)" glow="var(--green-glow)">
+                <Big size={42} color="var(--green)" glow="var(--green-glow)">
                   {outageCust}
                 </Big>
                 <div style={{ display: "flex", gap: 4 }}>
@@ -529,7 +529,7 @@ const Pi = () => {
               <div style={{ display: "flex", flexDirection: "column", width: "100%", gap: 4 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 4px" }}>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                    <Big size={32} color="var(--red)" glow="var(--red-glow)">
+                    <Big size={42} color="var(--red)" glow="var(--red-glow)">
                       {conflictLabelTxt}
                     </Big>
                     {conflictDelta != null && (
@@ -552,7 +552,7 @@ const Pi = () => {
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                 <PiQuakeProfile magnitude={largestMag ?? 0} width={120} height={56}
                   color={quakeSev === "red" ? "var(--red)" : quakeSev === "yellow" ? "var(--yellow)" : "var(--green)"} />
-                <Big size={22} color={quakeSev === "red" ? "var(--red)" : quakeSev === "yellow" ? "var(--yellow)" : "var(--green)"}
+                <Big size={30} color={quakeSev === "red" ? "var(--red)" : quakeSev === "yellow" ? "var(--yellow)" : "var(--green)"}
                   glow={quakeSev === "red" ? "var(--red-glow)" : "var(--yellow-glow)"}>
                   {largestMag != null ? `M${largestMag.toFixed(1)}` : "—"}
                 </Big>
@@ -563,7 +563,7 @@ const Pi = () => {
             footer="last 6h · gdelt curated"
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <Big size={32} color="var(--green)" glow="var(--green-glow)">{headlineCount}</Big>
+                <Big size={42} color="var(--green)" glow="var(--green-glow)">{headlineCount}</Big>
                 <PiHistogram data={headlinesBars} width={94} height={28} color="var(--green)" />
               </div>
             }
@@ -574,7 +574,7 @@ const Pi = () => {
             footer={`cloudflare · ${trafficDelta != null ? `${trafficDelta > 0 ? "+" : ""}${trafficDelta.toFixed(1)}%` : "no anomaly"}`}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                <Big size={28} color="var(--green)" glow="var(--green-glow)">{internetLabel}</Big>
+                <Big size={36} color="var(--green)" glow="var(--green-glow)">{internetLabel}</Big>
                 <PiPulseLine width={130} height={26} color="var(--green)" />
               </div>
             }
