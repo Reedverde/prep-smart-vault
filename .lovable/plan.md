@@ -1,23 +1,31 @@
-## Goal
-Make the tile icons visually dominant — match the presence of `PiRadarSweep` (88×88) seen in `SEVERE RADAR`. In the photo, weather sun (42), shield (44), moon (48), hazard triangle (48) all look small/timid relative to radar.
+# Plan: Let /pi breathe at 1024×768
 
-## Changes (icon size bumps only — no layout/logic changes)
+The current layout uses a flex column inside `100vh` (top strip 32px + flex grid + ticker 32px), so the grid already auto-fills whatever height the panel reports. At 1024×768 the grid area becomes ~704px (4 rows × ~176px) instead of ~528px (4 × 132px) at 1024×600. No structural changes needed — only typography and a couple of icons get scaled up so the extra vertical room is actually used.
 
-In `src/pages/Pi.tsx`:
+## Changes
+
+**`src/styles/pi.css`**
+- `.pi-big-clock` — `font-size: 56px` → `72px`
+
+**`src/pages/Pi.tsx`** — bump `<Big size=…>` and inline value sizes (~1.3× scale, keeping the existing relative hierarchy):
 
 | Tile | Current | New |
 |---|---|---|
-| `WEATHER` — `PiWeatherIcon` (line 369) | `size={42}` | `size={88}` |
-| `ALERTS · LOCAL` — `PiShield` (line 380) | `size={44}` | `size={88}` |
-| `MOON` — `PiMoon` (line 396) | `size={48}` | `size={88}` |
-| `HAZARD OUT` — `PiHazardTriangle` (line 433) | `size={48}` | `size={88}` |
-| `POWER OUTAGES` — `PiCellStack` (line 515) | review, scale up to ~88 tall if smaller |
-| `DISASTERS` — `PiGlobe` (line 586) | `size={72}` | `size={88}` |
-| `SPACE WX` — `PiKpField` (line 598) | `size={84}` | `size={88}` (already close) |
+| WEATHER `Big` | 32 | 42 |
+| ALERTS LOCAL `Big` | 28 | 36 |
+| NATIONAL `Big` | 26 | 34 |
+| GRID `Big` (+ "MW" 11→14) | 26 | 34 |
+| POWER OUTAGES `Big` (×2) | 32 | 42 |
+| EARTHQUAKES `Big` | 22 | 30 |
+| HEADLINES `Big` | 32 | 42 |
+| INTERNET `Big` | 28 | 36 |
+| Inline mono labels (fontSize 9/10/11 in tables, legends) | unchanged | unchanged |
 
-Quake/headlines/internet are charts (not icons) — leave alone.
-Conflict pulse is a big text label — leave alone.
+Icon sizes already match the radar's 88px presence from the previous pass — leaving them as-is.
 
 ## Out of scope
-- Tile sizes, grid layout, fonts, colors, copy.
-- Charts and meters (only icon glyphs change).
+- Grid template, tile count, severity logic, colors, copy.
+- Hardcoding any pixel heights — layout stays `100vh` flex so it adapts to whatever the display reports.
+
+## Verification
+After the edit, navigate the preview to `/pi` at viewport **1024×768** and confirm: no scrollbars, no clipped values, grid rows visibly taller, clock fills its tile, then also spot-check 1024×600 to ensure nothing overflows there.
