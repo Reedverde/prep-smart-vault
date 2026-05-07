@@ -30,10 +30,31 @@ Deno.serve(async (req) => {
     }
 
     const upstream = `https://www.airnowapi.org/aq/observation/latLong/current/?format=application/json&latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lng)}&distance=${encodeURIComponent(distance)}&API_KEY=${encodeURIComponent(apiKey)}`;
-    const res = await fetch(upstream);
-    if (!res.ok) {
-      console.error('airnow-observations upstream failed:', res.status);
-      return new Response(JSON.stringify({ error: 'upstream_failed' }), {
+
+    // AirNow occasionally returns transient errors; retry up to 3 times with backoff.
+    let res: Response | null = null;
+    let lastStatus = 0;
+    let lastBody = '';
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 8000);
+        const r = await fetch(upstream, { signal: ctrl.signal });
+        clearTimeout(t);
+        if (r.ok) {
+          res = r;
+          break;
+        }
+        lastStatus = r.status;
+        lastBody = (await r.text()).slice(0, 200);
+        console.warn(`airnow-observations upstream ${r.status} (attempt ${attempt + 1}): ${lastBody}`);
+      } catch (e) {
+        console.warn(`airnow-observations fetch threw (attempt ${attempt + 1}):`, e);
+      }
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+    }
+    if (!res) {
+      return new Response(JSON.stringify({ error: 'upstream_failed', status: lastStatus, detail: lastBody }), {
         status: 502,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
