@@ -377,7 +377,7 @@ const Pi = () => {
             footer={alertsCount === 0 ? "no active warnings" : `${alertsCount} active · ${officeCode}`}
             body={
               <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center" }}>
-                <PiShield size={44} count={alertsCount}
+                <PiShield size={80} count={alertsCount}
                   color={alertsSev === "red" ? "var(--red)" : alertsSev === "yellow" ? "var(--yellow)" : "var(--green)"} />
                 <table style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "var(--dim)", letterSpacing: "0.08em", borderSpacing: "6px 0" }}>
                   <tbody>
