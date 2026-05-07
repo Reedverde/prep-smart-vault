@@ -350,6 +350,18 @@
   letter-spacing: -0.02em;
   color: var(--green);
   text-shadow: 0 0 12px var(--green-glow);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+.pi-root .pi-big-clock .d {
+  display: inline-block;
+  width: 0.62ch;
+  text-align: center;
+}
+.pi-root .pi-big-clock .s {
+  display: inline-block;
+  width: 0.35ch;
+  text-align: center;
 }
 
 /* ============ Bottom ticker ============ */
