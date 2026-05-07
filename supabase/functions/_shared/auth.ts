@@ -34,12 +34,6 @@ export const requireUser = async (req: Request): Promise<AuthResult> => {
   if (token && (token === anonKey || token === publishableKey)) {
     return { ok: true, userId: 'anonymous' };
   }
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1] ?? ''));
-    if (payload?.role === 'anon') {
-      return { ok: true, userId: 'anonymous' };
-    }
-  } catch (_) { /* fall through to user check */ }
 
 
   const supabase = createClient(
