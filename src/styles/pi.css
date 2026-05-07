@@ -345,7 +345,8 @@
 .pi-root .pi-big-clock {
   font-family: "Orbitron", sans-serif;
   font-weight: 900;
-  font-size: 56px;
+  font-size: 64px;
+  white-space: nowrap;
   line-height: 1;
   letter-spacing: -0.02em;
   color: var(--green);
