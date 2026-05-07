@@ -1,29 +1,23 @@
 ## Goal
-Stop the big `SYSTEM :: CLOCK` digits from shifting horizontally every tick. Right now `22:20:45` is rendered in Orbitron, which is a proportional font — each digit has a different width, so the whole string nudges left/right as the seconds change.
+Make the tile icons visually dominant — match the presence of `PiRadarSweep` (88×88) seen in `SEVERE RADAR`. In the photo, weather sun (42), shield (44), moon (48), hazard triangle (48) all look small/timid relative to radar.
 
-## Approach
-Render the time with **fixed-width digit slots** so every character occupies the same horizontal space.
+## Changes (icon size bumps only — no layout/logic changes)
 
-Two viable options:
+In `src/pages/Pi.tsx`:
 
-1. **Tabular figures (lightest touch)** — add `font-variant-numeric: tabular-nums; font-feature-settings: "tnum";` to `.pi-big-clock`. Works only if Orbitron's webfont actually ships tabular figures. If it doesn't, digits will still be proportional.
+| Tile | Current | New |
+|---|---|---|
+| `WEATHER` — `PiWeatherIcon` (line 369) | `size={42}` | `size={88}` |
+| `ALERTS · LOCAL` — `PiShield` (line 380) | `size={44}` | `size={88}` |
+| `MOON` — `PiMoon` (line 396) | `size={48}` | `size={88}` |
+| `HAZARD OUT` — `PiHazardTriangle` (line 433) | `size={48}` | `size={88}` |
+| `POWER OUTAGES` — `PiCellStack` (line 515) | review, scale up to ~88 tall if smaller |
+| `DISASTERS` — `PiGlobe` (line 586) | `size={72}` | `size={88}` |
+| `SPACE WX` — `PiKpField` (line 598) | `size={84}` | `size={88}` (already close) |
 
-2. **Per-character fixed slot (guaranteed)** — change the clock render to wrap each character in a `<span>` with a fixed `inline-block` width (e.g. `0.62ch` for digits, `0.35ch` for the `:` separator). This is independent of the font and 100% prevents jitter while keeping the Orbitron look.
-
-Recommended: do **both** — add `tabular-nums` for free, and also wrap the digits in fixed slots so it works regardless of font support.
-
-## Changes
-
-**`src/styles/pi.css`** — `.pi-big-clock`:
-- add `font-variant-numeric: tabular-nums;`
-- add `font-feature-settings: "tnum";`
-
-**New CSS** — `.pi-big-clock .d` (digit slot) and `.pi-big-clock .s` (separator slot):
-- `.d` → `display: inline-block; width: 0.62ch; text-align: center;`
-- `.s` → `display: inline-block; width: 0.35ch; text-align: center;`
-
-**`src/pages/Pi.tsx`** (line 607) — replace `{clockStr}` with a small inline render that splits `clockStr` into characters and wraps digits in `<span class="d">` and `:` in `<span class="s">`.
+Quake/headlines/internet are charts (not icons) — leave alone.
+Conflict pulse is a big text label — leave alone.
 
 ## Out of scope
-- The smaller `pi-clocknow` line in the meta header (also Orbitron-ish but much smaller; can apply the same fix later if it's noticeable).
-- No changes to time format, font family, color, or background.
+- Tile sizes, grid layout, fonts, colors, copy.
+- Charts and meters (only icon glyphs change).
