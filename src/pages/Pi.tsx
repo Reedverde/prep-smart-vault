@@ -342,20 +342,31 @@ const Pi = () => {
               </>
             }
           />
-          <PiTile label="NWS ACTIVE ALERTS · LOCAL" num="02" wide sev={alertsSev}
-            footer="no active warnings · forecast office monitoring"
+          <PiTile label="ALERTS · LOCAL" num="02" sev={alertsSev}
+            footer={alertsCount === 0 ? "no active warnings" : `${alertsCount} active · ${officeCode}`}
             body={
-              <div style={{ display: "flex", alignItems: "center", gap: 16, width: "100%", justifyContent: "center" }}>
-                <PiShield size={56} count={alertsCount}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center" }}>
+                <PiShield size={44} count={alertsCount}
                   color={alertsSev === "red" ? "var(--red)" : alertsSev === "yellow" ? "var(--yellow)" : "var(--green)"} />
-                <table style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "var(--dim)", letterSpacing: "0.1em", borderSpacing: "10px 1px" }}>
+                <table style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "var(--dim)", letterSpacing: "0.08em", borderSpacing: "6px 0" }}>
                   <tbody>
-                    <tr><td>SEVERE</td><td className="pi-c-red" style={{ textAlign: "right" }}>{sevSevere}</td></tr>
-                    <tr><td>MODERATE</td><td className="pi-c-yellow" style={{ textAlign: "right" }}>{sevModerate}</td></tr>
-                    <tr><td>MINOR</td><td className="pi-c-green" style={{ textAlign: "right" }}>{sevMinor}</td></tr>
-                    <tr><td>OFFICE</td><td className="pi-c-green" style={{ textAlign: "right" }}>{officeCode}</td></tr>
+                    <tr><td>SEV</td><td className="pi-c-red" style={{ textAlign: "right" }}>{sevSevere}</td></tr>
+                    <tr><td>MOD</td><td className="pi-c-yellow" style={{ textAlign: "right" }}>{sevModerate}</td></tr>
+                    <tr><td>MIN</td><td className="pi-c-green" style={{ textAlign: "right" }}>{sevMinor}</td></tr>
                   </tbody>
                 </table>
+              </div>
+            }
+          />
+          <PiTile label="MOON" num="02b" sev="blue"
+            footer={`rise ${moonRiseStr} · set ${moonSetStr}`}
+            body={
+              <div style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--blue)" }}>
+                <PiMoon size={48} illumination={moonInfo.phase.illumination} waxing={moonInfo.phase.waxing} />
+                <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, lineHeight: 1.4, letterSpacing: "0.08em" }}>
+                  <div style={{ color: "var(--fg)" }}>{moonInfo.phase.name.toUpperCase()}</div>
+                  <div style={{ color: "var(--dim)" }} className="tabular-nums">{moonInfo.phase.illumination}% LIT</div>
+                </div>
               </div>
             }
           />
