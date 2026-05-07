@@ -366,7 +366,7 @@ const Pi = () => {
             footer={`${cond.toLowerCase()} · ${windMph != null ? `${windMph}mph w` : "—"} · feels ${tempF != null ? Math.round(tempF) : "—"}°`}
             body={
               <>
-                <PiWeatherIcon size={42} />
+                <PiWeatherIcon size={72} />
                 <Big size={32} color="var(--green)" glow="var(--green-glow)">
                   {tempF != null ? `${Math.round(tempF)}°` : "—"}
                 </Big>
@@ -377,7 +377,7 @@ const Pi = () => {
             footer={alertsCount === 0 ? "no active warnings" : `${alertsCount} active · ${officeCode}`}
             body={
               <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center" }}>
-                <PiShield size={44} count={alertsCount}
+                <PiShield size={80} count={alertsCount}
                   color={alertsSev === "red" ? "var(--red)" : alertsSev === "yellow" ? "var(--yellow)" : "var(--green)"} />
                 <table style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "var(--dim)", letterSpacing: "0.08em", borderSpacing: "6px 0" }}>
                   <tbody>
@@ -393,7 +393,7 @@ const Pi = () => {
             footer={`rise ${moonRiseStr} · set ${moonSetStr}`}
             body={
               <div style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--blue)" }}>
-                <PiMoon size={48} illumination={moonInfo.phase.illumination} waxing={moonInfo.phase.waxing} />
+                <PiMoon size={88} illumination={moonInfo.phase.illumination} waxing={moonInfo.phase.waxing} />
                 <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, lineHeight: 1.4, letterSpacing: "0.08em" }}>
                   <div style={{ color: "var(--fg)" }}>{moonInfo.phase.name.toUpperCase()}</div>
                   <div style={{ color: "var(--dim)" }} className="tabular-nums">{moonInfo.phase.illumination}% LIT</div>
@@ -430,7 +430,7 @@ const Pi = () => {
             footer={hwoData?.office ? `${hwoData.office.toLowerCase()}` : "tstorm thu/fri · pbz"}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <PiHazardTriangle size={48} color={hwoSev === "red" ? "var(--red)" : hwoSev === "yellow" ? "var(--yellow)" : "var(--green)"} />
+                <PiHazardTriangle size={80} color={hwoSev === "red" ? "var(--red)" : hwoSev === "yellow" ? "var(--yellow)" : "var(--green)"} />
                 <span className={`pi-pill ${hwoSev === "red" ? "pi-c-red" : hwoSev === "yellow" ? "pi-c-yellow" : "pi-c-green"}`}>
                   {hwoRisk ? hwoRisk.toUpperCase() : "—"}
                 </span>
@@ -514,8 +514,8 @@ const Pi = () => {
                   {[0, 1, 2].map((s) => (
                     <PiCellStack
                       key={s}
-                      width={14}
-                      height={64}
+                      width={18}
+                      height={84}
                       cells={Array.from({ length: 6 }, () => ({ lit: outageCust === 0 }))}
                     />
                   ))}
@@ -583,7 +583,7 @@ const Pi = () => {
             footer={`${gdacsArr.length} active · gdacs`}
             body={
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <PiGlobe size={72} pins={pins} color="var(--orange)" />
+                <PiGlobe size={88} pins={pins} color="var(--orange)" />
                 <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, lineHeight: 1.5, letterSpacing: "0.1em" }}>
                   <div className="pi-c-red">● {redCount} RED</div>
                   <div className="pi-c-orange">● {orangeCount} ORANGE</div>
