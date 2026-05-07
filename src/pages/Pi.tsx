@@ -393,7 +393,7 @@ const Pi = () => {
             footer={`rise ${moonRiseStr} · set ${moonSetStr}`}
             body={
               <div style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--blue)" }}>
-                <PiMoon size={48} illumination={moonInfo.phase.illumination} waxing={moonInfo.phase.waxing} />
+                <PiMoon size={88} illumination={moonInfo.phase.illumination} waxing={moonInfo.phase.waxing} />
                 <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, lineHeight: 1.4, letterSpacing: "0.08em" }}>
                   <div style={{ color: "var(--fg)" }}>{moonInfo.phase.name.toUpperCase()}</div>
                   <div style={{ color: "var(--dim)" }} className="tabular-nums">{moonInfo.phase.illumination}% LIT</div>
