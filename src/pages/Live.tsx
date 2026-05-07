@@ -56,7 +56,10 @@ const Live = () => {
       label: "LOCAL",
       panels: [
         <WeatherPanel key="weather" lat={lat} lng={lng} refreshMs={refreshMs} />,
-        <AlertsPanel key="alerts" lat={lat} lng={lng} refreshMs={refreshMs} />,
+        <div key="alerts-moon" className="flex flex-col gap-4">
+          <AlertsPanel lat={lat} lng={lng} refreshMs={refreshMs} />
+          <MoonPhasePanel lat={lat} lng={lng} />
+        </div>,
         <AirQualityPanel key="aq" lat={lat} lng={lng} refreshMs={refreshMs} />,
       ],
     },
