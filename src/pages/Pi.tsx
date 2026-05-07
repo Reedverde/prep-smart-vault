@@ -430,7 +430,7 @@ const Pi = () => {
             footer={hwoData?.office ? `${hwoData.office.toLowerCase()}` : "tstorm thu/fri · pbz"}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <PiHazardTriangle size={48} color={hwoSev === "red" ? "var(--red)" : hwoSev === "yellow" ? "var(--yellow)" : "var(--green)"} />
+                <PiHazardTriangle size={80} color={hwoSev === "red" ? "var(--red)" : hwoSev === "yellow" ? "var(--yellow)" : "var(--green)"} />
                 <span className={`pi-pill ${hwoSev === "red" ? "pi-c-red" : hwoSev === "yellow" ? "pi-c-yellow" : "pi-c-green"}`}>
                   {hwoRisk ? hwoRisk.toUpperCase() : "—"}
                 </span>
