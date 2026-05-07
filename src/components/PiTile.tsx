@@ -18,14 +18,24 @@ export type PiTileProps = {
   sev?: PiSeverity;
   /** Span 2 columns */
   wide?: boolean;
+  /** Optional background image URL, applied to tile with low opacity */
+  bgImage?: string;
 };
 
-export const PiTile = ({ label, num, body, footer, sev = "green", wide }: PiTileProps) => {
+export const PiTile = ({ label, num, body, footer, sev = "green", wide, bgImage }: PiTileProps) => {
+  const style: React.CSSProperties = {};
+  if (wide) style.gridColumn = "span 2 / span 2";
+  if (bgImage) {
+    style.backgroundImage = `linear-gradient(135deg, rgba(10,14,20,0.78), rgba(10,14,20,0.92)), url(${bgImage})`;
+    style.backgroundSize = "cover, cover";
+    style.backgroundPosition = "right center, right center";
+    style.backgroundRepeat = "no-repeat, no-repeat";
+  }
   return (
     <div
       className="pi-tile"
       data-sev={sev}
-      style={wide ? { gridColumn: "span 2 / span 2" } : undefined}
+      style={style}
     >
       <div className="pi-tile-inner" />
       <span className="pi-tile-corner tl" />
