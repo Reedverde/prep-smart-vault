@@ -26,7 +26,7 @@ export const PiTile = ({ label, num, body, footer, sev = "green", wide, bgImage 
   const style: React.CSSProperties = {};
   if (wide) style.gridColumn = "span 2 / span 2";
   if (bgImage) {
-    style.backgroundImage = `linear-gradient(135deg, rgba(10,14,20,0.25), rgba(10,14,20,0.25)), url(${bgImage})`;
+    style.backgroundImage = `linear-gradient(135deg, rgba(10,14,20,0.5), rgba(10,14,20,0.5)), url(${bgImage})`;
     style.backgroundSize = "cover, cover";
     style.backgroundPosition = "right center, right center";
     style.backgroundRepeat = "no-repeat, no-repeat";
