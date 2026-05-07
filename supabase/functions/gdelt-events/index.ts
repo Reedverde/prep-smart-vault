@@ -117,14 +117,17 @@ Deno.serve(async (req) => {
 
     const ua = { 'User-Agent': 'PrepPi/1.0 (situational-awareness)' };
 
-    // Run both in parallel; article fetch failure must NOT block stats.
+    // Run both in parallel; neither failure should throw out of the handler.
     const [statsRes, articlesRes] = await Promise.all([
-      fetch(statsUrl, { headers: ua }),
+      fetch(statsUrl, { headers: ua }).catch((e) => {
+        console.log('gdelt-events stats fetch threw', String(e));
+        return null;
+      }),
       fetch(articlesUrl, { headers: ua }).catch(() => null),
     ]);
 
-    if (!statsRes.ok) {
-      const body = await statsRes.text().catch(() => '');
+    if (!statsRes || !statsRes.ok) {
+      const body = statsRes ? await statsRes.text().catch(() => '') : '';
       if (cached) {
         return new Response(JSON.stringify(cached.payload), {
           status: 200,
@@ -142,11 +145,11 @@ Deno.serve(async (req) => {
         from: fmt(weekAgo),
         to: fmt(today),
         degraded: true,
-        upstreamStatus: statsRes.status,
+        upstreamStatus: statsRes?.status ?? 0,
       };
       cached = { at: Date.now() - (CACHE_TTL_MS - 60_000), payload: emptyPayload };
       console.log('gdelt-events upstream failed, returning degraded payload', {
-        status: statsRes.status,
+        status: statsRes?.status ?? 'fetch_threw',
         body: body.slice(0, 200),
       });
       return new Response(JSON.stringify(emptyPayload), {
