@@ -514,8 +514,8 @@ const Pi = () => {
                   {[0, 1, 2].map((s) => (
                     <PiCellStack
                       key={s}
-                      width={14}
-                      height={64}
+                      width={18}
+                      height={84}
                       cells={Array.from({ length: 6 }, () => ({ lit: outageCust === 0 }))}
                     />
                   ))}
