@@ -583,7 +583,7 @@ const Pi = () => {
             footer={`${gdacsArr.length} active · gdacs`}
             body={
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <PiGlobe size={72} pins={pins} color="var(--orange)" />
+                <PiGlobe size={88} pins={pins} color="var(--orange)" />
                 <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, lineHeight: 1.5, letterSpacing: "0.1em" }}>
                   <div className="pi-c-red">● {redCount} RED</div>
                   <div className="pi-c-orange">● {orangeCount} ORANGE</div>
