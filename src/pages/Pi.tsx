@@ -2,7 +2,7 @@
 // Pure inline SVG + CSS animations. All tokens scoped under .pi-root via src/styles/pi.css.
 // No new edge functions — reuses every existing data hook at current intervals.
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { format } from "date-fns";
 import "@/styles/pi.css";
 import { getMoonPhase } from "@/lib/moonPhase";
@@ -111,13 +111,16 @@ const Pi = () => {
     document.title = "PrepPi · Glance Terminal";
   }, []);
 
-  // Scale-to-fit: scale the fixed 1600x900 stage to whatever viewport we have.
+  // Scale-to-fit: scale the fixed 1600x900 stage to fit any viewport.
+  const stageRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const DESIGN_W = 1600;
     const DESIGN_H = 900;
     const apply = () => {
+      const el = stageRef.current;
+      if (!el) return;
       const s = Math.min(window.innerWidth / DESIGN_W, window.innerHeight / DESIGN_H);
-      document.documentElement.style.setProperty("--pi-scale", String(s));
+      el.style.transform = `translate(-50%, -50%) scale(${s})`;
     };
     apply();
     window.addEventListener("resize", apply);
@@ -125,7 +128,6 @@ const Pi = () => {
     return () => {
       window.removeEventListener("resize", apply);
       window.removeEventListener("orientationchange", apply);
-      document.documentElement.style.removeProperty("--pi-scale");
     };
   }, []);
 
@@ -358,7 +360,7 @@ const Pi = () => {
 
   return (
     <div className="pi-root">
-      <div className="pi-stage">
+      <div className="pi-stage" ref={stageRef}>
       <div className="pi-frame">
         <i className="pi-corner-bl" />
         <i className="pi-corner-br" />
