@@ -571,7 +571,7 @@ const Pi = () => {
 
           {/* Row 4 */}
           <PiTile label="INTERNET HEALTH" num="14" sev={internetSev}
-            bgImage={piClockBg} bgPosition="right center" bgFlip bgSize="cover"
+            bgImage={piClockBg} bgPosition="right center" bgFlip bgSize="cover" bgOffsetX={40}
             footer={`cloudflare · ${trafficDelta != null ? `${trafficDelta > 0 ? "+" : ""}${trafficDelta.toFixed(1)}%` : "no anomaly"}`}
             body={
               <div style={{ display: "flex", width: "100%", justifyContent: "flex-end" }}>
