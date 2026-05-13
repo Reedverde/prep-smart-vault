@@ -358,6 +358,7 @@ const Pi = () => {
 
   return (
     <div className="pi-root">
+      <div className="pi-stage">
       <div className="pi-frame">
         <i className="pi-corner-bl" />
         <i className="pi-corner-br" />
