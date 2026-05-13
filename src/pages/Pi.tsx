@@ -571,10 +571,10 @@ const Pi = () => {
 
           {/* Row 4 */}
           <PiTile label="INTERNET HEALTH" num="14" sev={internetSev}
-            bgImage={piClockBg} bgPosition="right center" bgFlip bgOffsetX={-40}
+            bgImage={piClockBg} bgPosition="left center" bgFlip bgSize="contain"
             footer={`cloudflare · ${trafficDelta != null ? `${trafficDelta > 0 ? "+" : ""}${trafficDelta.toFixed(1)}%` : "no anomaly"}`}
             body={
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2, width: "100%", paddingRight: 4 }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, width: "100%" }}>
                 <Big size={36} color="var(--green)" glow="var(--green-glow)">{internetLabel}</Big>
                 <PiPulseLine width={140} height={26} color="var(--green)" />
               </div>

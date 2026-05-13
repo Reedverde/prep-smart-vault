@@ -24,8 +24,8 @@ export type PiTileProps = {
   bgPosition?: string;
   /** Mirror the bgImage horizontally */
   bgFlip?: boolean;
-  /** Background size for bgImage (default "cover") */
-  bgSize?: string;
+  /** Background fit for bgImage (default "cover") */
+  bgSize?: React.CSSProperties["objectFit"];
   /** Horizontal pixel offset for bgImage (negative = shift left) */
   bgOffsetX?: number;
 };
@@ -46,14 +46,12 @@ export const PiTile = ({ label, num, body, footer, sev = "green", wide, bgImage,
           aria-hidden
           style={{
             position: "absolute",
-            top: 0,
-            bottom: 0,
-            left: bgOffsetX,
+            inset: 0,
             height: "100%",
-            width: "auto",
-            objectFit: "cover",
+            width: "100%",
+            objectFit: bgSize,
             objectPosition: bgPosition,
-            transform: bgFlip ? "scaleX(-1)" : undefined,
+            transform: `${bgFlip ? "scaleX(-1)" : ""} ${bgOffsetX ? `translateX(${bgOffsetX}px)` : ""}`.trim() || undefined,
             opacity: 0.35,
             pointerEvents: "none",
             zIndex: 0,
