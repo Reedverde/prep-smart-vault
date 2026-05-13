@@ -52,7 +52,7 @@ export const PiTile = ({ label, num, body, footer, sev = "green", wide, bgImage,
             objectFit: bgSize,
             objectPosition: bgPosition,
             transform: `${bgFlip ? "scaleX(-1)" : ""} ${bgOffsetX ? `translateX(${bgOffsetX}px)` : ""}`.trim() || undefined,
-            opacity: 0.35,
+            opacity: 0.7,
             pointerEvents: "none",
             zIndex: 0,
           }}
