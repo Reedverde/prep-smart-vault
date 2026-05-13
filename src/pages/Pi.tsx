@@ -571,6 +571,7 @@ const Pi = () => {
 
           {/* Row 4 */}
           <PiTile label="INTERNET HEALTH" num="14" sev={internetSev}
+            bgImage={piClockBg} bgPosition="left center" bgFlip bgSize="contain"
             footer={`cloudflare · ${trafficDelta != null ? `${trafficDelta > 0 ? "+" : ""}${trafficDelta.toFixed(1)}%` : "no anomaly"}`}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
@@ -600,7 +601,7 @@ const Pi = () => {
               </div>
             }
           />
-          <PiTile label="SYSTEM :: CLOCK" num="17" wide sev="green" bgImage={piClockBg}
+          <PiTile label="SYSTEM :: CLOCK" num="17" wide sev="green"
             footer={`all services nominal · uptime ${errCount === 0 ? "ok" : `${errCount} feeds down`}`}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, width: "100%" }}>

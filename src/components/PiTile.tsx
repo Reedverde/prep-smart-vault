@@ -20,23 +20,42 @@ export type PiTileProps = {
   wide?: boolean;
   /** Optional background image URL, applied to tile with low opacity */
   bgImage?: string;
+  /** Background position for bgImage (default "right center") */
+  bgPosition?: string;
+  /** Mirror the bgImage horizontally */
+  bgFlip?: boolean;
+  /** Background size for bgImage (default "cover") */
+  bgSize?: string;
 };
 
-export const PiTile = ({ label, num, body, footer, sev = "green", wide, bgImage }: PiTileProps) => {
+export const PiTile = ({ label, num, body, footer, sev = "green", wide, bgImage, bgPosition = "right center", bgFlip, bgSize = "cover" }: PiTileProps) => {
   const style: React.CSSProperties = {};
   if (wide) style.gridColumn = "span 2 / span 2";
-  if (bgImage) {
-    style.backgroundImage = `linear-gradient(135deg, rgba(10,14,20,0.5), rgba(10,14,20,0.5)), url(${bgImage})`;
-    style.backgroundSize = "cover, cover";
-    style.backgroundPosition = "right center, right center";
-    style.backgroundRepeat = "no-repeat, no-repeat";
-  }
   return (
     <div
       className="pi-tile"
       data-sev={sev}
       style={style}
     >
+      {bgImage && (
+        <img
+          src={bgImage}
+          alt=""
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: bgSize === "contain" ? "contain" : "cover",
+            objectPosition: bgPosition,
+            transform: bgFlip ? "scaleX(-1)" : undefined,
+            opacity: 0.55,
+            pointerEvents: "none",
+            zIndex: 0,
+          }}
+        />
+      )}
       <div className="pi-tile-inner" />
       <span className="pi-tile-corner tl" />
       <span className="pi-tile-corner tr" />
