@@ -24,8 +24,8 @@ export type PiTileProps = {
   bgPosition?: string;
   /** Mirror the bgImage horizontally */
   bgFlip?: boolean;
-  /** Background size for bgImage (default "cover") */
-  bgSize?: string;
+  /** Background fit for bgImage (default "cover") */
+  bgSize?: React.CSSProperties["objectFit"];
   /** Horizontal pixel offset for bgImage (negative = shift left) */
   bgOffsetX?: number;
 };
