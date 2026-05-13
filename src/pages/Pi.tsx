@@ -400,7 +400,7 @@ const Pi = () => {
               <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center" }}>
                 <PiShield size={108} count={alertsCount}
                   color={alertsSev === "red" ? "var(--red)" : alertsSev === "yellow" ? "var(--yellow)" : "var(--green)"} />
-                <table style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "var(--dim)", letterSpacing: "0.08em", borderSpacing: "6px 0" }}>
+                <table style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 14, color: "var(--dim)", letterSpacing: "0.08em", borderSpacing: "10px 0" }}>
                   <tbody>
                     <tr><td>SEV</td><td className="pi-c-red" style={{ textAlign: "right" }}>{sevSevere}</td></tr>
                     <tr><td>MOD</td><td className="pi-c-yellow" style={{ textAlign: "right" }}>{sevModerate}</td></tr>
@@ -415,7 +415,7 @@ const Pi = () => {
             body={
               <div style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--blue)" }}>
                 <PiMoon size={119} illumination={moonInfo.phase.illumination} waxing={moonInfo.phase.waxing} />
-                <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, lineHeight: 1.4, letterSpacing: "0.08em" }}>
+                <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 16, lineHeight: 1.4, letterSpacing: "0.08em" }}>
                   <div style={{ color: "var(--fg)" }}>{moonInfo.phase.name.toUpperCase()}</div>
                   <div style={{ color: "var(--dim)" }} className="tabular-nums">{moonInfo.phase.illumination}% LIT</div>
                 </div>
@@ -608,7 +608,7 @@ const Pi = () => {
             body={
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <PiGlobe size={119} pins={pins} color="var(--orange)" />
-                <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, lineHeight: 1.5, letterSpacing: "0.1em" }}>
+                <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 16, lineHeight: 1.5, letterSpacing: "0.1em" }}>
                   <div className="pi-c-red">● {redCount} RED</div>
                   <div className="pi-c-orange">● {orangeCount} ORANGE</div>
                 </div>

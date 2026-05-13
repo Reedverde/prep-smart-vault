@@ -49,7 +49,7 @@ export const PiShield = ({ size = 56, count, color = PI_COLORS.GREEN }: { size?:
         d="M28 4 L50 12 L50 28 C50 40 40 49 28 52 C16 49 6 40 6 28 L6 12 Z"
         fill="none"
         stroke={color}
-        strokeWidth={2}
+        strokeWidth={3.5}
         strokeLinejoin="round"
         style={{ filter: `drop-shadow(0 0 4px ${color})` }}
       />
@@ -90,7 +90,7 @@ export const PiHalfRing = ({
   const cx = width / 2;
   const cy = height - 6;
   const r = Math.min(width / 2 - 6, height - 10);
-  const stroke = 7;
+  const stroke = 11;
   const v2a = (v: number) =>
     180 + ((Math.max(min, Math.min(max, v)) - min) / (max - min)) * 180;
   const polar = (deg: number, rad: number) => {
@@ -123,13 +123,13 @@ export const PiHalfRing = ({
         ))}
         {value != null && (
           <>
-            <line x1={cx} y1={cy} x2={nx} y2={ny} stroke="var(--text)" strokeWidth={2} strokeLinecap="round" />
-            <circle cx={cx} cy={cy} r={3} fill="var(--text)" />
+            <line x1={cx} y1={cy} x2={nx} y2={ny} stroke="var(--text)" strokeWidth={3} strokeLinecap="round" />
+            <circle cx={cx} cy={cy} r={4.5} fill="var(--text)" />
           </>
         )}
       </svg>
       {value != null && (
-        <div style={{ fontFamily: "Orbitron, sans-serif", fontWeight: 700, fontSize: 16, color: "var(--text)", lineHeight: 1 }}>
+        <div style={{ fontFamily: "Orbitron, sans-serif", fontWeight: 700, fontSize: 26, color: "var(--text)", lineHeight: 1 }}>
           {Math.round(value)}
         </div>
       )}
@@ -225,7 +225,7 @@ export const PiRingMeter = ({
   centerLabel?: ReactNode;
   sublabel?: string;
 }) => {
-  const stroke = 7;
+  const stroke = 12;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const span = max - min;
@@ -255,11 +255,11 @@ export const PiRingMeter = ({
           fontFamily: "Orbitron, sans-serif", fontWeight: 700,
         }}
       >
-        <div style={{ fontSize: 18, color, textShadow: `0 0 6px ${sevGlow(sev)}`, lineHeight: 1 }}>
+        <div style={{ fontSize: 30, color, textShadow: `0 0 6px ${sevGlow(sev)}`, lineHeight: 1 }}>
           {centerLabel ?? (value != null ? value.toFixed(2) : "—")}
         </div>
         {sublabel && (
-          <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, color: "var(--dim)", marginTop: 2, letterSpacing: "0.1em" }}>
+          <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 12, color: "var(--dim)", marginTop: 2, letterSpacing: "0.1em" }}>
             {sublabel}
           </div>
         )}
@@ -491,14 +491,14 @@ export const PiGlobe = ({
   return (
     <div style={{ position: "relative", width: size, height: size, display: "inline-block" }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={1.25}
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={2.5}
           style={{ filter: `drop-shadow(0 0 4px ${color})` }} />
         {/* Equator */}
-        <ellipse cx={cx} cy={cy} rx={r} ry={r * 0.28} fill="none" stroke={color} strokeWidth={1} opacity={0.7} />
+        <ellipse cx={cx} cy={cy} rx={r} ry={r * 0.28} fill="none" stroke={color} strokeWidth={2} opacity={0.7} />
         {/* Meridians */}
-        <ellipse cx={cx} cy={cy} rx={r * 0.4} ry={r} fill="none" stroke={color} strokeWidth={1} opacity={0.55} />
-        <ellipse cx={cx} cy={cy} rx={r * 0.75} ry={r} fill="none" stroke={color} strokeWidth={1} opacity={0.4} />
-        <line x1={cx} y1={cy - r} x2={cx} y2={cy + r} stroke={color} strokeWidth={1} opacity={0.5} />
+        <ellipse cx={cx} cy={cy} rx={r * 0.4} ry={r} fill="none" stroke={color} strokeWidth={2} opacity={0.55} />
+        <ellipse cx={cx} cy={cy} rx={r * 0.75} ry={r} fill="none" stroke={color} strokeWidth={2} opacity={0.4} />
+        <line x1={cx} y1={cy - r} x2={cx} y2={cy + r} stroke={color} strokeWidth={2} opacity={0.5} />
       </svg>
       {pins.map((p, i) => (
         <span
@@ -540,18 +540,18 @@ export const PiKpField = ({
             ry={(size * 0.28) * s}
             fill="none"
             stroke={color}
-            strokeWidth={1}
+            strokeWidth={2}
             opacity={0.3 + i * 0.15}
             style={{ filter: `drop-shadow(0 0 3px ${color})` }}
           />
         ))}
-        <circle cx={cx} cy={cy * 0.8} r={3} fill={color} style={{ filter: `drop-shadow(0 0 4px ${color})` }} />
+        <circle cx={cx} cy={cy * 0.8} r={5} fill={color} style={{ filter: `drop-shadow(0 0 4px ${color})` }} />
       </svg>
       {kp != null && (
         <div style={{
           position: "absolute", bottom: -2, left: 0, right: 0,
           textAlign: "center",
-          fontFamily: "Orbitron, sans-serif", fontWeight: 700, fontSize: 14,
+          fontFamily: "Orbitron, sans-serif", fontWeight: 700, fontSize: 22,
           color, textShadow: `0 0 6px ${color}`,
         }}>
           Kp {Math.round(kp)}
