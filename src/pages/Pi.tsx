@@ -2,7 +2,7 @@
 // Pure inline SVG + CSS animations. All tokens scoped under .pi-root via src/styles/pi.css.
 // No new edge functions — reuses every existing data hook at current intervals.
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { format } from "date-fns";
 import "@/styles/pi.css";
 import { getMoonPhase } from "@/lib/moonPhase";
