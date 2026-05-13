@@ -265,6 +265,7 @@
 .pi-root .pi-tile-corner.bl { bottom: 1px; left: 1px; border-bottom: 1px solid var(--green); border-left: 1px solid var(--green); }
 .pi-root .pi-tile-corner.br { bottom: 1px; right: 1px; border-bottom: 1px solid var(--green); border-right: 1px solid var(--green); }
 
+.pi-root .pi-tile[data-sev="green"]   { border-color: var(--green); }
 .pi-root .pi-tile[data-sev="yellow"]  { border-color: var(--yellow); }
 .pi-root .pi-tile[data-sev="yellow"]  .pi-tile-corner { border-color: var(--yellow); filter: drop-shadow(0 0 3px var(--yellow-glow)); }
 .pi-root .pi-tile[data-sev="orange"]  { border-color: var(--orange); }
