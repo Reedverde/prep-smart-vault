@@ -35,21 +35,21 @@
   color: var(--text);
   font-family: "Rajdhani", system-ui, sans-serif;
   overflow: hidden;
-  display: grid;
-  place-items: center;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Fixed design-size stage; scaled to fit the viewport via --pi-scale (set in Pi.tsx). */
+/* Fixed design-size stage; scaled to fit viewport via JS-set transform on stageRef. */
 .pi-root .pi-stage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
   width: 1600px;
   height: 900px;
   display: flex;
   flex-direction: column;
-  transform: scale(var(--pi-scale, 1));
+  transform: translate(-50%, -50%) scale(1);
   transform-origin: center center;
-  flex-shrink: 0;
 }
 
 /* ============ Keyframes ============ */
