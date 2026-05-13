@@ -111,6 +111,24 @@ const Pi = () => {
     document.title = "PrepPi · Glance Terminal";
   }, []);
 
+  // Scale-to-fit: scale the fixed 1600x900 stage to whatever viewport we have.
+  useEffect(() => {
+    const DESIGN_W = 1600;
+    const DESIGN_H = 900;
+    const apply = () => {
+      const s = Math.min(window.innerWidth / DESIGN_W, window.innerHeight / DESIGN_H);
+      document.documentElement.style.setProperty("--pi-scale", String(s));
+    };
+    apply();
+    window.addEventListener("resize", apply);
+    window.addEventListener("orientationchange", apply);
+    return () => {
+      window.removeEventListener("resize", apply);
+      window.removeEventListener("orientationchange", apply);
+      document.documentElement.style.removeProperty("--pi-scale");
+    };
+  }, []);
+
   // ============ Data hooks ============
   const weather = useWeather(LOCATION.lat, LOCATION.lng, STD);
   const localAlerts = useLocalAlerts(LOCATION.lat, LOCATION.lng, STD);
