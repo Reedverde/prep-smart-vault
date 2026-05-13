@@ -1,47 +1,48 @@
 ## Goal
 
-Make the /pi HUD readable on a 1024x600 display by scaling up text and thickening lines/strokes. The stage is a fixed 1600x900 design scaled down to the actual screen, so bumping sizes in CSS/SVG translates directly to larger pixels on the Pi screen.
-
-## Scope
-
-CSS-only + small SVG stroke tweaks. No layout restructuring, no logic changes, no removed elements.
+Beef up the seven specific tile visualizations the user called out so numbers, labels, and stroked lines are readable on the 1024×600 Pi screen.
 
 ## Changes
 
-### 1. `src/styles/pi.css` — typography bumps (~+40–60%)
+### `src/components/PiViz.tsx`
 
-- `.pi-topstrip` font-size 10 → 14
-- `.pi-brand` 12 → 16
-- `.pi-tile-header` 9 → 13
-- `.pi-tile-id` 9 → 12
-- `.pi-tile-footer` 9 → 12
-- `.pi-pill` 9 → 12
-- `.pi-big-clock` 64 → 84
-- `.pi-ticker` 10 → 14
-- Default body text inside tiles: ensure `.pi-root` base font-size lifted from inherited 16 → 18 (so any unstyled inline numbers grow too)
+**1. PiHalfRing (AQI — image 1)**
+- Arc `stroke` 7 → 11
+- Needle `strokeWidth` 2 → 3, hub `r` 3 → 4.5
+- Value text `fontSize` 16 → 26
 
-### 2. `src/styles/pi.css` — stroke / border thickening
+**2. PiRadarSweep (image 2)** — uses CSS in `pi.css`
+- `.pi-radar` border 2px → 3px
+- `.pi-radar::before/::after` inner ring border 1 → 2px
+- `.pi-radar-cross::before/::after` 2px → 3px
+- `.pi-radar-center` 6 → 9px
 
-- `.pi-frame` border 1px → 2px
-- Frame corner brackets (`::before/::after`, `.pi-corner-bl/br`) 2px → 3px, size 18 → 22px
-- `.pi-tile` border 1px → 2px (all severity overrides inherit)
-- `.pi-tile-corner` 1px → 2px, size 8 → 12px
-- `.pi-topstrip` / `.pi-ticker` border 1px → 2px
-- `.pi-glyph` ring 1 → 2px, inner dot/animated pip slightly larger
-- `.pi-cursor` width 8 → 10, height 14 → 18
-- `.pi-bars span` width 2 → 3
-- `.pi-radar` border 1 → 2px, cross lines 1 → 2px, center dot 4 → 6
-- Tile-inner faint inset border 1 → 2px
+**3. PiRingMeter (STLFSI — image 3)**
+- `stroke` 7 → 12
+- Center value `fontSize` 18 → 30
+- `sublabel` `fontSize` 8 → 12
 
-### 3. `src/pages/Pi.tsx` — SVG stroke widths
+**4. PiMoon caption (image 4)** — in `src/pages/Pi.tsx`
+- Inline text block next to PiMoon: `fontSize` 10 → 16, line-height stays
 
-For the inline SVGs used inside tiles (gauges, rings, charts, sparklines, radar pings, weather/icons), bump `stroke-width` / `strokeWidth` values by ~1.5–2× (e.g. 1 → 2, 1.5 → 3, 2 → 3). No size or viewBox changes — strokes only, so layouts remain intact.
+**5. PiShield + table (image 5)**
+- Shield path `strokeWidth` 2 → 3.5
+- In `Pi.tsx` ALERTS·LOCAL table: `fontSize` 9 → 14, `borderSpacing` 6px → 10px
+
+**6. PiGlobe + legend (image 6)**
+- Outer circle `strokeWidth` 1.25 → 2.5
+- Equator + meridians + axis line `strokeWidth` 1 → 2
+- In `Pi.tsx` DISASTERS legend: `fontSize` 10 → 16
+
+**7. PiKpField (image 7)**
+- Ellipse `strokeWidth` 1 → 2
+- Center dot `r` 3 → 5
+- "Kp N" label `fontSize` 14 → 22
 
 ### Out of scope
 
-- No changes to grid layout, tile count, colors, or animations.
-- No icon swaps; lucide icon `size` props already enlarged in a previous pass.
+No layout, color, hook, or polling changes. No Tile/grid restructuring.
 
 ## Verification
 
-After edit: open /pi in preview, screenshot at 1024x600 (Pi target) and at current 1298x961, crop a couple of tiles to confirm text is readable and strokes are visibly thicker without overflow.
+After edits, screenshot `/pi` and crop each of the seven tiles to confirm the call-outs match the user's request.
