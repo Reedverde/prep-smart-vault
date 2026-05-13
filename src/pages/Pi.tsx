@@ -95,7 +95,7 @@ const PiMoon = ({ size = 48, illumination, waxing }: { size?: number; illuminati
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" stroke="currentColor" fill="none" aria-hidden
       style={{ filter: "drop-shadow(0 0 6px currentColor)" }}>
-      <circle cx={cx} cy={cy} r={r} stroke="currentColor" strokeOpacity="0.5" strokeWidth="1.5" />
+      <circle cx={cx} cy={cy} r={r} stroke="currentColor" strokeOpacity="0.5" strokeWidth="3" />
       {d && <path d={d} fill="currentColor" fillOpacity="0.9" stroke="none" />}
     </svg>
   );
