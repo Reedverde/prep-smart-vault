@@ -35,11 +35,15 @@ Deno.serve(async (req) => {
     let res: Response | null = null;
     let lastStatus = 0;
     let lastBody = '';
+    let lastErr = '';
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), 8000);
-        const r = await fetch(upstream, { signal: ctrl.signal });
+        const t = setTimeout(() => ctrl.abort(), 20000);
+        const r = await fetch(upstream, {
+          signal: ctrl.signal,
+          headers: { 'User-Agent': 'PrepPi/1.0', Accept: 'application/json' },
+        });
         clearTimeout(t);
         if (r.ok) {
           res = r;
@@ -49,13 +53,17 @@ Deno.serve(async (req) => {
         lastBody = (await r.text()).slice(0, 200);
         console.warn(`airnow-observations upstream ${r.status} (attempt ${attempt + 1}): ${lastBody}`);
       } catch (e) {
-        console.warn(`airnow-observations fetch threw (attempt ${attempt + 1}):`, e);
+        lastErr = e instanceof Error ? e.message : String(e);
+        console.warn(`airnow-observations fetch threw (attempt ${attempt + 1}):`, lastErr);
       }
-      if (attempt < 2) await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
     }
     if (!res) {
-      return new Response(JSON.stringify({ error: 'upstream_failed', status: lastStatus, detail: lastBody }), {
-        status: 502,
+      // Return empty observation list with 200 so panel renders "no data" gracefully
+      // instead of surfacing a 502 runtime error overlay.
+      console.warn(`airnow-observations giving up; status=${lastStatus} err=${lastErr} body=${lastBody}`);
+      return new Response(JSON.stringify([]), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
