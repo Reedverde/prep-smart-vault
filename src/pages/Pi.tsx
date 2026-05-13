@@ -111,13 +111,16 @@ const Pi = () => {
     document.title = "PrepPi · Glance Terminal";
   }, []);
 
-  // Scale-to-fit: scale the fixed 1600x900 stage to whatever viewport we have.
+  // Scale-to-fit: scale the fixed 1600x900 stage to fit any viewport.
+  const stageRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const DESIGN_W = 1600;
     const DESIGN_H = 900;
     const apply = () => {
+      const el = stageRef.current;
+      if (!el) return;
       const s = Math.min(window.innerWidth / DESIGN_W, window.innerHeight / DESIGN_H);
-      document.documentElement.style.setProperty("--pi-scale", String(s));
+      el.style.transform = `translate(-50%, -50%) scale(${s})`;
     };
     apply();
     window.addEventListener("resize", apply);
@@ -125,7 +128,6 @@ const Pi = () => {
     return () => {
       window.removeEventListener("resize", apply);
       window.removeEventListener("orientationchange", apply);
-      document.documentElement.style.removeProperty("--pi-scale");
     };
   }, []);
 
