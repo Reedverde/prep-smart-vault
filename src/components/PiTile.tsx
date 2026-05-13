@@ -37,6 +37,25 @@ export const PiTile = ({ label, num, body, footer, sev = "green", wide, bgImage,
       data-sev={sev}
       style={style}
     >
+      {bgImage && (
+        <img
+          src={bgImage}
+          alt=""
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: bgSize === "contain" ? "contain" : "cover",
+            objectPosition: bgPosition,
+            transform: bgFlip ? "scaleX(-1)" : undefined,
+            opacity: 0.55,
+            pointerEvents: "none",
+            zIndex: 0,
+          }}
+        />
+      )}
       <div className="pi-tile-inner" />
       <span className="pi-tile-corner tl" />
       <span className="pi-tile-corner tr" />
