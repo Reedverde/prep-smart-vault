@@ -574,9 +574,11 @@ const Pi = () => {
             bgImage={piClockBg} bgPosition="left center" bgFlip bgSize="cover"
             footer={`cloudflare · ${trafficDelta != null ? `${trafficDelta > 0 ? "+" : ""}${trafficDelta.toFixed(1)}%` : "no anomaly"}`}
             body={
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, width: "100%" }}>
-                <Big size={36} color="var(--green)" glow="var(--green-glow)">{internetLabel}</Big>
-                <PiPulseLine width={140} height={26} color="var(--green)" />
+              <div style={{ display: "flex", width: "100%", justifyContent: "flex-end" }}>
+                <div style={{ width: "33.333%", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                  <Big size={36} color="var(--green)" glow="var(--green-glow)">{internetLabel}</Big>
+                  <PiPulseLine width={140} height={26} color="var(--green)" />
+                </div>
               </div>
             }
           />
