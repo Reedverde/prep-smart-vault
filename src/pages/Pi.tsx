@@ -575,7 +575,7 @@ const Pi = () => {
             footer={`cloudflare · ${trafficDelta != null ? `${trafficDelta > 0 ? "+" : ""}${trafficDelta.toFixed(1)}%` : "no anomaly"}`}
             body={
               <div style={{ display: "flex", width: "100%", justifyContent: "flex-end" }}>
-                <div style={{ width: "33.333%", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                <div style={{ width: "33.333%", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, transform: "translateX(-30px)" }}>
                   <Big size={36} color="var(--green)" glow="var(--green-glow)">{internetLabel}</Big>
                   <PiPulseLine width={140} height={26} color="var(--green)" />
                 </div>
