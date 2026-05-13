@@ -44,13 +44,18 @@ export const PiTile = ({ label, num, body, footer, sev = "green", wide, bgImage,
           aria-hidden
           style={{
             position: "absolute",
-            inset: 0,
-            width: "100%",
+            top: 0,
+            bottom: 0,
+            ...(bgPosition.includes("left") ? { left: 0 } : bgPosition.includes("right") ? { right: 0 } : { left: "50%", transform: "translateX(-50%)" }),
             height: "100%",
-            objectFit: bgSize === "contain" ? "contain" : "cover",
+            width: "auto",
+            maxWidth: "60%",
+            objectFit: "contain",
             objectPosition: bgPosition,
-            transform: bgFlip ? "scaleX(-1)" : undefined,
-            opacity: 0.55,
+            transform: bgFlip
+              ? (bgPosition.includes("left") || bgPosition.includes("right") ? "scaleX(-1)" : "translateX(-50%) scaleX(-1)")
+              : undefined,
+            opacity: 0.6,
             pointerEvents: "none",
             zIndex: 0,
           }}
