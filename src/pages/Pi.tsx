@@ -662,6 +662,7 @@ const Pi = () => {
         {/* Scanline overlay — absolute inside .pi-root, contained */}
         <div className="pi-scan" />
       </div>
+      </div>
     </div>
   );
 };
