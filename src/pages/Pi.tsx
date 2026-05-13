@@ -387,8 +387,8 @@ const Pi = () => {
             footer={`${cond.toLowerCase()} · ${windMph != null ? `${windMph}mph w` : "—"} · feels ${tempF != null ? Math.round(tempF) : "—"}°`}
             body={
               <>
-                <PiWeatherIcon size={72} />
-                <Big size={42} color="var(--green)" glow="var(--green-glow)">
+                <PiWeatherIcon size={97} />
+                <Big size={57} color="var(--green)" glow="var(--green-glow)">
                   {tempF != null ? `${Math.round(tempF)}°` : "—"}
                 </Big>
               </>
@@ -398,7 +398,7 @@ const Pi = () => {
             footer={alertsCount === 0 ? "no active warnings" : `${alertsCount} active · ${officeCode}`}
             body={
               <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center" }}>
-                <PiShield size={80} count={alertsCount}
+                <PiShield size={108} count={alertsCount}
                   color={alertsSev === "red" ? "var(--red)" : alertsSev === "yellow" ? "var(--yellow)" : "var(--green)"} />
                 <table style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "var(--dim)", letterSpacing: "0.08em", borderSpacing: "6px 0" }}>
                   <tbody>
@@ -414,7 +414,7 @@ const Pi = () => {
             footer={`rise ${moonRiseStr} · set ${moonSetStr}`}
             body={
               <div style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--blue)" }}>
-                <PiMoon size={88} illumination={moonInfo.phase.illumination} waxing={moonInfo.phase.waxing} />
+                <PiMoon size={119} illumination={moonInfo.phase.illumination} waxing={moonInfo.phase.waxing} />
                 <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, lineHeight: 1.4, letterSpacing: "0.08em" }}>
                   <div style={{ color: "var(--fg)" }}>{moonInfo.phase.name.toUpperCase()}</div>
                   <div style={{ color: "var(--dim)" }} className="tabular-nums">{moonInfo.phase.illumination}% LIT</div>
@@ -429,8 +429,8 @@ const Pi = () => {
                 value={maxAqi}
                 min={0}
                 max={300}
-                width={110}
-                height={56}
+                width={148}
+                height={76}
                 label={maxAqi != null ? aqiCat.toUpperCase() : undefined}
                 zones={[
                   { from: 0, to: 50, color: "var(--green)" },
@@ -451,7 +451,7 @@ const Pi = () => {
             footer={hwoData?.office ? `${hwoData.office.toLowerCase()}` : "tstorm thu/fri · pbz"}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <PiHazardTriangle size={80} color={hwoSev === "red" ? "var(--red)" : hwoSev === "yellow" ? "var(--yellow)" : "var(--green)"} />
+                <PiHazardTriangle size={108} color={hwoSev === "red" ? "var(--red)" : hwoSev === "yellow" ? "var(--yellow)" : "var(--green)"} />
                 <span className={`pi-pill ${hwoSev === "red" ? "pi-c-red" : hwoSev === "yellow" ? "pi-c-yellow" : "pi-c-green"}`}>
                   {hwoRisk ? hwoRisk.toUpperCase() : "—"}
                 </span>
@@ -462,10 +462,10 @@ const Pi = () => {
             footer={`padd 1b · weekly · eia`}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, width: "100%" }}>
-                <Big size={36} color="var(--green)" glow="var(--green-glow)">
+                <Big size={49} color="var(--green)" glow="var(--green-glow)">
                   {fuelLatest != null ? `$${fuelLatest.toFixed(2)}` : "—"}
                 </Big>
-                <PiGradBar pct={fuelPct ?? 0} width={140} height={9} redlinePct={80} />
+                <PiGradBar pct={fuelPct ?? 0} width={189} height={12} redlinePct={80} />
                 <div style={{ display: "flex", justifyContent: "space-between", width: 140, fontFamily: "JetBrains Mono, monospace", fontSize: 8, color: "var(--dim)" }}>
                   <span>$2.50</span>
                   <span className={fuelWow != null && fuelWow < 0 ? "pi-c-green" : "pi-c-yellow"}>
@@ -483,7 +483,7 @@ const Pi = () => {
                 value={stlfsi}
                 min={-2}
                 max={2}
-                size={78}
+                size={105}
                 sev={stressSev === "red" ? "red" : stressSev === "yellow" ? "yellow" : "purple"}
                 centerLabel={stlfsi != null ? stlfsi.toFixed(2) : "—"}
                 sublabel="STLFSI"
@@ -494,12 +494,12 @@ const Pi = () => {
             footer={`${natStateCount} states · top: ${natTopStates || "—"}`}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", gap: 4 }}>
-                <Big size={34} color={natSev === "red" ? "var(--red)" : "var(--yellow)"}
+                <Big size={46} color={natSev === "red" ? "var(--red)" : "var(--yellow)"}
                   glow={natSev === "red" ? "var(--red-glow)" : "var(--yellow-glow)"}>
                   {natCount.toLocaleString()}
                 </Big>
                 <div style={{ width: "100%", padding: "0 4px" }}>
-                  <PiUSHeatmap values={natTop} sev={natSev === "red" ? "red" : "yellow"} height={32} />
+                  <PiUSHeatmap values={natTop} sev={natSev === "red" ? "red" : "yellow"} height={43} />
                 </div>
               </div>
             }
@@ -508,12 +508,12 @@ const Pi = () => {
             footer={`pjm · ${gridSev === "red" ? "critical" : gridSev === "yellow" ? "elevated" : "normal"}`}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", gap: 4 }}>
-                <Big size={34} color={gridSev === "red" ? "var(--red)" : "var(--yellow)"}
+                <Big size={46} color={gridSev === "red" ? "var(--red)" : "var(--yellow)"}
                   glow={gridSev === "red" ? "var(--red-glow)" : "var(--yellow-glow)"}>
                   {gridDemand ? `${(gridDemand / 1000).toFixed(1)}k` : "—"}
                   <span style={{ fontSize: 14, color: "var(--dim)", marginLeft: 4, fontWeight: 400 }}>MW</span>
                 </Big>
-                <PiGradBar pct={gridPct ?? 0} width={140} height={9} redlinePct={92} />
+                <PiGradBar pct={gridPct ?? 0} width={189} height={12} redlinePct={92} />
                 <div style={{ display: "flex", justifyContent: "space-between", width: 140, fontFamily: "JetBrains Mono, monospace", fontSize: 8, color: "var(--dim)" }}>
                   <span>0</span>
                   <span className="pi-c-yellow">{gridPct != null ? `${gridPct.toFixed(0)}% PEAK` : ""}</span>
@@ -528,15 +528,15 @@ const Pi = () => {
             footer={`${outageSeverity || "all clear"} · firstenergy`}
             body={
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <Big size={42} color="var(--green)" glow="var(--green-glow)">
+                <Big size={57} color="var(--green)" glow="var(--green-glow)">
                   {outageCust}
                 </Big>
                 <div style={{ display: "flex", gap: 4 }}>
                   {[0, 1, 2].map((s) => (
                     <PiCellStack
                       key={s}
-                      width={18}
-                      height={84}
+                      width={24}
+                      height={113}
                       cells={Array.from({ length: 6 }, () => ({ lit: outageCust === 0 }))}
                     />
                   ))}
@@ -550,7 +550,7 @@ const Pi = () => {
               <div style={{ display: "flex", flexDirection: "column", width: "100%", gap: 4 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 4px" }}>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                    <Big size={42} color="var(--red)" glow="var(--red-glow)">
+                    <Big size={57} color="var(--red)" glow="var(--red-glow)">
                       {conflictLabelTxt}
                     </Big>
                     {conflictDelta != null && (
@@ -563,7 +563,7 @@ const Pi = () => {
                     {conflictCount?.toLocaleString() ?? "—"} ARTICLES
                   </span>
                 </div>
-                <PiAreaChart data={conflictSeries} width={290} height={48} color="var(--red)" />
+                <PiAreaChart data={conflictSeries} width={392} height={65} color="var(--red)" />
               </div>
             }
           />
@@ -571,9 +571,9 @@ const Pi = () => {
             footer={`${largestPlace ? largestPlace.toLowerCase() : `${quakesArr.length} events`}${largestHrsAgo != null ? ` · ${largestHrsAgo}h` : ""}`}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                <PiQuakeProfile magnitude={largestMag ?? 0} width={120} height={56}
+                <PiQuakeProfile magnitude={largestMag ?? 0} width={162} height={76}
                   color={quakeSev === "red" ? "var(--red)" : quakeSev === "yellow" ? "var(--yellow)" : "var(--green)"} />
-                <Big size={30} color={quakeSev === "red" ? "var(--red)" : quakeSev === "yellow" ? "var(--yellow)" : "var(--green)"}
+                <Big size={40} color={quakeSev === "red" ? "var(--red)" : quakeSev === "yellow" ? "var(--yellow)" : "var(--green)"}
                   glow={quakeSev === "red" ? "var(--red-glow)" : "var(--yellow-glow)"}>
                   {largestMag != null ? `M${largestMag.toFixed(1)}` : "—"}
                 </Big>
@@ -584,8 +584,8 @@ const Pi = () => {
             footer="last 6h · gdelt curated"
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <Big size={42} color="var(--green)" glow="var(--green-glow)">{headlineCount}</Big>
-                <PiHistogram data={headlinesBars} width={94} height={28} color="var(--green)" />
+                <Big size={57} color="var(--green)" glow="var(--green-glow)">{headlineCount}</Big>
+                <PiHistogram data={headlinesBars} width={127} height={38} color="var(--green)" />
               </div>
             }
           />
@@ -597,8 +597,8 @@ const Pi = () => {
             body={
               <div style={{ display: "flex", width: "100%", justifyContent: "flex-end" }}>
                 <div style={{ width: "33.333%", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, transform: "translateX(-30px)" }}>
-                  <Big size={36} color="var(--green)" glow="var(--green-glow)">{internetLabel}</Big>
-                  <PiPulseLine width={140} height={26} color="var(--green)" />
+                  <Big size={49} color="var(--green)" glow="var(--green-glow)">{internetLabel}</Big>
+                  <PiPulseLine width={189} height={35} color="var(--green)" />
                 </div>
               </div>
             }
@@ -607,7 +607,7 @@ const Pi = () => {
             footer={`${gdacsArr.length} active · gdacs`}
             body={
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <PiGlobe size={88} pins={pins} color="var(--orange)" />
+                <PiGlobe size={119} pins={pins} color="var(--orange)" />
                 <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, lineHeight: 1.5, letterSpacing: "0.1em" }}>
                   <div className="pi-c-red">● {redCount} RED</div>
                   <div className="pi-c-orange">● {orangeCount} ORANGE</div>
@@ -619,7 +619,7 @@ const Pi = () => {
             footer="noaa swpc"
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <PiKpField kp={latestKp} size={84} color={kpSev === "red" ? "var(--red)" : kpSev === "yellow" ? "var(--yellow)" : "var(--blue)"} />
+                <PiKpField kp={latestKp} size={113} color={kpSev === "red" ? "var(--red)" : kpSev === "yellow" ? "var(--yellow)" : "var(--blue)"} />
                 <span className={`pi-pill ${kpSev === "red" ? "pi-c-red" : kpSev === "yellow" ? "pi-c-yellow" : "pi-c-blue"}`}>{kpLabel}</span>
               </div>
             }
