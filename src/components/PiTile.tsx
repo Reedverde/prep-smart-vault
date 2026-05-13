@@ -54,7 +54,7 @@ export const PiTile = ({ label, num, body, footer, sev = "green", wide, bgImage,
             objectFit: "cover",
             objectPosition: bgPosition,
             transform: bgFlip ? "scaleX(-1)" : undefined,
-            opacity: 0.6,
+            opacity: 0.35,
             pointerEvents: "none",
             zIndex: 0,
           }}
