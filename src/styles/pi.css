@@ -34,6 +34,7 @@
   background: var(--bg-deep);
   color: var(--text);
   font-family: "Rajdhani", system-ui, sans-serif;
+  font-size: 18px;
   overflow: hidden;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
@@ -85,7 +86,7 @@
   display: flex;
   flex-direction: column;
   margin: 8px;
-  border: 1px solid var(--chrome-2);
+  border: 2px solid var(--chrome-2);
   background: var(--bg);
 }
 
@@ -95,40 +96,40 @@
 .pi-root .pi-frame::after {
   content: "";
   position: absolute;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   pointer-events: none;
   filter: drop-shadow(0 0 4px var(--green-glow));
   z-index: 3;
 }
 .pi-root .pi-frame::before {
   top: -2px; left: -2px;
-  border-top: 2px solid var(--green);
-  border-left: 2px solid var(--green);
+  border-top: 3px solid var(--green);
+  border-left: 3px solid var(--green);
 }
 .pi-root .pi-frame::after {
   top: -2px; right: -2px;
-  border-top: 2px solid var(--green);
-  border-right: 2px solid var(--green);
+  border-top: 3px solid var(--green);
+  border-right: 3px solid var(--green);
 }
 .pi-root .pi-corner-bl,
 .pi-root .pi-corner-br {
   position: absolute;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   pointer-events: none;
   filter: drop-shadow(0 0 4px var(--green-glow));
   z-index: 3;
 }
 .pi-root .pi-corner-bl {
   bottom: -2px; left: -2px;
-  border-bottom: 2px solid var(--green);
-  border-left: 2px solid var(--green);
+  border-bottom: 3px solid var(--green);
+  border-left: 3px solid var(--green);
 }
 .pi-root .pi-corner-br {
   bottom: -2px; right: -2px;
-  border-bottom: 2px solid var(--green);
-  border-right: 2px solid var(--green);
+  border-bottom: 3px solid var(--green);
+  border-right: 3px solid var(--green);
 }
 
 /* Scanline overlay — absolute inside .pi-root, not fixed. */
@@ -152,9 +153,9 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 10px;
-  border-bottom: 1px solid var(--chrome);
+  border-bottom: 2px solid var(--chrome);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 14px;
   letter-spacing: 0.18em;
   color: var(--dim);
   text-transform: uppercase;
@@ -163,15 +164,15 @@
 .pi-root .pi-brand {
   font-family: "Orbitron", sans-serif;
   font-weight: 800;
-  font-size: 12px;
+  font-size: 16px;
   color: var(--green);
   letter-spacing: 0.2em;
   text-shadow: 0 0 8px var(--green-glow);
 }
 .pi-root .pi-glyph {
   position: relative;
-  width: 16px; height: 16px;
-  border: 1px solid var(--green);
+  width: 20px; height: 20px;
+  border: 2px solid var(--green);
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
@@ -180,14 +181,14 @@
 }
 .pi-root .pi-glyph::before {
   content: "";
-  width: 8px; height: 8px;
-  border: 1px solid var(--green);
+  width: 10px; height: 10px;
+  border: 2px solid var(--green);
   border-radius: 50%;
 }
 .pi-root .pi-glyph::after {
   content: "";
   position: absolute;
-  width: 4px; height: 4px;
+  width: 6px; height: 6px;
   background: var(--green);
   border-radius: 50%;
   animation: pi-pulse 2s ease-in-out infinite;
@@ -195,7 +196,7 @@
 }
 .pi-root .pi-cursor {
   display: inline-block;
-  width: 8px; height: 14px;
+  width: 10px; height: 18px;
   background: var(--green);
   margin-left: 6px;
   animation: pi-blink 1s steps(2) infinite;
@@ -238,7 +239,7 @@
 .pi-root .pi-tile {
   position: relative;
   background: linear-gradient(135deg, var(--tile), var(--bg));
-  border: 1px solid var(--chrome);
+  border: 2px solid var(--chrome);
   display: flex;
   flex-direction: column;
   padding: 6px 8px;
@@ -250,20 +251,20 @@
 .pi-root .pi-tile-inner {
   position: absolute;
   inset: 4px;
-  border: 1px solid rgba(143, 255, 122, 0.06);
+  border: 2px solid rgba(143, 255, 122, 0.06);
   pointer-events: none;
 }
 /* 4 corner accents (8x8) */
 .pi-root .pi-tile-corner {
   position: absolute;
-  width: 8px; height: 8px;
+  width: 12px; height: 12px;
   pointer-events: none;
   filter: drop-shadow(0 0 3px var(--green-glow));
 }
-.pi-root .pi-tile-corner.tl { top: 1px; left: 1px; border-top: 1px solid var(--green); border-left: 1px solid var(--green); }
-.pi-root .pi-tile-corner.tr { top: 1px; right: 1px; border-top: 1px solid var(--green); border-right: 1px solid var(--green); }
-.pi-root .pi-tile-corner.bl { bottom: 1px; left: 1px; border-bottom: 1px solid var(--green); border-left: 1px solid var(--green); }
-.pi-root .pi-tile-corner.br { bottom: 1px; right: 1px; border-bottom: 1px solid var(--green); border-right: 1px solid var(--green); }
+.pi-root .pi-tile-corner.tl { top: 1px; left: 1px; border-top: 2px solid var(--green); border-left: 2px solid var(--green); }
+.pi-root .pi-tile-corner.tr { top: 1px; right: 1px; border-top: 2px solid var(--green); border-right: 2px solid var(--green); }
+.pi-root .pi-tile-corner.bl { bottom: 1px; left: 1px; border-bottom: 2px solid var(--green); border-left: 2px solid var(--green); }
+.pi-root .pi-tile-corner.br { bottom: 1px; right: 1px; border-bottom: 2px solid var(--green); border-right: 2px solid var(--green); }
 
 .pi-root .pi-tile[data-sev="green"]   { border-color: var(--green); }
 .pi-root .pi-tile[data-sev="yellow"]  { border-color: var(--yellow); }
@@ -285,14 +286,14 @@
   justify-content: space-between;
   font-family: "Orbitron", sans-serif;
   font-weight: 600;
-  font-size: 9px;
+  font-size: 13px;
   letter-spacing: 0.18em;
   color: var(--dim);
   text-transform: uppercase;
 }
 .pi-root .pi-tile-id {
   font-family: "JetBrains Mono", monospace;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 400;
   letter-spacing: 0.15em;
   color: var(--faint);
@@ -312,7 +313,7 @@
   position: relative;
   z-index: 2;
   font-family: "JetBrains Mono", monospace;
-  font-size: 9px;
+  font-size: 12px;
   color: var(--dim);
   letter-spacing: 0.05em;
   text-transform: lowercase;
@@ -344,7 +345,7 @@
   border: 1px solid currentColor;
   border-radius: 2px;
   font-family: "JetBrains Mono", monospace;
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 0.15em;
   text-transform: uppercase;
 }
@@ -359,7 +360,7 @@
 .pi-root .pi-big-clock {
   font-family: "Orbitron", sans-serif;
   font-weight: 900;
-  font-size: 64px;
+  font-size: 84px;
   white-space: nowrap;
   line-height: 1;
   letter-spacing: -0.02em;
@@ -385,9 +386,9 @@
   height: 32px;
   display: flex;
   align-items: center;
-  border-top: 1px solid var(--chrome);
+  border-top: 2px solid var(--chrome);
   font-family: "JetBrains Mono", monospace;
-  font-size: 10px;
+  font-size: 14px;
   letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--green);
@@ -440,7 +441,7 @@
 }
 .pi-root .pi-bars span {
   display: block;
-  width: 2px;
+  width: 3px;
   background: var(--green);
   box-shadow: 0 0 4px var(--green-glow);
 }
@@ -454,7 +455,7 @@
   position: relative;
   width: 88px; height: 88px;
   border-radius: 50%;
-  border: 1px solid var(--green);
+  border: 2px solid var(--green);
   box-shadow: inset 0 0 12px var(--green-soft);
 }
 .pi-root .pi-radar::before,
@@ -475,8 +476,8 @@
   position: absolute;
   background: rgba(143, 255, 122, 0.25);
 }
-.pi-root .pi-radar-cross::before { top: 50%; left: 0; right: 0; height: 1px; }
-.pi-root .pi-radar-cross::after  { left: 50%; top: 0; bottom: 0; width: 1px; }
+.pi-root .pi-radar-cross::before { top: 50%; left: 0; right: 0; height: 2px; }
+.pi-root .pi-radar-cross::after  { left: 50%; top: 0; bottom: 0; width: 2px; }
 .pi-root .pi-radar-sweep {
   position: absolute;
   inset: 0;
@@ -494,7 +495,7 @@
 .pi-root .pi-radar-center {
   position: absolute;
   top: 50%; left: 50%;
-  width: 4px; height: 4px;
+  width: 6px; height: 6px;
   background: var(--green);
   border-radius: 50%;
   transform: translate(-50%, -50%);
