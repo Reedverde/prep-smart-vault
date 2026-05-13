@@ -26,9 +26,11 @@ export type PiTileProps = {
   bgFlip?: boolean;
   /** Background size for bgImage (default "cover") */
   bgSize?: string;
+  /** Horizontal pixel offset for bgImage (negative = shift left) */
+  bgOffsetX?: number;
 };
 
-export const PiTile = ({ label, num, body, footer, sev = "green", wide, bgImage, bgPosition = "right center", bgFlip, bgSize = "cover" }: PiTileProps) => {
+export const PiTile = ({ label, num, body, footer, sev = "green", wide, bgImage, bgPosition = "right center", bgFlip, bgSize = "cover", bgOffsetX = 0 }: PiTileProps) => {
   const style: React.CSSProperties = {};
   if (wide) style.gridColumn = "span 2 / span 2";
   return (
@@ -44,9 +46,12 @@ export const PiTile = ({ label, num, body, footer, sev = "green", wide, bgImage,
           aria-hidden
           style={{
             position: "absolute",
-            inset: 0,
-            width: "100%",
+            top: 0,
+            bottom: 0,
+            left: bgOffsetX,
+            right: -bgOffsetX,
             height: "100%",
+            width: "auto",
             objectFit: "cover",
             objectPosition: bgPosition,
             transform: bgFlip ? "scaleX(-1)" : undefined,
