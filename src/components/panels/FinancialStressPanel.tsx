@@ -5,6 +5,10 @@ import { LineChart, Line, ResponsiveContainer, YAxis, ReferenceLine } from "rech
 
 type Level = "low" | "below" | "normal" | "elevated" | "high";
 
+const PURPLE = "hsl(270 85% 72%)";
+const PURPLE_DIM = "hsl(270 85% 72% / 0.18)";
+const PURPLE_GLOW = "hsl(270 85% 72% / 0.55)";
+
 const LEVEL_STYLE: Record<Level, string> = {
   low: "border-severity-low/40 bg-severity-low/15 text-severity-low",
   below: "border-severity-low/30 bg-severity-low/10 text-severity-low",
@@ -26,6 +30,56 @@ const ConfigureNotice = ({ keyName }: { keyName: string }) => (
     Configure <span className="text-foreground">{keyName}</span> in secrets to enable.
   </div>
 );
+
+const StressRing = ({ value }: { value: number }) => {
+  const SIZE = 156;
+  const STROKE = 8;
+  const r = (SIZE - STROKE) / 2;
+  const cx = SIZE / 2;
+  const cy = SIZE / 2;
+  const circumference = 2 * Math.PI * r;
+  // map |value| 0..3 to 0..1 of full ring
+  const pct = Math.max(0, Math.min(1, Math.abs(value) / 3));
+  const dash = pct * circumference;
+
+  return (
+    <div className="relative" style={{ width: SIZE, height: SIZE }}>
+      <svg width={SIZE} height={SIZE} className="-rotate-90">
+        <circle
+          cx={cx}
+          cy={cy}
+          r={r}
+          fill="none"
+          stroke={PURPLE_DIM}
+          strokeWidth={STROKE}
+        />
+        <circle
+          cx={cx}
+          cy={cy}
+          r={r}
+          fill="none"
+          stroke={PURPLE}
+          strokeWidth={STROKE}
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${circumference - dash}`}
+          style={{ filter: `drop-shadow(0 0 6px ${PURPLE_GLOW})` }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span
+          className="font-mono text-4xl font-semibold tabular-nums leading-none"
+          style={{ color: PURPLE, textShadow: `0 0 14px ${PURPLE_GLOW}` }}
+        >
+          {value > 0 ? "+" : ""}
+          {value.toFixed(2)}
+        </span>
+        <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-dim mt-2">
+          STLFSI
+        </span>
+      </div>
+    </div>
+  );
+};
 
 export const FinancialStressPanel = ({ refreshMs }: { refreshMs: number }) => {
   const { data, isLoading, error, refetch, isFetching, dataUpdatedAt } = useFredStress(refreshMs);
@@ -52,17 +106,12 @@ export const FinancialStressPanel = ({ refreshMs }: { refreshMs: number }) => {
       ) : error || !data ? (
         <PanelError message="Could not load FRED data" onRetry={() => refetch()} />
       ) : (
-        <div className="space-y-3">
-          <div className="flex items-baseline justify-between gap-2">
-            <div>
-              <div className="font-mono text-[10px] uppercase tracking-wider text-dim mb-1">STLFSI</div>
-              <span className="font-mono text-3xl font-semibold text-foreground tabular-nums">
-                {data.stlfsi?.latest != null ? data.stlfsi.latest.toFixed(2) : "—"}
-              </span>
-            </div>
+        <div className="space-y-4">
+          <div className="flex flex-col items-center gap-3 pt-1">
+            <StressRing value={data.stlfsi?.latest ?? 0} />
             {data.stlfsi?.level && (
               <span
-                className={`font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border ${LEVEL_STYLE[data.stlfsi.level as Level]}`}
+                className={`font-mono text-[10px] uppercase tracking-[0.2em] px-2.5 py-1 rounded border ${LEVEL_STYLE[data.stlfsi.level as Level]}`}
               >
                 {LEVEL_LABEL[data.stlfsi.level as Level]}
               </span>
@@ -77,7 +126,7 @@ export const FinancialStressPanel = ({ refreshMs }: { refreshMs: number }) => {
                   <LineChart data={data.stlfsi.series}>
                     <YAxis hide domain={["auto", "auto"]} />
                     <ReferenceLine y={0} stroke="hsl(var(--border))" strokeDasharray="2 2" />
-                    <Line type="monotone" dataKey="value" stroke="hsl(var(--accent))" strokeWidth={1.5} dot={false} />
+                    <Line type="monotone" dataKey="value" stroke={PURPLE} strokeWidth={1.5} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
