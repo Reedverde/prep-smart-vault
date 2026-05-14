@@ -1,7 +1,9 @@
 import { corsHeaders, requireUser } from '../_shared/auth.ts';
+import { cacheRead, cacheWrite } from '../_shared/cache.ts';
 
-let cache: { ts: number; payload: any } | null = null;
-const CACHE_MS = 60 * 60 * 1000;
+const CACHE_KEY = 'eia:fuel';
+const FRESH_MS = 24 * 60 * 60 * 1000;         // 24h — EIA fuel is weekly
+const STALE_MAX_MS = 14 * 24 * 60 * 60 * 1000; // 14d fallback
 
 type Row = { period: string; value: number };
 
