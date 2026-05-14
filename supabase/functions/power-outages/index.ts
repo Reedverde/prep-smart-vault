@@ -134,11 +134,14 @@ const parsePage = (html: string): ParsedData => {
   };
 };
 
-const fetchPage = async (url: string): Promise<{ html: string | null; code: number }> => {
+const fetchPage = async (
+  url: string,
+  headers: Record<string, string>,
+): Promise<{ html: string | null; code: number }> => {
   try {
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 20_000);
-    const res = await fetch(url, { headers: HEADERS, signal: ctrl.signal });
+    const t = setTimeout(() => ctrl.abort(), 25_000);
+    const res = await fetch(url, { headers, signal: ctrl.signal });
     clearTimeout(t);
     if (!res.ok) return { html: null, code: res.status };
     return { html: await res.text(), code: res.status };
@@ -149,8 +152,18 @@ const fetchPage = async (url: string): Promise<{ html: string | null; code: numb
 };
 
 const fetchOutages = async () => {
-  const { html, code } = await fetchPage(PA_URL);
+  // Try direct first; if blocked, fall back to the reader proxy.
+  let { html, code } = await fetchPage(PA_URL, HEADERS_DIRECT);
+  let via = 'direct';
+  if (!html) {
+    console.log(`power-outages: direct fetch failed (${code}), falling back to proxy`);
+    const proxied = await fetchPage(PROXY_URL, HEADERS_PROXY);
+    html = proxied.html;
+    code = proxied.code;
+    via = 'proxy';
+  }
   if (!html) throw new Error(`upstream fetch failed code=${code}`);
+  console.log(`power-outages: fetched via ${via} (${html.length} bytes)`);
 
   const parsed = parsePage(html);
   if (parsed.stateOut == null || parsed.stateTracked == null) {
