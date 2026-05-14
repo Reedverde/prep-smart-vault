@@ -12,7 +12,6 @@ import { Loader2 } from "lucide-react";
 const Login = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -25,18 +24,8 @@ const Login = () => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: `${window.location.origin}/dashboard` },
-        });
-        if (error) throw error;
-        toast.success("Account created. Signing you in…");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
     } catch (err: any) {
       toast.error(err.message || "Authentication failed");
     } finally {
@@ -130,23 +119,14 @@ const Login = () => {
               disabled={submitting}
             >
               {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {mode === "signup" ? "Create Account" : "Sign In"}
+              Sign In
             </Button>
           </form>
 
-          <div className="flex items-center justify-between font-mono text-xs">
-            <button
-              type="button"
-              className="text-accent hover:underline"
-              onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-            >
-              {mode === "signin" ? "Create account" : "Have an account? Sign in"}
+          <div className="flex items-center justify-end font-mono text-xs">
+            <button type="button" className="text-dim hover:text-foreground" onClick={handleReset}>
+              Forgot?
             </button>
-            {mode === "signin" && (
-              <button type="button" className="text-dim hover:text-foreground" onClick={handleReset}>
-                Forgot?
-              </button>
-            )}
           </div>
         </div>
 
