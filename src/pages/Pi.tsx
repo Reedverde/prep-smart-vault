@@ -477,14 +477,27 @@ const Pi = () => {
           <PiTile label="FIN STRESS · STLFSI" num="07" sev={stressSev}
             footer={`${stlfsi != null && stlfsi < 0 ? "below avg" : "elevated"} · vix · weekly`}
             body={
-              <PiRingMeter
+              <PiStressHud
                 value={stlfsi}
                 min={-2}
-                max={2}
-                size={105}
+                max={3}
                 sev={stressSev === "red" ? "red" : stressSev === "yellow" ? "yellow" : "purple"}
-                centerLabel={stlfsi != null ? stlfsi.toFixed(2) : "—"}
-                sublabel="STLFSI"
+                ringSize={92}
+                barWidth={104}
+                segments={11}
+                levelLabel={
+                  stlfsi == null
+                    ? "—"
+                    : stlfsi > 2
+                    ? "HIGH"
+                    : stlfsi > 1
+                    ? "ELEVATED"
+                    : stlfsi > 0
+                    ? "NORMAL"
+                    : stlfsi > -1
+                    ? "BELOW AVG"
+                    : "LOW"
+                }
               />
             }
           />
