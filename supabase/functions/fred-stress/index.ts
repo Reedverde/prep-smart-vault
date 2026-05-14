@@ -1,7 +1,9 @@
 import { corsHeaders, requireUser } from '../_shared/auth.ts';
+import { cacheRead, cacheWrite } from '../_shared/cache.ts';
 
-let cache: { ts: number; payload: any } | null = null;
-const CACHE_MS = 60 * 60 * 1000;
+const CACHE_KEY = 'fred:stress';
+const FRESH_MS = 24 * 60 * 60 * 1000;          // 24h — FRED publishes daily/weekly
+const STALE_MAX_MS = 14 * 24 * 60 * 60 * 1000; // 14d fallback
 
 const fetchFred = async (apiKey: string, seriesId: string, limit: number) => {
   const url = `https://api.stlouisfed.org/fred/series/observations?series_id=${seriesId}&api_key=${apiKey}&file_type=json&sort_order=desc&limit=${limit}`;
