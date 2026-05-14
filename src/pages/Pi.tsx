@@ -26,6 +26,8 @@ import {
   PiPulseLine,
   PiGlobe,
   PiKpField,
+  PiAqiArcGauge,
+  PiStressHud,
   PI_COLORS,
 } from "@/components/PiViz";
 import {
@@ -434,20 +436,7 @@ const Pi = () => {
           <PiTile label="AIR QUALITY" num="03" sev={aqiSev}
             footer={`aqi · pm2.5 · airnow`}
             body={
-              <PiHalfRing
-                value={maxAqi}
-                min={0}
-                max={300}
-                width={148}
-                height={76}
-                label={maxAqi != null ? aqiCat.toUpperCase() : undefined}
-                zones={[
-                  { from: 0, to: 50, color: "var(--green)" },
-                  { from: 50, to: 100, color: "var(--yellow)" },
-                  { from: 100, to: 150, color: "var(--orange)" },
-                  { from: 150, to: 300, color: "var(--red)" },
-                ]}
-              />
+              <PiAqiArcGauge value={maxAqi} max={300} width={210} height={120} ticks={26} />
             }
           />
           <PiTile label="SEVERE RADAR" num="04" sev="green"
@@ -488,14 +477,27 @@ const Pi = () => {
           <PiTile label="FIN STRESS · STLFSI" num="07" sev={stressSev}
             footer={`${stlfsi != null && stlfsi < 0 ? "below avg" : "elevated"} · vix · weekly`}
             body={
-              <PiRingMeter
+              <PiStressHud
                 value={stlfsi}
                 min={-2}
-                max={2}
-                size={105}
+                max={3}
                 sev={stressSev === "red" ? "red" : stressSev === "yellow" ? "yellow" : "purple"}
-                centerLabel={stlfsi != null ? stlfsi.toFixed(2) : "—"}
-                sublabel="STLFSI"
+                ringSize={92}
+                barWidth={104}
+                segments={11}
+                levelLabel={
+                  stlfsi == null
+                    ? "—"
+                    : stlfsi > 2
+                    ? "HIGH"
+                    : stlfsi > 1
+                    ? "ELEVATED"
+                    : stlfsi > 0
+                    ? "NORMAL"
+                    : stlfsi > -1
+                    ? "BELOW AVG"
+                    : "LOW"
+                }
               />
             }
           />
