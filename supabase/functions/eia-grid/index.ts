@@ -12,8 +12,7 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  const auth = await requireUser(req);
-  if (!auth.ok) return auth.response;
+  // Auth removed: public-data proxy, cron-accessible.
 
   const apiKey = Deno.env.get('EIA_APP_KEY');
   if (!apiKey) {

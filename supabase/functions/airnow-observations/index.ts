@@ -34,8 +34,7 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  const auth = await requireUser(req);
-  if (!auth.ok) return auth.response;
+  // Auth removed: this endpoint proxies public data; cron jobs need keyless access.
 
   const apiKey = Deno.env.get('AIRNOW_API_KEY');
   if (!apiKey) {

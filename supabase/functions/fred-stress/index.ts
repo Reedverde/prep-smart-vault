@@ -28,8 +28,7 @@ const latestValid = (rows: any[]) => rows.find((r) => r.value != null) || null;
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
-  const auth = await requireUser(req);
-  if (!auth.ok) return auth.response;
+  // Auth removed: public-data proxy, cron-accessible.
 
   const apiKey = Deno.env.get('FRED_API_KEY');
   if (!apiKey) {
