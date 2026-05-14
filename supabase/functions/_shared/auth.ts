@@ -29,9 +29,11 @@ export const requireUser = async (req: Request): Promise<AuthResult> => {
   // Allow anonymous kiosk access: accept the project's publishable/anon key
   // (either as the raw key or as a JWT whose role is "anon"). These endpoints
   // only proxy public third-party data, so anonymous reads are safe.
+  // Also accept the service-role key so internal cron jobs can warm the cache.
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
   const publishableKey = Deno.env.get('SUPABASE_PUBLISHABLE_KEY') ?? '';
-  if (token && (token === anonKey || token === publishableKey)) {
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  if (token && (token === anonKey || token === publishableKey || token === serviceKey)) {
     return { ok: true, userId: 'anonymous' };
   }
 

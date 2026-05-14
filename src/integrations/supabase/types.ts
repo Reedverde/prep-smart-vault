@@ -68,6 +68,27 @@ export type Database = {
         }
         Relationships: []
       }
+      api_cache: {
+        Row: {
+          cache_key: string
+          fetched_at: string
+          payload: Json
+          updated_at: string
+        }
+        Insert: {
+          cache_key: string
+          fetched_at?: string
+          payload: Json
+          updated_at?: string
+        }
+        Update: {
+          cache_key?: string
+          fetched_at?: string
+          payload?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       inventory_items: {
         Row: {
           category: string | null

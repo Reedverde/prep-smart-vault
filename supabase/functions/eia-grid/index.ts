@@ -1,15 +1,18 @@
 import { corsHeaders, requireUser } from '../_shared/auth.ts';
+import { cacheRead, cacheWrite } from '../_shared/cache.ts';
 
 // EIA API v2: region PJM demand + generation mix
 // Docs: https://www.eia.gov/opendata/documentation.php
+const CACHE_KEY = 'eia:grid:pjm';
+const FRESH_MS = 60 * 60 * 1000;              // 1h — EIA hourly data
+const STALE_MAX_MS = 7 * 24 * 60 * 60 * 1000; // 7d fallback
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  const auth = await requireUser(req);
-  if (!auth.ok) return auth.response;
+  // Auth removed: public-data proxy, cron-accessible.
 
   const apiKey = Deno.env.get('EIA_APP_KEY');
   if (!apiKey) {
@@ -17,6 +20,17 @@ Deno.serve(async (req) => {
       status: 503,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+  }
+
+  const forceFresh = new URL(req.url).searchParams.get('fresh') === '1';
+  if (!forceFresh) {
+    const cached = await cacheRead(CACHE_KEY);
+    if (cached && Date.now() - new Date(cached.fetched_at).getTime() < FRESH_MS) {
+      return new Response(JSON.stringify(cached.payload), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'cache-fresh', 'X-Cache-Fetched-At': cached.fetched_at },
+      });
+    }
   }
 
   try {
@@ -51,14 +65,16 @@ Deno.serve(async (req) => {
         mix: mixRes.status,
         isInvalidKey,
       });
+      const cached = await cacheRead(CACHE_KEY);
+      if (cached && Date.now() - new Date(cached.fetched_at).getTime() < STALE_MAX_MS) {
+        return new Response(JSON.stringify(cached.payload), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'cache-stale', 'X-Cache-Fetched-At': cached.fetched_at },
+        });
+      }
       return new Response(
-        JSON.stringify({
-          error: isInvalidKey ? 'invalid_api_key' : 'upstream_failed',
-        }),
-        {
-          status: 502,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
+        JSON.stringify({ error: isInvalidKey ? 'invalid_api_key' : 'upstream_failed' }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
@@ -112,33 +128,42 @@ Deno.serve(async (req) => {
       mixTotal,
     });
 
-    return new Response(
-      JSON.stringify({
-        region: 'PJM',
-        currentDemand,
-        peakToday,
-        peak7d,
-        stressLevel,
-        stressPct,
-        // Back-compat
-        peakDemand7d: peak7d,
-        highLoad: stressLevel === 'stressed' || stressLevel === 'critical',
-        demandTrend: demandSeries,
-        mix,
-        mixTotal,
-        mixPeriod: latestPeriod,
-      }),
-      {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-          'Cache-Control': 'public, max-age=300, stale-while-revalidate=900',
-        },
+    const payload = {
+      region: 'PJM',
+      currentDemand,
+      peakToday,
+      peak7d,
+      stressLevel,
+      stressPct,
+      // Back-compat
+      peakDemand7d: peak7d,
+      highLoad: stressLevel === 'stressed' || stressLevel === 'critical',
+      demandTrend: demandSeries,
+      mix,
+      mixTotal,
+      mixPeriod: latestPeriod,
+    };
+
+    await cacheWrite(CACHE_KEY, payload);
+
+    return new Response(JSON.stringify(payload), {
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+        'X-Cache': 'fresh',
+        'Cache-Control': 'public, max-age=300, stale-while-revalidate=900',
       },
-    );
+    });
   } catch (err) {
     console.error('eia-grid error:', err);
+    const cached = await cacheRead(CACHE_KEY);
+    if (cached && Date.now() - new Date(cached.fetched_at).getTime() < STALE_MAX_MS) {
+      return new Response(JSON.stringify(cached.payload), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'cache-stale', 'X-Cache-Fetched-At': cached.fetched_at },
+      });
+    }
     return new Response(JSON.stringify({ error: 'internal_error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
