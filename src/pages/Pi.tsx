@@ -241,9 +241,20 @@ const Pi = () => {
 
   // 10 Outages
   const outageData: any = outages.data;
-  const outageCust: number = outageData?.lawrence?.customers ?? 0;
+  const outageUnavail = outageData?.status === "unavailable";
+  const outageCust: number = outageData?.lawrence?.customersOut ?? 0;
   const outageSeverity = outageData?.severity;
-  const outageSev: PiSeverity = outageSeverity === "widespread" ? "red" : outageSeverity === "localized" ? "yellow" : "green";
+  const outageSev: PiSeverity = outageUnavail
+    ? "yellow"
+    : outageSeverity === "widespread"
+    ? "red"
+    : outageSeverity === "localized"
+    ? "yellow"
+    : "green";
+  const outageColorVar =
+    outageSev === "red" ? "var(--red)" : outageSev === "yellow" ? "var(--yellow)" : "var(--green)";
+  const outageGlowVar =
+    outageSev === "red" ? "var(--red-glow)" : outageSev === "yellow" ? "var(--yellow-glow)" : "var(--green-glow)";
 
   // 11 Conflict pulse
   const conflictData: any = conflict.data;
