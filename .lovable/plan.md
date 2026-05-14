@@ -1,25 +1,22 @@
-## Goal
-Make `/dashboard` visually identical to `/live`, and keep them in sync going forward by sharing one layout component.
+## Problem
+Global Headlines panel shows "No recent headlines" with no fallback to previous data. Two root causes in `supabase/functions/gdelt-headlines/index.ts`:
 
-## Differences today
-- `/live` uses `MoonPhasePanel` in LOCAL WEATHER DEEP DIVE; `/dashboard` uses `ScannerAudioPanel`.
-- `/live` shows a "Local Scanner · Tune In" button + location header row; `/dashboard` shows only a location row.
-- Otherwise identical 7 groups, identical responsive masonry grid.
+1. Cache is an **in-memory** `let cached` variable. Edge isolates restart frequently (visible in recent logs), wiping the cache every cold start. Other panels use the persistent `api_cache` table via `_shared/cache.ts::serveCached` — this one never migrated.
+2. When upstream fails or returns junk, the function returns `{ items: [] }` with HTTP 200 and **stores that empty result in cache**. React Query (with persistence) then locks in the empty array for the full 5-minute staleTime, overwriting any prior good payload on the client.
 
 ## Plan
 
-1. **Create `src/components/DashboardGrid.tsx`** — extract the shared content from `Live.tsx`:
-   - Props: `lat`, `lng`, `refreshMs`, `refreshMin`, `locationName`, `headerRight?` (ReactNode for an extra header slot like the scanner button), `extraHeaderNote?` (e.g. "read-only public view").
-   - Renders the location header row (with optional right-side slot) and the full 7-group masonry exactly as `Live.tsx` does today.
-   - Uses `MoonPhasePanel` (matching `/live`), removing `ScannerAudioPanel` from the deep-dive group so the two pages match. The scanner stays accessible via the "Tune In" button.
+Rewrite `supabase/functions/gdelt-headlines/index.ts` to:
 
-2. **Update `src/pages/Live.tsx`** — replace inline groups + header with `<DashboardGrid>` plus its scanner-button `headerRight` and "read-only public view" note. Keeps `PublicTopNav`.
+1. **Use `serveCached`** with key `gdelt-headlines:v1`, `freshMs = 5 min`, `staleMaxAgeMs = 24 h`. Cache persists across cold starts in the `api_cache` table.
+2. **Inside the fetcher, throw on bad upstream** (non-OK status, non-JSON body, or zero parsed articles). Throwing lets `serveCached` fall back to the last known good payload up to 24 h old instead of poisoning cache with `[]`.
+3. **Only write a successful payload** with `items.length > 0`. Empty result paths return `{ items: [], degraded: true }` with `Cache-Control: no-store` and DO NOT write to `api_cache`.
+4. **Add `X-Cache` headers** from `cacheHeaders(result)` so we can tell fresh vs stale at a glance in the network tab.
+5. Keep current classification, dedupe, denylist, and exclusion logic exactly as-is.
 
-3. **Update `src/pages/Dashboard.tsx`** — replace inline groups + header with `<DashboardGrid>`, also passing the same scanner "Tune In" button as `headerRight` so both pages look identical. Keeps `PageContainer`/`TopNav` and the `useUserSettings` loading state.
+Optional follow-up (not in this change): on the client, treat `degraded: true` responses as "don't replace existing cache" — but with #2 above the server-side fix alone should keep the panel populated.
 
-4. **Result** — only the top nav differs (auth'd `TopNav` vs `PublicTopNav`); body is one shared component, so future panel/layout changes touch one file.
+## Files touched
+- `supabase/functions/gdelt-headlines/index.ts` — rewrite cache layer per above.
 
-## Notes
-- No changes to individual panel components or edge functions.
-- `ScannerAudioPanel` import becomes unused on Dashboard; remove it. Component file stays in case it's wanted later.
-- Memory file `dashboard-panels.md` will need a small update afterward to reflect MoonPhasePanel replacing ScannerAudioPanel in the deep-dive row, and the shared `DashboardGrid` wrapper.
+No frontend, no schema, no other panels affected.

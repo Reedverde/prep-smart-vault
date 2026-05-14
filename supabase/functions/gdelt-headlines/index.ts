@@ -1,9 +1,9 @@
 import { corsHeaders, requireUser } from '../_shared/auth.ts';
+import { serveCached, cacheHeaders } from '../_shared/cache.ts';
 
-// In-memory cache to respect GDELT's 1-request-per-5-seconds rate limit.
-// 5-min cache balances freshness against the upstream limit.
-const CACHE_TTL_MS = 5 * 60 * 1000;
-let cached: { at: number; payload: unknown } | null = null;
+const CACHE_KEY = 'gdelt-headlines:v1';
+const FRESH_MS = 5 * 60 * 1000;          // serve cache instantly if newer than 5 min
+const STALE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // fall back up to 24 h on upstream failure
 
 type Tag =
   | 'CYBER'
@@ -20,13 +20,11 @@ type Tag =
 
 const classify = (title: string): Tag => {
   const t = title.toLowerCase();
-  // Most specific / highest-stakes first.
   if (/(cyber|hack|ransomware|breach|malware|phishing|data leak|exploit|zero[- ]day|ddos)/.test(t)) return 'CYBER';
   if (/coup/.test(t)) return 'COUP';
   if (/(invasion|invade)/.test(t)) return 'INVASION';
   if (/(conflict|war|military|airstrike|shelling|offensive|missile|drone strike|skirmish|clash)/.test(t)) return 'CONFLICT';
   if (/(violence|attack|killed|shooting|bombing|stabbing|assault|murder|massacre|ambush|terror|terrorism)/.test(t)) return 'VIOLENCE';
-  // POLITICAL after VIOLENCE so "political violence" still tags as VIOLENCE.
   if (/(election|parliament|congress|legislation|diplomatic|summit|treaty|sanctions|ceasefire|tariff|embargo|\bpolicy\b)/.test(t)) return 'POLITICAL';
   if (/(protest|demonstration|rally|march|riot|blockade)/.test(t)) return 'PROTEST';
   if (/(unrest|uprising)/.test(t)) return 'UNREST';
@@ -35,7 +33,6 @@ const classify = (title: string): Tag => {
   return 'OTHER';
 };
 
-// Server-side noise filter — drop personal/entertainment/sports/lifestyle before classification.
 const EXCLUDE: Array<{ reason: string; rx: RegExp }> = [
   { reason: 'entertainment', rx: /\b(actor|actress|singer|rapper|musician|celebrity|influencer|reality tv|kardashian|taylor swift|beyonce|oscars?|grammys?|golden globes?|emmy|mtv|billboard|netflix series|hbo series|marvel|dc comics)\b/i },
   { reason: 'entertainment', rx: /\b(movie|film premiere|box office|tv show|reality show|streaming release|album release|tour announcement|red carpet)\b/i },
@@ -52,14 +49,9 @@ const DENY_DOMAINS = new Set([
 const DENY_URL_SUBSTR = ['dailymail.co.uk/tvshowbiz/', 'dailymail.co.uk/femail/'];
 
 const parseDomain = (url: string): string => {
-  try {
-    return new URL(url).hostname.replace(/^www\./, '');
-  } catch {
-    return '';
-  }
+  try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return ''; }
 };
 
-// GDELT seendate format: "20260420T120000Z" → ISO
 const parseSeenDate = (s: string): string => {
   if (!s || s.length < 15) return new Date().toISOString();
   const iso = `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}T${s.slice(9, 11)}:${s.slice(11, 13)}:${s.slice(13, 15)}Z`;
@@ -67,172 +59,118 @@ const parseSeenDate = (s: string): string => {
   return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
 };
 
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+type Headline = {
+  tag: Tag;
+  title: string;
+  url: string;
+  country: string;
+  domain: string;
+  seendate: string;
+};
+
+type Payload = { items: Headline[]; fetchedAt: string };
+
+const fetchGdelt = async (): Promise<Payload> => {
+  const query = '(war OR conflict OR cyberattack OR terrorism OR sanctions OR protest OR coup) sourcelang:english';
+  const url =
+    'https://api.gdeltproject.org/api/v2/doc/doc?query=' +
+    encodeURIComponent(query) +
+    '&mode=artlist&maxrecords=100&timespan=6h&format=json&sort=DateDesc';
+
+  const res = await fetch(url, { headers: { 'User-Agent': 'PrepPi/1.0 (situational-awareness)' } });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`gdelt upstream ${res.status}: ${body.slice(0, 120)}`);
   }
+
+  const text = await res.text();
+  let json: any;
+  try { json = text ? JSON.parse(text) : {}; }
+  catch { throw new Error(`gdelt non-JSON response: ${text.slice(0, 120)}`); }
+
+  const articles: any[] = Array.isArray(json?.articles) ? json.articles : [];
+  if (articles.length === 0) throw new Error('gdelt returned zero articles');
+
+  const seen = new Set<string>();
+  const items: Headline[] = [];
+  let excludedCount = 0;
+  const reasons: Record<string, number> = {};
+
+  for (const art of articles) {
+    const title = String(art?.title || '').trim();
+    const articleUrl = String(art?.url || '').trim();
+    if (!title || !articleUrl) continue;
+
+    const domain = String(art?.domain || '').trim() || parseDomain(articleUrl);
+    const lowerUrl = articleUrl.toLowerCase();
+
+    if (DENY_DOMAINS.has(domain) || DENY_URL_SUBSTR.some((s) => lowerUrl.includes(s))) {
+      excludedCount++; reasons.domain = (reasons.domain || 0) + 1; continue;
+    }
+
+    let dropped = false;
+    for (const { reason, rx } of EXCLUDE) {
+      if (rx.test(title)) { excludedCount++; reasons[reason] = (reasons[reason] || 0) + 1; dropped = true; break; }
+    }
+    if (dropped) continue;
+
+    const dedupKey = `${domain}::${title.slice(0, 80).toLowerCase()}`;
+    if (seen.has(dedupKey)) continue;
+    seen.add(dedupKey);
+
+    items.push({
+      tag: classify(title),
+      title,
+      url: articleUrl,
+      country: String(art?.sourcecountry || '').trim(),
+      domain,
+      seendate: parseSeenDate(String(art?.seendate || '')),
+    });
+  }
+
+  items.sort((a, b) => new Date(b.seendate).getTime() - new Date(a.seendate).getTime());
+  const top = items.slice(0, 25);
+  if (top.length === 0) throw new Error('gdelt: all articles filtered out');
+
+  console.log('gdelt-headlines:', { fetched: articles.length, excluded: excludedCount, kept: top.length, reasons });
+
+  return { items: top, fetchedAt: new Date().toISOString() };
+};
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   const auth = await requireUser(req);
   if (!auth.ok) return auth.response;
 
-  if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
-    return new Response(JSON.stringify(cached.payload), {
-      status: 200,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json',
-        'X-Cache': 'HIT',
-        'Cache-Control': 'public, max-age=300, stale-while-revalidate=900',
-      },
-    });
-  }
-
   try {
-    // GDELT doc 2.0 enforces an undocumented OR-term cap — empirically ~7 terms.
-    // Anything more triggers "Your query was too short or too long".
-    // We pick the highest-signal situational-awareness keywords. Classification
-    // downstream catches related terms in titles even when not in the query.
-    const query = '(war OR conflict OR cyberattack OR terrorism OR sanctions OR protest OR coup) sourcelang:english';
-    const url =
-      'https://api.gdeltproject.org/api/v2/doc/doc?query=' +
-      encodeURIComponent(query) +
-      '&mode=artlist&maxrecords=100&timespan=6h&format=json&sort=DateDesc';
-
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'PrepPi/1.0 (situational-awareness)' },
-    });
-    if (!res.ok) {
-      if (cached) {
-        return new Response(JSON.stringify(cached.payload), {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'STALE' },
-        });
-      }
-      const emptyPayload = { items: [], fetchedAt: new Date().toISOString() };
-      cached = { at: Date.now() - (CACHE_TTL_MS - 30_000), payload: emptyPayload };
-      return new Response(JSON.stringify(emptyPayload), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'EMPTY' },
-      });
-    }
-
-    const text = await res.text();
-    let json: any = {};
-    let parseFailed = false;
-    try {
-      json = text ? JSON.parse(text) : {};
-    } catch {
-      json = {};
-      parseFailed = true;
-    }
-    if (parseFailed) {
-      console.log('gdelt-headlines: non-JSON response from GDELT (first 200 chars):', text.slice(0, 200));
-      if (cached) {
-        return new Response(JSON.stringify(cached.payload), {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'STALE' },
-        });
-      }
-    }
-    const articles: any[] = Array.isArray(json?.articles) ? json.articles : [];
-
-    const seen = new Set<string>();
-    const items: Array<{
-      tag: Tag;
-      title: string;
-      url: string;
-      country: string;
-      domain: string;
-      seendate: string;
-    }> = [];
-
-    let excludedCount = 0;
-    const reasons: Record<string, number> = {};
-
-    for (const art of articles) {
-      const title = String(art?.title || '').trim();
-      const articleUrl = String(art?.url || '').trim();
-      if (!title || !articleUrl) continue;
-
-      const domain = String(art?.domain || '').trim() || parseDomain(articleUrl);
-      const lowerUrl = articleUrl.toLowerCase();
-
-      // Domain / URL denylist
-      if (DENY_DOMAINS.has(domain) || DENY_URL_SUBSTR.some((s) => lowerUrl.includes(s))) {
-        excludedCount++;
-        reasons.domain = (reasons.domain || 0) + 1;
-        continue;
-      }
-
-      // Title-based exclusion (first match wins)
-      let dropped = false;
-      for (const { reason, rx } of EXCLUDE) {
-        if (rx.test(title)) {
-          excludedCount++;
-          reasons[reason] = (reasons[reason] || 0) + 1;
-          dropped = true;
-          break;
-        }
-      }
-      if (dropped) continue;
-
-      const dedupKey = `${domain}::${title.slice(0, 80).toLowerCase()}`;
-      if (seen.has(dedupKey)) continue;
-      seen.add(dedupKey);
-
-      items.push({
-        tag: classify(title),
-        title,
-        url: articleUrl,
-        country: String(art?.sourcecountry || '').trim(),
-        domain,
-        seendate: parseSeenDate(String(art?.seendate || '')),
-      });
-    }
-
-    items.sort((a, b) => new Date(b.seendate).getTime() - new Date(a.seendate).getTime());
-    const top = items.slice(0, 25);
-
-    const tagCounts = top.reduce((acc, item) => {
-      acc[item.tag] = (acc[item.tag] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    const otherPct = top.length ? Math.round(((tagCounts.OTHER || 0) / top.length) * 100) : 0;
-    console.log('gdelt-headlines:', {
-      fetched: articles.length,
-      excluded: excludedCount,
-      remaining: items.length,
-      reasons,
-      tagCounts,
-      otherPct,
+    const result = await serveCached<Payload>({
+      key: CACHE_KEY,
+      freshMs: FRESH_MS,
+      staleMaxAgeMs: STALE_MAX_AGE_MS,
+      fetcher: fetchGdelt,
     });
 
-    const payload = { items: top, fetchedAt: new Date().toISOString() };
-    cached = { at: Date.now(), payload };
-
-    return new Response(JSON.stringify(payload), {
+    return new Response(JSON.stringify(result.payload), {
       status: 200,
       headers: {
         ...corsHeaders,
+        ...cacheHeaders(result),
         'Content-Type': 'application/json',
-        'X-Cache': 'MISS',
-        'Cache-Control': 'public, max-age=300, stale-while-revalidate=900',
+        'Cache-Control': 'public, max-age=300, stale-while-revalidate=86400',
       },
     });
   } catch (err) {
-    if (cached) {
-      return new Response(JSON.stringify(cached.payload), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'STALE' },
-      });
-    }
-    console.error('gdelt-headlines error:', err);
-    const emptyPayload = { items: [], fetchedAt: new Date().toISOString(), degraded: true };
-    // Short-cache so we retry sooner than the normal 5-min TTL.
-    cached = { at: Date.now() - (CACHE_TTL_MS - 60_000), payload: emptyPayload };
-    return new Response(JSON.stringify(emptyPayload), {
+    // Upstream failed AND no usable cache. Do NOT poison cache with [].
+    console.warn('gdelt-headlines: degraded (no cache):', err instanceof Error ? err.message : err);
+    return new Response(JSON.stringify({ items: [], fetchedAt: new Date().toISOString(), degraded: true }), {
       status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'ERROR' },
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+        'X-Cache': 'degraded',
+        'Cache-Control': 'no-store',
+      },
     });
   }
 });
