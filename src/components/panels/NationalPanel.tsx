@@ -160,7 +160,21 @@ export const NationalPanel = ({
       sourceUrl="https://www.weather.gov/alerts"
       action={
         <>
-          <InfoTip>All active NWS alerts across the US, broken down by event type.</InfoTip>
+          <InfoTip>
+            <div className="space-y-1.5">
+              <div>All active NWS alerts across the US, broken down by event type.</div>
+              <div className="pt-1 border-t border-border/40">
+                <div className="font-semibold mb-1">Common alert types:</div>
+                <div><b>Small Craft Advisory</b> — winds 25–33 kt or hazardous seas; dangerous for boats under ~33 ft.</div>
+                <div><b>Red Flag Warning</b> — critical fire weather: low humidity + wind + dry fuels.</div>
+                <div><b>Gale Warning</b> — sustained marine winds 34–47 kt.</div>
+                <div><b>Fire Weather Watch</b> — fire-favorable conditions possible in 12–72h.</div>
+                <div><b>High Wind Warning</b> — sustained 40+ mph or gusts 58+ mph.</div>
+                <div><b>Flood Warning</b> — flooding imminent or occurring.</div>
+                <div><b>Wind Advisory</b> — sustained 31–39 mph or gusts 46–57 mph.</div>
+              </div>
+            </div>
+          </InfoTip>
           <RefreshButton onClick={() => refetch()} loading={isFetching} />
         </>
       }
