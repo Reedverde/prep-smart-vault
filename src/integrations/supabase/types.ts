@@ -286,7 +286,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      _preppi_cron_headers: { Args: never; Returns: Json }
     }
     Enums: {
       [_ in never]: never
