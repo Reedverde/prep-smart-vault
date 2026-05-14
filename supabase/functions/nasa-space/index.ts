@@ -69,35 +69,44 @@ Deno.serve(async (req) => {
     }
     neoList.sort((a, b) => a.missKm - b.missKm);
 
-    return new Response(
-      JSON.stringify({
-        donki: {
-          flares: Array.isArray(flares) ? flares.map((f: any) => ({
-            id: f.flrID,
-            classType: f.classType,
-            beginTime: f.beginTime,
-            peakTime: f.peakTime,
-            sourceLocation: f.sourceLocation,
-          })) : [],
-          cmes: Array.isArray(cmes) ? cmes.map((c: any) => ({
-            id: c.activityID,
-            startTime: c.startTime,
-            note: c.note,
-          })) : [],
-        },
-        neo: neoList.slice(0, 20),
-      }),
-      {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-          'Cache-Control': 'public, max-age=300, stale-while-revalidate=900',
-        },
+    const payload = {
+      donki: {
+        flares: Array.isArray(flares) ? flares.map((f: any) => ({
+          id: f.flrID,
+          classType: f.classType,
+          beginTime: f.beginTime,
+          peakTime: f.peakTime,
+          sourceLocation: f.sourceLocation,
+        })) : [],
+        cmes: Array.isArray(cmes) ? cmes.map((c: any) => ({
+          id: c.activityID,
+          startTime: c.startTime,
+          note: c.note,
+        })) : [],
       },
-    );
+      neo: neoList.slice(0, 20),
+    };
+
+    await cacheWrite(CACHE_KEY, payload);
+
+    return new Response(JSON.stringify(payload), {
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+        'X-Cache': 'fresh',
+        'Cache-Control': 'public, max-age=300, stale-while-revalidate=900',
+      },
+    });
   } catch (err) {
     console.error('nasa-space error:', err);
+    const cached = await cacheRead(CACHE_KEY);
+    if (cached && Date.now() - new Date(cached.fetched_at).getTime() < STALE_MAX_MS) {
+      return new Response(JSON.stringify(cached.payload), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'cache-stale', 'X-Cache-Fetched-At': cached.fetched_at },
+      });
+    }
     return new Response(JSON.stringify({ error: 'internal_error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
