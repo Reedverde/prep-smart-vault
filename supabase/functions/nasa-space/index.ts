@@ -1,4 +1,9 @@
 import { corsHeaders, requireUser } from '../_shared/auth.ts';
+import { cacheRead, cacheWrite } from '../_shared/cache.ts';
+
+const CACHE_KEY = 'nasa:space';
+const FRESH_MS = 3 * 60 * 60 * 1000;          // 3h — NASA data evolves slowly
+const STALE_MAX_MS = 7 * 24 * 60 * 60 * 1000; // 7d fallback
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -14,6 +19,17 @@ Deno.serve(async (req) => {
       status: 503,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+  }
+
+  const forceFresh = new URL(req.url).searchParams.get('fresh') === '1';
+  if (!forceFresh) {
+    const cached = await cacheRead(CACHE_KEY);
+    if (cached && Date.now() - new Date(cached.fetched_at).getTime() < FRESH_MS) {
+      return new Response(JSON.stringify(cached.payload), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'cache-fresh', 'X-Cache-Fetched-At': cached.fetched_at },
+      });
+    }
   }
 
   try {
