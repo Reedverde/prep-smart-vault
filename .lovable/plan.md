@@ -1,62 +1,79 @@
-## Plan
+## Goal
 
-### 1. Air Quality gauge — thicker, glowy, segmented (image 1 reference)
-File: `src/components/PanelKit.tsx` (`SemiGauge`)
-- Increase `stroke` 14 → 26 and add inner radius padding so the arc stays inside the tile.
-- Split each color zone into ~4 discrete segments with a 2° gap (gives the segmented "speedometer" look from the reference).
-- Add an SVG `<filter>` glow (feGaussianBlur + feMerge) applied to each arc for the neon halo.
-- Thicken the needle: width 2.5 → 5, length to outer edge, drop-shadow filter; hub circle r 4 → 7 with accent ring.
-- Add a faint inner concentric ring (decorative) like the reference.
-File: `src/components/panels/AirQualityPanel.tsx`
-- Bump the centered AQI value from `text-3xl` → `text-5xl` and tighten spacing so the number sits inside the arc.
+Replace the broken Gannett scrape with direct fetches from PA's electric utilities, and redesign the panel to mirror the PowerOutage.com layout you shared.
 
-### 2 & 3. Alerts panel cut off (images 2 & 3)
-File: `src/components/panels/AlertsPanel.tsx`
-- The panel body overflows because the expanded "Recent" accordions push content past the panel's fixed row height.
-- Wrap the alerts list in a scroll container: `max-h-[420px] overflow-y-auto pr-1` with a thin custom scrollbar.
-- Keep the active alert pinned at the top (outside the scroll area) so it's always visible.
+## Why the current panel is broken
 
-### 4. Pollutant explainers — O3, PM2.5, PM10 (image 4)
-File: `src/components/panels/AirQualityPanel.tsx`
-- Wrap each pollutant row's label in an `<InfoTip>` with a one-line explanation:
-  - **O3** — "Ozone. Ground-level ozone irritates lungs; worse on hot sunny afternoons."
-  - **PM2.5** — "Fine particles (smoke, exhaust). Penetrate deep into lungs and bloodstream."
-  - **PM10** — "Coarse dust/pollen particles. Aggravate asthma and allergies."
-- Tiny `?` icon next to each label, same pattern already used elsewhere.
+I confirmed `data.tcpalm.com` (our current source) and `poweroutage.us` itself both return **403 Cloudflare blocks** when called from our edge function. The panel has been silently failing every fetch — it just shows 0 customers and a stale tracked-count.
 
-### 5. Power Outages "unavailable" (image 5)
-File: `supabase/functions/power-outages/index.ts`
-- Current source (FirstEnergy/Penelec Kubra JSON) is brittle and currently broken — that's the root cause of the perpetual "unavailable" banner.
-- Switch primary source to **PowerOutage.us** county-level public JSON (`https://poweroutage.us/api/web/counties?countyId=...` is private, but their state summary endpoint `https://poweroutage.us/area/state/pennsylvania` returns parseable HTML; alternative: `eaglei.geheatmap` from ORNL is gated).
-- Pragmatic fix: use **EIA-930** balancing-authority hourly demand as a *grid-stress* proxy fallback (we already have `EIA_APP_KEY`), and only show the FirstEnergy banner when both fail.
-- Also: increase cache `staleMaxAgeMs` so we keep showing the last good number for 24h instead of going blank.
-- Update the panel copy from "temporarily unavailable" → friendlier: "Live county outage feed is unstable. Showing last known totals from {time}."
+## Data plan — direct from the utilities
 
-### 6. Alert-type explainers (image 6 — bar chart in National panel)
-File: `src/components/panels/NationalPanel.tsx`
-- Add an `InfoTip` legend at the top of the chart: hover any bar label to see what it means.
-- Build a small dictionary in the same file:
-  - Small Craft Advisory — winds 25–33 kt or hazardous seas; dangerous for boats < ~33 ft.
-  - Red Flag Warning — critical fire weather (low humidity + wind + dry fuels).
-  - Gale Warning — sustained marine winds 34–47 kt.
-  - Fire Weather Watch — fire-favorable conditions possible in 12–72h.
-  - High Wind Warning — sustained 40+ mph or gusts 58+ mph.
-  - Flood Warning — flooding imminent or occurring.
-  - Wind Advisory — sustained 31–39 mph or gusts 46–57 mph.
-- Render labels with a dotted underline + tooltip; also add one combined `InfoTip` in the panel header that lists all of them.
+Pennsylvania's grid is ~95% covered by 4 investor-owned utilities. We hit each one's public outage feed in parallel and aggregate.
 
-### 7. Cloudflare "+3.4%" meaning (image 7)
-File: `src/components/panels/InternetHealthPanel.tsx`
-- The header already says "US traffic vs 7d avg" but it's ambiguous. Add a one-line subcaption under the number:
-  > "+3.4% more US web requests than the 7-day average — normal range is ±15%."
-- Expand the existing `InfoTip` to be plain-English:
-  > "This shows whether US internet traffic is higher or lower than usual. Big swings (±15% or more) often signal a major outage, BGP route leak, or holiday spike."
-- Add hover tooltips to the country list values explaining they are the share of layer-7 attack traffic targeting that country (% of total).
+| Utility | Customers tracked | Territory |
+|---|---|---|
+| FirstEnergy (Penn Power, Penelec, Met-Ed, West Penn Power) | ~2.0M | NW + Central PA, **includes Lawrence County** |
+| PPL Electric Utilities | ~1.4M | Eastern + Central PA |
+| PECO (Exelon) | ~1.7M | Philadelphia metro |
+| Duquesne Light | ~600k | Pittsburgh metro |
 
-### Out of scope
-- No backend schema changes.
-- No new panels or layout restructuring.
-- Pi kiosk view (`/pi`) not touched.
+**Lawrence County** specifically is served by Penn Power (a FirstEnergy subsidiary), so your home-county number comes from FirstEnergy's feed.
 
-### Verification
-After implementation: refresh `/dashboard`, check (a) AQI gauge visibly glows and matches reference, (b) Alerts panel scrolls cleanly when expanded, (c) all explainer tooltips render, (d) Power Outages either shows a real number or a clearer fallback message.
+### Implementation notes (technical)
+
+- New edge function `power-outages-pa` replaces the old one.
+- Fetch each utility's outage JSON in parallel, with per-utility try/catch so one failure doesn't blank the panel.
+- For utilities behind Akamai/Cloudflare (Duquesne Light returned 403 in my probe), I'll discover the actual public JSON endpoint by inspecting their KUBRA-hosted map data feed during build. KUBRA endpoints are typically reachable; the page wrapper isn't.
+- Cache 5 min fresh / 24 h stale via the existing `serveCached` helper.
+- Output shape: `{ stateTotal, stateTracked, lawrenceCounty, topCounties[], byUtility[], severity, scrapedAt }`.
+
+## Panel redesign — PowerOutage.com aesthetic
+
+Reworked `PowerOutagesPanel.tsx` to match the reference layout:
+
+```text
+┌─ Power Outages · PA ──────────────────────── [src] ┐
+│                                                    │
+│  CUSTOMERS OUT       CUSTOMERS TRACKED             │
+│  3,237               6,765,006                     │
+│  ─────────────────────────────────────────         │
+│  Lawrence County:  0   ALL CLEAR                   │
+│                                                    │
+│  TOP AFFECTED COUNTIES                             │
+│  Lycoming      ████████████░░░  790                │
+│  Carbon        ████████░░░░░░░  547                │
+│  Lehigh        ████░░░░░░░░░░░  286                │
+│  Franklin      ███░░░░░░░░░░░░  223                │
+│  Centre        ███░░░░░░░░░░░░  217                │
+│                                                    │
+│  BY UTILITY                                        │
+│  FirstEnergy   1,278     PPL  846                  │
+│  PECO            238     DLC    0                  │
+│                                                    │
+│  Updated 2 min ago                                 │
+└────────────────────────────────────────────────────┘
+```
+
+Key visual elements:
+- **Two big stat numbers** at top (Customers Out + Customers Tracked), terminal-green for the out count, dim for tracked.
+- **Lawrence County row** stays prominent with severity chip (since it's your home county).
+- **Top affected counties** as a horizontal bar list — each row shows county name, a colored bar (length proportional to % of state outages), and the customer count. Bar color follows our existing severity palette.
+- **By utility** breakdown — small 2-column grid showing each utility's contribution.
+- All in the existing dark-terminal aesthetic, SF Mono, semantic color tokens.
+
+Skipping a literal interactive map — adds heavy deps (maplibre + county geojson) for one panel. The bar list communicates the same "where are outages concentrated" answer in a fraction of the space and load.
+
+## Files touched
+
+- `supabase/functions/power-outages/index.ts` — rewrite to fetch the 4 utilities directly and aggregate
+- `src/components/panels/PowerOutagesPanel.tsx` — new layout per mockup above
+- `src/hooks/useDataSources.ts` — update return type if shape changes (keeps endpoint name, no client routing changes)
+
+No DB changes, no new secrets needed.
+
+## Risks & mitigations
+
+- **Endpoint discovery may surface a utility I can't reach.** If one utility's feed is hard-blocked, I'll show its slice as "—" rather than break the whole panel; you'd still get state totals from the other three plus your Lawrence County number from FirstEnergy.
+- **Schema drift.** Each utility could change their feed shape. Mitigated by per-utility error isolation and the 24h stale cache.
+
+Ready to build when you approve.
