@@ -57,7 +57,6 @@ const Live = () => {
       panels: [
         <WeatherPanel key="weather" lat={lat} lng={lng} refreshMs={refreshMs} />,
         <AlertsPanel key="alerts" lat={lat} lng={lng} refreshMs={refreshMs} />,
-        <MoonPhasePanel key="moon" lat={lat} lng={lng} />,
         <AirQualityPanel key="aq" lat={lat} lng={lng} refreshMs={refreshMs} />,
       ],
     },
@@ -66,6 +65,7 @@ const Live = () => {
       panels: [
         <SevereRadarPanel key="radar" lat={lat} lng={lng} refreshMs={5 * 60 * 1000} />,
         <HazardousOutlookPanel key="hwo" lat={lat} lng={lng} refreshMs={30 * 60 * 1000} />,
+        <MoonPhasePanel key="moon" lat={lat} lng={lng} />,
       ],
     },
     {
