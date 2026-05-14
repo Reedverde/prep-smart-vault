@@ -71,21 +71,21 @@ export const AirQualityPanel = ({
           const cat = aqiCategory(maxObs.AQI);
           return (
             <div className="space-y-4">
-              <div className="flex flex-col items-center">
+              <div className="relative flex flex-col items-center">
                 <SemiGauge value={Math.min(maxObs.AQI, 300)} min={0} max={300} zones={zones} size={220} />
-                <div className="flex items-baseline gap-2 mt-1">
+                <div className="absolute inset-x-0 top-[28%] flex flex-col items-center pointer-events-none">
                   <span
                     className="font-mono text-5xl font-semibold tabular-nums leading-none"
                     style={{ color: cat.color, textShadow: `0 0 18px ${cat.color}` }}
                   >
                     {maxObs.AQI}
                   </span>
-                </div>
-                <div
-                  className="font-mono text-[10px] uppercase tracking-wider mt-1"
-                  style={{ color: cat.color }}
-                >
-                  {cat.label}
+                  <div
+                    className="font-mono text-[10px] uppercase tracking-wider mt-1"
+                    style={{ color: cat.color }}
+                  >
+                    {cat.label}
+                  </div>
                 </div>
               </div>
 

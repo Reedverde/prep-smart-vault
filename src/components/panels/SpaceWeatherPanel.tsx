@@ -75,15 +75,21 @@ export const SpaceWeatherPanel = ({ refreshMs }: { refreshMs: number }) => {
                 </div>
               </div>
             )}
-            <div className="flex flex-col items-center">
+            <div className="relative flex flex-col items-center">
               <SemiGauge value={current} min={0} max={9} zones={zones} />
-              <div className="flex items-baseline gap-2 -mt-1">
-                <span className="font-mono text-2xl font-semibold text-foreground tabular-nums">
-                  Kp {current.toFixed(1)}
+              <div className="absolute inset-x-0 top-[22%] flex flex-col items-center pointer-events-none">
+                <span className="font-mono text-[11px] uppercase tracking-wider text-dim leading-none">
+                  Kp
                 </span>
                 <span
-                  className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border"
-                  style={{ color: status.color, borderColor: status.color }}
+                  className="font-mono text-4xl font-semibold tabular-nums leading-none mt-1"
+                  style={{ color: status.color, textShadow: `0 0 18px ${status.color}` }}
+                >
+                  {current.toFixed(1)}
+                </span>
+                <span
+                  className="font-mono text-[10px] uppercase tracking-wider mt-1"
+                  style={{ color: status.color }}
                 >
                   {status.label}
                 </span>
