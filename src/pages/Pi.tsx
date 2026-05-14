@@ -208,6 +208,8 @@ const Pi = () => {
   const fuelMin = 2.5;
   const fuelMax = 5.0;
   const fuelPct = fuelLatest != null ? ((fuelLatest - fuelMin) / (fuelMax - fuelMin)) * 100 : null;
+  const fuelSev: PiSeverity =
+    fuelWow == null ? "green" : fuelWow > 0.1 ? "yellow" : fuelWow > 0.25 ? "red" : "green";
 
   // 07 Financial stress
   const fredData: any = stress.data;
