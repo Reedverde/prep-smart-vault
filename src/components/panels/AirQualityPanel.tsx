@@ -11,6 +11,15 @@ const aqiCategory = (aqi: number) => {
   return { label: "HAZARDOUS", color: "hsl(var(--severity-critical))" };
 };
 
+const POLLUTANT_INFO: Record<string, string> = {
+  O3: "Ozone (O₃) — ground-level ozone irritates the lungs and worsens asthma. Highest on hot, sunny afternoons.",
+  "PM2.5": "Fine particles under 2.5 microns (smoke, vehicle exhaust, wildfires). Penetrate deep into lungs and bloodstream.",
+  PM10: "Coarse particles under 10 microns (dust, pollen, mold). Aggravate asthma and allergies.",
+  NO2: "Nitrogen dioxide — traffic and combustion pollutant. Inflames airways with prolonged exposure.",
+  SO2: "Sulfur dioxide — from fossil-fuel burning. Triggers bronchoconstriction in asthmatics.",
+  CO: "Carbon monoxide — odorless gas from incomplete combustion. Reduces oxygen delivery in the body.",
+};
+
 const zones = [
   { from: 0, to: 50, color: "hsl(var(--severity-low))" },
   { from: 50, to: 100, color: "hsl(var(--severity-moderate))" },
