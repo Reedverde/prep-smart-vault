@@ -5,21 +5,27 @@ const FRESH_MS = 5 * 60 * 1000;
 const STALE_MAX_MS = 24 * 60 * 60 * 1000;
 
 const PA_URL = 'https://poweroutage.us/area/state/pennsylvania';
+// Cloudflare blocks direct hits from cloud-provider IPs (Supabase Edge runs on AWS),
+// so we proxy through r.jina.ai's reader, which serves the same HTML and preserves
+// the embedded SvelteKit hydration data we parse.
+const PROXY_URL = `https://r.jina.ai/${PA_URL}`;
 
-// Pretend to be a real browser - poweroutage.us 200s only with full headers.
-const HEADERS = {
+const HEADERS_DIRECT = {
   'User-Agent':
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
   Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   'Accept-Language': 'en-US,en;q=0.9',
-  'Accept-Encoding': 'gzip, deflate, br',
   'Sec-Fetch-Dest': 'document',
   'Sec-Fetch-Mode': 'navigate',
   'Sec-Fetch-Site': 'none',
   'Upgrade-Insecure-Requests': '1',
 };
 
-const PA_STATE_ID = 41;
+const HEADERS_PROXY = {
+  'User-Agent': 'Mozilla/5.0 (PrepPi/1.0)',
+  'X-Return-Format': 'html',
+  Accept: 'text/html',
+};
 
 const severityFor = (lawrenceOut: number, paOut: number): 'clear' | 'localized' | 'widespread' => {
   if (lawrenceOut >= 500 || paOut >= 50_000) return 'widespread';
