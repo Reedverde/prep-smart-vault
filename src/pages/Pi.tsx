@@ -466,13 +466,13 @@ const Pi = () => {
             }
           />
           <PiTile label="SEVERE RADAR" num="04" sev="green"
-            footer="no echoes · iowa mesonet"
+            footer="iowa mesonet · live"
             body={<PiRadarSweep />}
           />
 
           {/* Row 2 */}
           <PiTile label="HAZARD OUT · 7D" num="05" sev={hwoSev}
-            footer={hwoData?.office ? `${hwoData.office.toLowerCase()}` : "tstorm thu/fri · pbz"}
+            footer={hwoData?.office ? `${hwoData.office.toLowerCase()}` : "nws · 7d outlook"}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                 <PiHazardTriangle size={108} color={hwoSev === "red" ? "var(--red)" : hwoSev === "yellow" ? "var(--yellow)" : "var(--green)"} />
@@ -482,11 +482,15 @@ const Pi = () => {
               </div>
             }
           />
-          <PiTile label="FUEL · MID-ATL" num="06" sev="green"
-            footer={`padd 1b · weekly · eia`}
+          <PiTile label="FUEL · MID-ATL" num="06" sev={fuelSev}
+            footer={`padd 1b · weekly · eia${fuelWow != null ? ` · ${fuelWow >= 0 ? "+" : "−"}$${Math.abs(fuelWow).toFixed(2)} wow` : ""}`}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, width: "100%" }}>
-                <Big size={49} color="var(--green)" glow="var(--green-glow)">
+                <Big
+                  size={49}
+                  color={fuelSev === "red" ? "var(--red)" : fuelSev === "yellow" ? "var(--yellow)" : "var(--green)"}
+                  glow={fuelSev === "red" ? "var(--red-glow)" : fuelSev === "yellow" ? "var(--yellow-glow)" : "var(--green-glow)"}
+                >
                   {fuelLatest != null ? `$${fuelLatest.toFixed(2)}` : "—"}
                 </Big>
                 <PiGradBar pct={fuelPct ?? 0} width={189} height={12} redlinePct={80} />
@@ -501,7 +505,7 @@ const Pi = () => {
             }
           />
           <PiTile label="FIN STRESS · STLFSI" num="07" sev={stressSev}
-            footer={`${stlfsi != null && stlfsi < 0 ? "below avg" : "elevated"} · vix · weekly`}
+            footer={`${stressLevelLabel.toLowerCase()} · vix · weekly`}
             body={
               <PiStressHud
                 value={stlfsi}
@@ -511,19 +515,7 @@ const Pi = () => {
                 ringSize={92}
                 barWidth={104}
                 segments={11}
-                levelLabel={
-                  stlfsi == null
-                    ? "—"
-                    : stlfsi > 2
-                    ? "HIGH"
-                    : stlfsi > 1
-                    ? "ELEVATED"
-                    : stlfsi > 0
-                    ? "NORMAL"
-                    : stlfsi > -1
-                    ? "BELOW AVG"
-                    : "LOW"
-                }
+                levelLabel={stressLevelLabel}
               />
             }
           />
