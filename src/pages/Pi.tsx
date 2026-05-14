@@ -214,7 +214,20 @@ const Pi = () => {
   // 07 Financial stress
   const fredData: any = stress.data;
   const stlfsi: number | null = fredData?.stlfsi?.latest ?? null;
+  const stressLevel: string | null = fredData?.stlfsi?.level ?? null;
   const stressSev: PiSeverity = stlfsi == null ? "purple" : stlfsi > 1 ? "red" : stlfsi > 0 ? "yellow" : "purple";
+  const stressLevelLabel: string =
+    stressLevel === "high" ? "HIGH"
+      : stressLevel === "elevated" ? "ELEVATED"
+      : stressLevel === "normal" ? "NORMAL"
+      : stressLevel === "below" ? "BELOW AVG"
+      : stressLevel === "low" ? "LOW"
+      : stlfsi == null ? "—"
+      : stlfsi > 2 ? "HIGH"
+      : stlfsi > 1 ? "ELEVATED"
+      : stlfsi > 0 ? "NORMAL"
+      : stlfsi > -1 ? "BELOW AVG"
+      : "LOW";
 
   // 08 National alerts
   const natFeatures = natAlerts.data || [];
