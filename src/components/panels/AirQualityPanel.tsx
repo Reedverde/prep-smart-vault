@@ -75,7 +75,7 @@ export const AirQualityPanel = ({
                 <SemiGauge value={Math.min(maxObs.AQI, 300)} min={0} max={300} zones={zones} size={220} />
                 <div
                   className="absolute inset-x-0 flex flex-col items-center pointer-events-none"
-                  style={{ bottom: 10 }}
+                  style={{ bottom: 32 }}
                 >
                   <span
                     className="font-mono text-5xl font-semibold tabular-nums leading-none"
