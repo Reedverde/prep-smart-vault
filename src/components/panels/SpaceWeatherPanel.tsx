@@ -79,7 +79,7 @@ export const SpaceWeatherPanel = ({ refreshMs }: { refreshMs: number }) => {
               <SemiGauge value={current} min={0} max={9} zones={zones} />
               <div
                 className="absolute inset-x-0 flex flex-col items-center pointer-events-none"
-                style={{ bottom: 20 }}
+                style={{ bottom: 12 }}
               >
                 <span className="font-mono text-[11px] uppercase tracking-wider text-dim leading-none mb-1">
                   Kp
