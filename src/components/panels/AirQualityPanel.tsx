@@ -11,6 +11,15 @@ const aqiCategory = (aqi: number) => {
   return { label: "HAZARDOUS", color: "hsl(var(--severity-critical))" };
 };
 
+const POLLUTANT_INFO: Record<string, string> = {
+  O3: "Ozone (O₃) — ground-level ozone irritates the lungs and worsens asthma. Highest on hot, sunny afternoons.",
+  "PM2.5": "Fine particles under 2.5 microns (smoke, vehicle exhaust, wildfires). Penetrate deep into lungs and bloodstream.",
+  PM10: "Coarse particles under 10 microns (dust, pollen, mold). Aggravate asthma and allergies.",
+  NO2: "Nitrogen dioxide — traffic and combustion pollutant. Inflames airways with prolonged exposure.",
+  SO2: "Sulfur dioxide — from fossil-fuel burning. Triggers bronchoconstriction in asthmatics.",
+  CO: "Carbon monoxide — odorless gas from incomplete combustion. Reduces oxygen delivery in the body.",
+};
+
 const zones = [
   { from: 0, to: 50, color: "hsl(var(--severity-low))" },
   { from: 50, to: 100, color: "hsl(var(--severity-moderate))" },
@@ -62,15 +71,19 @@ export const AirQualityPanel = ({
           const cat = aqiCategory(maxObs.AQI);
           return (
             <div className="space-y-4">
-              <div className="flex flex-col items-center">
-                <SemiGauge value={Math.min(maxObs.AQI, 300)} min={0} max={300} zones={zones} />
-                <div className="flex items-baseline gap-2 -mt-1">
-                  <span className="font-mono text-3xl font-semibold tabular-nums" style={{ color: cat.color }}>
+              <div className="relative flex flex-col items-center">
+                <SemiGauge value={Math.min(maxObs.AQI, 300)} min={0} max={300} zones={zones} size={220} />
+                {/* Big AQI value overlaid inside the arc */}
+                <div className="absolute inset-x-0 top-[58%] flex flex-col items-center pointer-events-none">
+                  <span
+                    className="font-mono text-5xl font-semibold tabular-nums leading-none"
+                    style={{ color: cat.color, textShadow: `0 0 18px ${cat.color}` }}
+                  >
                     {maxObs.AQI}
                   </span>
                 </div>
                 <div
-                  className="font-mono text-[10px] uppercase tracking-wider mt-1"
+                  className="font-mono text-[10px] uppercase tracking-wider mt-2"
                   style={{ color: cat.color }}
                 >
                   {cat.label}
@@ -78,17 +91,23 @@ export const AirQualityPanel = ({
               </div>
 
               <div className="space-y-1.5">
-                {observations.map((o: any, i: number) => (
+                {observations.map((o: any, i: number) => {
+                  const tip = POLLUTANT_INFO[o.ParameterName];
+                  return (
                   <div
                     key={i}
                     className="flex items-center justify-between font-mono text-xs py-1 border-b border-border/40 last:border-0"
                   >
-                    <span className="text-dim uppercase tracking-wider text-[10px]">{o.ParameterName}</span>
+                    <span className="text-dim uppercase tracking-wider text-[10px] inline-flex items-center gap-1">
+                      {o.ParameterName}
+                      {tip && <InfoTip>{tip}</InfoTip>}
+                    </span>
                     <span className="text-foreground tabular-nums">
                       {o.AQI} <span className="text-dim">{o.Category?.Name}</span>
                     </span>
                   </div>
-                ))}
+                  );
+                })}
               </div>
 
               <ContextBox>

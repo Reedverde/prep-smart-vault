@@ -1,7 +1,8 @@
-import { corsHeaders, requireUser } from '../_shared/auth.ts';
+import { corsHeaders } from '../_shared/auth.ts';
+import { serveCached, cacheHeaders } from '../_shared/cache.ts';
 
-let cache: { ts: number; payload: any } | null = null;
-const CACHE_MS = 5 * 60 * 1000;
+const FRESH_MS = 5 * 60 * 1000;            // 5 min — outage data changes fast
+const STALE_MAX_MS = 24 * 60 * 60 * 1000;  // 24 h — keep showing last good number
 
 const LAWRENCE_URL = 'https://data.tcpalm.com/national-power-outage-map-tracker/area/lawrence-county-pa/42073/';
 const PA_URL = 'https://data.tcpalm.com/national-power-outage-map-tracker/area/pennsylvania/42/';
@@ -20,12 +21,9 @@ const severityFor = (n: number): 'clear' | 'localized' | 'widespread' => {
 type Parsed = { tracked: number | null; latestOut: number | null; status: 'ok' | 'partial' | 'failed' };
 
 const parsePage = (html: string): Parsed => {
-  // Tracked customers — stable label in panel-body
   const trackedMatch = html.match(/Total tracked customers:\s*([\d,]+)/i);
   const tracked = trackedMatch ? Number(trackedMatch[1].replace(/,/g, '')) : null;
 
-  // Chart series: barChartData { labels: [...], datasets: [{ data: [n, n, n, ...] }] }
-  // Grab the first numeric `data: [ ... ]` array after `barChartData`.
   let latestOut: number | null = null;
   const chartIdx = html.indexOf('barChartData');
   if (chartIdx >= 0) {
@@ -47,7 +45,10 @@ const parsePage = (html: string): Parsed => {
 
 const fetchPage = async (url: string): Promise<{ html: string | null; code: number }> => {
   try {
-    const res = await fetch(url, { headers: HEADERS });
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 15000);
+    const res = await fetch(url, { headers: HEADERS, signal: ctrl.signal });
+    clearTimeout(t);
     if (!res.ok) return { html: null, code: res.status };
     return { html: await res.text(), code: res.status };
   } catch (err) {
@@ -56,62 +57,19 @@ const fetchPage = async (url: string): Promise<{ html: string | null; code: numb
   }
 };
 
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-
-  const auth = await requireUser(req);
-  if (!auth.ok) return auth.response;
-
-  if (cache && Date.now() - cache.ts < CACHE_MS) {
-    return new Response(JSON.stringify(cache.payload), {
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=300, stale-while-revalidate=900',
-      },
-    });
-  }
-
-  const fallback: any = {
-    status: 'unavailable',
-    message: 'PowerOutage.us mirror temporarily unreachable.',
-    lawrence: null,
-    paTotal: null,
-    topCounties: [],
-    severity: 'clear' as const,
-    source: 'PowerOutage.us (via Gannett)',
-    sourceUrl: LAWRENCE_URL,
-    scrapedAt: new Date().toISOString(),
-  };
-
+const fetchOutages = async () => {
   const [lawRes, paRes] = await Promise.all([fetchPage(LAWRENCE_URL), fetchPage(PA_URL)]);
-
-  if (!lawRes.html && !paRes.html) {
-    console.log(JSON.stringify({ fn: 'power-outages', lawCode: lawRes.code, paCode: paRes.code, result: 'unavailable' }));
-    return new Response(JSON.stringify(fallback), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
 
   const law = lawRes.html ? parsePage(lawRes.html) : { tracked: null, latestOut: null, status: 'failed' as const };
   const pa = paRes.html ? parsePage(paRes.html) : { tracked: null, latestOut: null, status: 'failed' as const };
 
   if (law.status === 'failed' && pa.status === 'failed') {
-    console.log(JSON.stringify({
-      fn: 'power-outages',
-      lawCode: lawRes.code,
-      paCode: paRes.code,
-      parseStatus: 'failed',
-      sample: (lawRes.html || paRes.html || '').slice(0, 300),
-    }));
-    return new Response(JSON.stringify(fallback), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    throw new Error(`upstream parse failed lawCode=${lawRes.code} paCode=${paRes.code}`);
   }
 
   const lawCustomers = law.latestOut ?? 0;
-  const payload: any = {
-    status: 'ok',
+  return {
+    status: 'ok' as const,
     lawrence: { customers: lawCustomers, outages: null, tracked: law.tracked },
     paTotal: pa.latestOut ?? null,
     paTracked: pa.tracked ?? null,
@@ -122,23 +80,43 @@ Deno.serve(async (req) => {
     scrapedAt: new Date().toISOString(),
     parseStatus: law.status === 'ok' && pa.status === 'ok' ? 'ok' : 'partial',
   };
+};
 
-  console.log(JSON.stringify({
-    fn: 'power-outages',
-    lawrenceTracked: law.tracked,
-    lawrenceOut: law.latestOut,
-    paOut: pa.latestOut,
-    paTracked: pa.tracked,
-    parseStatus: payload.parseStatus,
-  }));
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
-  cache = { ts: Date.now(), payload };
+  const url = new URL(req.url);
+  const forceFresh = url.searchParams.get('fresh') === '1';
 
-  return new Response(JSON.stringify(payload), {
-    headers: {
-      ...corsHeaders,
-      'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=300, stale-while-revalidate=900',
-    },
-  });
+  try {
+    const result = await serveCached({
+      key: 'power-outages:lawrence-pa',
+      freshMs: FRESH_MS,
+      staleMaxAgeMs: STALE_MAX_MS,
+      forceFresh,
+      fetcher: fetchOutages,
+    });
+    return new Response(JSON.stringify(result.payload), {
+      status: 200,
+      headers: { ...corsHeaders, ...cacheHeaders(result), 'Content-Type': 'application/json' },
+    });
+  } catch (err) {
+    console.warn('power-outages: no cache + upstream failed:', err);
+    const fallback = {
+      status: 'unavailable',
+      message:
+        "Live county outage feed is currently unstable. We'll show last known totals as soon as one good fetch succeeds.",
+      lawrence: null,
+      paTotal: null,
+      topCounties: [],
+      severity: 'clear' as const,
+      source: 'PowerOutage.us (via Gannett)',
+      sourceUrl: LAWRENCE_URL,
+      scrapedAt: new Date().toISOString(),
+    };
+    return new Response(JSON.stringify(fallback), {
+      status: 200,
+      headers: { ...corsHeaders, 'X-Cache': 'empty', 'Content-Type': 'application/json' },
+    });
+  }
 });

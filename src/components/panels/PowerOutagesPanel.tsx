@@ -40,12 +40,12 @@ export const PowerOutagesPanel = ({ refreshMs }: { refreshMs: number }) => {
         <PanelError message="Could not load outage data" onRetry={() => refetch()} />
       ) : unavailable ? (
         <div className="space-y-3">
-          <div className="font-mono text-[11px] px-2 py-2 rounded border border-border/60 bg-secondary/40 text-dim">
-            Outage data temporarily unavailable. Retrying every 5 min.
+          <div className="font-mono text-[11px] px-2 py-2 rounded border border-border/60 bg-secondary/40 text-dim leading-relaxed">
+            Live county outage feed is currently unstable. As soon as one good fetch succeeds we'll show the last known totals here for up to 24 hours.
           </div>
           <ContextBox>
-            FirstEnergy's public outage feed is occasionally restructured. Check {" "}
-            <a className="text-accent underline" href="https://www.firstenergycorp.com/outages.html" target="_blank" rel="noreferrer">firstenergycorp.com</a> directly in the meantime.
+            The third-party scraper (PowerOutage.us via Gannett) occasionally restructures its page. For an authoritative live view check{" "}
+            <a className="text-accent underline" href="https://www.firstenergycorp.com/outages.html" target="_blank" rel="noreferrer">firstenergycorp.com</a>.
           </ContextBox>
           <UpdatedAgo date={dataUpdatedAt ? new Date(dataUpdatedAt) : undefined} />
         </div>
