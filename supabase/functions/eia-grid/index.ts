@@ -1,7 +1,11 @@
 import { corsHeaders, requireUser } from '../_shared/auth.ts';
+import { cacheRead, cacheWrite } from '../_shared/cache.ts';
 
 // EIA API v2: region PJM demand + generation mix
 // Docs: https://www.eia.gov/opendata/documentation.php
+const CACHE_KEY = 'eia:grid:pjm';
+const FRESH_MS = 60 * 60 * 1000;              // 1h — EIA hourly data
+const STALE_MAX_MS = 7 * 24 * 60 * 60 * 1000; // 7d fallback
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -17,6 +21,17 @@ Deno.serve(async (req) => {
       status: 503,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+  }
+
+  const forceFresh = new URL(req.url).searchParams.get('fresh') === '1';
+  if (!forceFresh) {
+    const cached = await cacheRead(CACHE_KEY);
+    if (cached && Date.now() - new Date(cached.fetched_at).getTime() < FRESH_MS) {
+      return new Response(JSON.stringify(cached.payload), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'cache-fresh', 'X-Cache-Fetched-At': cached.fetched_at },
+      });
+    }
   }
 
   try {
