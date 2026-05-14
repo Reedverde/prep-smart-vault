@@ -1,22 +1,32 @@
-## Problem
-Global Headlines panel shows "No recent headlines" with no fallback to previous data. Two root causes in `supabase/functions/gdelt-headlines/index.ts`:
+## Goal
+Lock down authentication so only you can access PrepPi. No new accounts, no other Google users.
 
-1. Cache is an **in-memory** `let cached` variable. Edge isolates restart frequently (visible in recent logs), wiping the cache every cold start. Other panels use the persistent `api_cache` table via `_shared/cache.ts::serveCached` — this one never migrated.
-2. When upstream fails or returns junk, the function returns `{ items: [] }` with HTTP 200 and **stores that empty result in cache**. React Query (with persistence) then locks in the empty array for the full 5-minute staleTime, overwriting any prior good payload on the client.
+## Changes
 
-## Plan
+### 1. Disable signup at the auth provider level
+Call `configure_auth` with `disable_signup: true`. This blocks all new account creation server-side — both email/password and Google. Even if someone hits the API directly, Supabase will reject the signup.
 
-Rewrite `supabase/functions/gdelt-headlines/index.ts` to:
+### 2. Restrict Google sign-in to your email
+Add an allowlist check after OAuth completes. The cleanest spot is in `useAuth.tsx` inside `onAuthStateChange`: if a session appears for an email that isn't yours, immediately `signOut()` and show a toast. This catches both Google and any stray account.
 
-1. **Use `serveCached`** with key `gdelt-headlines:v1`, `freshMs = 5 min`, `staleMaxAgeMs = 24 h`. Cache persists across cold starts in the `api_cache` table.
-2. **Inside the fetcher, throw on bad upstream** (non-OK status, non-JSON body, or zero parsed articles). Throwing lets `serveCached` fall back to the last known good payload up to 24 h old instead of poisoning cache with `[]`.
-3. **Only write a successful payload** with `items.length > 0`. Empty result paths return `{ items: [], degraded: true }` with `Cache-Control: no-store` and DO NOT write to `api_cache`.
-4. **Add `X-Cache` headers** from `cacheHeaders(result)` so we can tell fresh vs stale at a glance in the network tab.
-5. Keep current classification, dedupe, denylist, and exclusion logic exactly as-is.
+Allowed email: **reed@everde.co** (please confirm — see question below).
 
-Optional follow-up (not in this change): on the client, treat `degraded: true` responses as "don't replace existing cache" — but with #2 above the server-side fix alone should keep the panel populated.
+### 3. Clean up the Login page UI
+- Remove the "Create account" toggle link.
+- Remove the signup mode entirely (only sign-in remains).
+- Keep "Forgot?" password reset (still useful for you).
+- Keep Google + email/password buttons.
+
+### 4. Optional hardening (recommended)
+Enable HIBP leaked-password check via `configure_auth` (`password_hibp_enabled: true`) so your own password can't be a known-breached one.
 
 ## Files touched
-- `supabase/functions/gdelt-headlines/index.ts` — rewrite cache layer per above.
+- `src/pages/Login.tsx` — strip signup mode + UI
+- `src/hooks/useAuth.tsx` — add email allowlist guard
+- Auth config (via tool) — disable_signup + HIBP
 
-No frontend, no schema, no other panels affected.
+## Not touched
+No DB schema, no RLS, no panels, no edge functions.
+
+## Question before I build
+Confirm the allowed email is **reed@everde.co**? And should I hardcode it, or read from an env-style constant in a small `src/lib/allowlist.ts` file (easier to change later)?
