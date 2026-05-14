@@ -436,20 +436,7 @@ const Pi = () => {
           <PiTile label="AIR QUALITY" num="03" sev={aqiSev}
             footer={`aqi · pm2.5 · airnow`}
             body={
-              <PiHalfRing
-                value={maxAqi}
-                min={0}
-                max={300}
-                width={148}
-                height={76}
-                label={maxAqi != null ? aqiCat.toUpperCase() : undefined}
-                zones={[
-                  { from: 0, to: 50, color: "var(--green)" },
-                  { from: 50, to: 100, color: "var(--yellow)" },
-                  { from: 100, to: 150, color: "var(--orange)" },
-                  { from: 150, to: 300, color: "var(--red)" },
-                ]}
-              />
+              <PiAqiArcGauge value={maxAqi} max={300} width={210} height={120} ticks={26} />
             }
           />
           <PiTile label="SEVERE RADAR" num="04" sev="green"
