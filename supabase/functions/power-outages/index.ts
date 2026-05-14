@@ -1,4 +1,4 @@
-import { corsHeaders } from '../_shared/auth.ts';
+import { corsHeaders, requireUser } from '../_shared/auth.ts';
 import { serveCached, cacheHeaders } from '../_shared/cache.ts';
 
 const FRESH_MS = 5 * 60 * 1000;
@@ -208,6 +208,9 @@ const fetchOutages = async () => {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+  const auth = await requireUser(req);
+  if (!auth.ok) return auth.response;
 
   const url = new URL(req.url);
   const forceFresh = url.searchParams.get('fresh') === '1';
