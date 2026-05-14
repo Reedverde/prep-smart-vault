@@ -66,6 +66,15 @@ export const InternetHealthPanel = ({ refreshMs }: { refreshMs: number }) => {
             </span>
           </div>
 
+          {data.trafficDeltaPct != null && (
+            <div className="font-mono text-[11px] text-dim leading-relaxed">
+              {data.trafficDeltaPct > 0 ? "+" : ""}{data.trafficDeltaPct.toFixed(1)}% {data.trafficDeltaPct >= 0 ? "more" : "less"} US web traffic than the 7-day baseline.
+              {Math.abs(data.trafficDeltaPct) <= 15
+                ? " Within normal daily variation (±15%)."
+                : " Outside normal range — possible outage or major event."}
+            </div>
+          )}
+
           {data.anomalyNote && (
             <div className="font-mono text-[11px] px-2 py-1.5 rounded border border-severity-moderate/40 bg-severity-moderate/15 text-severity-moderate">
               {data.anomalyNote}
@@ -74,7 +83,10 @@ export const InternetHealthPanel = ({ refreshMs }: { refreshMs: number }) => {
 
           {Array.isArray(data.topTargets) && data.topTargets.length > 0 && (
             <div className="space-y-1">
-              <div className="font-mono text-[10px] uppercase tracking-wider text-dim">Top attack targets (7d)</div>
+              <div className="font-mono text-[10px] uppercase tracking-wider text-dim inline-flex items-center gap-1">
+                Top attack targets (7d)
+                <InfoTip>Share (%) of global layer-7 DDoS attack traffic targeting each country over the past 7 days. Higher = more attacks aimed at servers in that country.</InfoTip>
+              </div>
               {data.topTargets.map((t: any, i: number) => (
                 <div key={`${t.name}-${i}`} className="flex justify-between font-mono text-[11px]">
                   <span className="text-foreground truncate">{t.name}</span>
