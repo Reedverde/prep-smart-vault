@@ -28,7 +28,7 @@ export const InternetHealthPanel = ({ refreshMs }: { refreshMs: number }) => {
       action={
         <>
           <InfoTip>
-            Cloudflare Radar aggregates global internet traffic and attack data from Cloudflare's network (~20% of internet traffic). Sudden drops or spikes can indicate BGP hijacks, DDoS, or major outages. Not localized to your ISP.
+            Compares right-now US web traffic to the past 7-day average across Cloudflare's network (~20% of the internet). Swings beyond ±15% often signal a major outage, BGP route leak, or an unusual spike (holiday, viral event). Attack level summarizes worldwide layer-7 (HTTP) DDoS volume.
           </InfoTip>
           {!notConfigured && <RefreshButton onClick={() => refetch()} loading={isFetching} />}
         </>
