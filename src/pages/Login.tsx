@@ -119,23 +119,14 @@ const Login = () => {
               disabled={submitting}
             >
               {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {mode === "signup" ? "Create Account" : "Sign In"}
+              Sign In
             </Button>
           </form>
 
-          <div className="flex items-center justify-between font-mono text-xs">
-            <button
-              type="button"
-              className="text-accent hover:underline"
-              onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-            >
-              {mode === "signin" ? "Create account" : "Have an account? Sign in"}
+          <div className="flex items-center justify-end font-mono text-xs">
+            <button type="button" className="text-dim hover:text-foreground" onClick={handleReset}>
+              Forgot?
             </button>
-            {mode === "signin" && (
-              <button type="button" className="text-dim hover:text-foreground" onClick={handleReset}>
-                Forgot?
-              </button>
-            )}
           </div>
         </div>
 
