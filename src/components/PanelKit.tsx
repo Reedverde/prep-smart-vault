@@ -65,13 +65,14 @@ export const UpdatedAgo = ({ date }: { date: Date | undefined }) => {
 };
 
 // ============ Semicircle Gauge ============
+// Segmented, glowing speedometer-style half-ring.
 export const SemiGauge = ({
   value,
   min = 0,
   max = 9,
   zones,
   label,
-  size = 180,
+  size = 200,
 }: {
   value: number;
   min?: number;
@@ -80,10 +81,13 @@ export const SemiGauge = ({
   label?: string;
   size?: number;
 }) => {
-  const radius = size / 2 - 12;
+  const stroke = 24;
+  const radius = size / 2 - stroke / 2 - 4;
   const cx = size / 2;
   const cy = size / 2;
-  const stroke = 14;
+  const filterId = `gauge-glow-${Math.round(radius)}`;
+  const SEGMENTS_PER_ZONE = 4;
+  const GAP_DEG = 2;
 
   const polar = (angleDeg: number, r: number) => {
     const a = ((angleDeg - 180) * Math.PI) / 180;
@@ -103,25 +107,77 @@ export const SemiGauge = ({
   };
 
   const needleAngle = valueToDeg(value);
-  const [nx, ny] = polar(needleAngle, radius - 4);
+  const [nx, ny] = polar(needleAngle, radius - 2);
+
+  // Build segmented arc data
+  const segments: { d: string; color: string }[] = [];
+  zones.forEach((z) => {
+    const startDeg = valueToDeg(z.from);
+    const endDeg = valueToDeg(z.to);
+    const span = endDeg - startDeg;
+    const segSpan = (span - GAP_DEG * (SEGMENTS_PER_ZONE - 1)) / SEGMENTS_PER_ZONE;
+    for (let i = 0; i < SEGMENTS_PER_ZONE; i++) {
+      const s = startDeg + i * (segSpan + GAP_DEG);
+      const e = s + segSpan;
+      if (e > s) segments.push({ d: arcPath(s, e, radius), color: z.color });
+    }
+  });
 
   return (
     <div className="flex flex-col items-center">
-      <svg width={size} height={size / 2 + 16} viewBox={`0 0 ${size} ${size / 2 + 16}`}>
-        {zones.map((z, i) => (
-          <path
-            key={i}
-            d={arcPath(valueToDeg(z.from), valueToDeg(z.to), radius)}
-            stroke={z.color}
-            strokeWidth={stroke}
-            fill="none"
-            strokeLinecap="butt"
-            opacity={0.85}
+      <svg width={size} height={size / 2 + 20} viewBox={`0 0 ${size} ${size / 2 + 20}`}>
+        <defs>
+          <filter id={filterId} x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="3.5" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        {/* Inner faint backdrop ring (decorative depth) */}
+        <path
+          d={arcPath(0, 180, radius - stroke - 2)}
+          stroke="hsl(var(--foreground) / 0.06)"
+          strokeWidth={2}
+          fill="none"
+        />
+        <path
+          d={arcPath(0, 180, radius - stroke - 10)}
+          stroke="hsl(var(--foreground) / 0.04)"
+          strokeWidth={1}
+          fill="none"
+        />
+
+        {/* Segmented colored arcs with glow */}
+        <g filter={`url(#${filterId})`}>
+          {segments.map((s, i) => (
+            <path
+              key={i}
+              d={s.d}
+              stroke={s.color}
+              strokeWidth={stroke}
+              fill="none"
+              strokeLinecap="butt"
+              opacity={0.95}
+            />
+          ))}
+        </g>
+
+        {/* Needle with glow */}
+        <g filter={`url(#${filterId})`}>
+          <line
+            x1={cx}
+            y1={cy}
+            x2={nx}
+            y2={ny}
+            stroke="hsl(var(--foreground))"
+            strokeWidth={5}
+            strokeLinecap="round"
           />
-        ))}
-        {/* Needle */}
-        <line x1={cx} y1={cy} x2={nx} y2={ny} stroke="hsl(var(--foreground))" strokeWidth={2.5} strokeLinecap="round" />
-        <circle cx={cx} cy={cy} r={4} fill="hsl(var(--foreground))" />
+        </g>
+        <circle cx={cx} cy={cy} r={7} fill="hsl(var(--background))" stroke="hsl(var(--foreground))" strokeWidth={2} />
       </svg>
       {label && <div className="font-mono text-[10px] uppercase tracking-wider text-dim -mt-2">{label}</div>}
     </div>
