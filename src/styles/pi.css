@@ -293,7 +293,7 @@
 }
 .pi-root .pi-tile-id {
   font-family: "JetBrains Mono", monospace;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 400;
   letter-spacing: 0.15em;
   color: var(--faint);
