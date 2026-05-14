@@ -2,7 +2,7 @@ import { Panel, StatBox, ContextBox } from "@/components/Panel";
 import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo } from "@/components/PanelKit";
 import { useWeather } from "@/hooks/useDataSources";
 import { WeatherIcon, iconForForecast } from "@/components/WeatherIcon";
-import { MoonBadge } from "@/components/MoonBadge";
+
 
 const COMPASS = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
 const degToCompass = (deg: number | null | undefined) => {
