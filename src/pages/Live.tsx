@@ -56,11 +56,11 @@ const Live = () => {
       label: "LOCAL",
       panels: [
         <WeatherPanel key="weather" lat={lat} lng={lng} refreshMs={refreshMs} />,
-        <div key="alerts-moon" className="flex flex-col gap-4">
-          <AlertsPanel lat={lat} lng={lng} refreshMs={refreshMs} />
+        <AlertsPanel key="alerts" lat={lat} lng={lng} refreshMs={refreshMs} />,
+        <div key="moon-aq" className="flex flex-col gap-4">
           <MoonPhasePanel lat={lat} lng={lng} />
+          <AirQualityPanel lat={lat} lng={lng} refreshMs={refreshMs} />
         </div>,
-        <AirQualityPanel key="aq" lat={lat} lng={lng} refreshMs={refreshMs} />,
       ],
     },
     {

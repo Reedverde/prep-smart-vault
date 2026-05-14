@@ -2,7 +2,7 @@ import { Panel, StatBox, ContextBox } from "@/components/Panel";
 import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo } from "@/components/PanelKit";
 import { useWeather } from "@/hooks/useDataSources";
 import { WeatherIcon, iconForForecast } from "@/components/WeatherIcon";
-import { MoonBadge } from "@/components/MoonBadge";
+
 
 const COMPASS = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
 const degToCompass = (deg: number | null | undefined) => {
@@ -58,7 +58,7 @@ export const WeatherPanel = ({
         <PanelError message="Could not load NWS forecast" onRetry={() => refetch()} />
       ) : (
         <div className="space-y-4">
-          {/* Pip-Boy weather icon + moon phase row */}
+          {/* Pip-Boy weather icon + big temperature */}
           <div className="flex items-center justify-between gap-3">
             <div className="text-accent">
               <WeatherIcon
@@ -69,25 +69,23 @@ export const WeatherPanel = ({
                 size={64}
               />
             </div>
-            <div className="text-accent">
-              <MoonBadge size={48} />
+            <div className="flex items-baseline gap-1">
+              <span className="font-mono text-5xl md:text-6xl font-semibold text-foreground tabular-nums leading-none">
+                {data.observed?.temperatureF != null
+                  ? Math.round(data.observed.temperatureF)
+                  : data.period.temperature}
+              </span>
+              <span className="font-mono text-xl text-dim">°F</span>
             </div>
           </div>
 
-          {/* Big temp + condition (observed when available, else forecast period) */}
-          <div className="flex items-baseline gap-3">
-            <span className="font-mono text-5xl md:text-6xl font-semibold text-foreground tabular-nums">
-              {data.observed?.temperatureF != null
-                ? Math.round(data.observed.temperatureF)
-                : data.period.temperature}
-            </span>
-            <span className="font-mono text-xl text-dim">°F</span>
-            <span className="font-mono text-xs text-dim ml-auto uppercase tracking-wider">
+          <div className="flex items-baseline justify-between gap-3">
+            <div className="font-mono text-sm text-foreground">
+              {data.observed?.shortForecast || data.period.shortForecast}
+            </div>
+            <span className="font-mono text-xs text-dim uppercase tracking-wider">
               {data.period.name}
             </span>
-          </div>
-          <div className="font-mono text-sm text-foreground">
-            {data.observed?.shortForecast || data.period.shortForecast}
           </div>
 
           {/* 4-stat grid: Wind, Precip, Humidity, Dewpoint */}
