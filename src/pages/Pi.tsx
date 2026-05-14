@@ -554,11 +554,15 @@ const Pi = () => {
 
           {/* Row 3 */}
           <PiTile label="POWER OUTAGES · PA" num="10" sev={outageSev}
-            footer={`${outageSeverity || "all clear"} · firstenergy`}
+            footer={
+              outageUnavail
+                ? "feed unavailable · firstenergy"
+                : `${outageSeverity || "all clear"} · firstenergy`
+            }
             body={
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <Big size={57} color="var(--green)" glow="var(--green-glow)">
-                  {outageCust}
+                <Big size={57} color={outageColorVar} glow={outageGlowVar}>
+                  {outageUnavail ? "—" : outageCust.toLocaleString()}
                 </Big>
                 <div style={{ display: "flex", gap: 4 }}>
                   {[0, 1, 2].map((s) => (
@@ -566,7 +570,7 @@ const Pi = () => {
                       key={s}
                       width={24}
                       height={113}
-                      cells={Array.from({ length: 6 }, () => ({ lit: outageCust === 0 }))}
+                      cells={Array.from({ length: 6 }, () => ({ lit: !outageUnavail && outageCust === 0 }))}
                     />
                   ))}
                 </div>
