@@ -66,14 +66,16 @@ Deno.serve(async (req) => {
         mix: mixRes.status,
         isInvalidKey,
       });
+      const cached = await cacheRead(CACHE_KEY);
+      if (cached && Date.now() - new Date(cached.fetched_at).getTime() < STALE_MAX_MS) {
+        return new Response(JSON.stringify(cached.payload), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'cache-stale', 'X-Cache-Fetched-At': cached.fetched_at },
+        });
+      }
       return new Response(
-        JSON.stringify({
-          error: isInvalidKey ? 'invalid_api_key' : 'upstream_failed',
-        }),
-        {
-          status: 502,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
+        JSON.stringify({ error: isInvalidKey ? 'invalid_api_key' : 'upstream_failed' }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
