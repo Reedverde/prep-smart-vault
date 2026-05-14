@@ -14,7 +14,7 @@ import { GridStatusPanel } from "@/components/panels/GridStatusPanel";
 import { GlobalHeadlinesPanel } from "@/components/panels/GlobalHeadlinesPanel";
 import { SevereRadarPanel } from "@/components/panels/SevereRadarPanel";
 import { HazardousOutlookPanel } from "@/components/panels/HazardousOutlookPanel";
-import { ScannerAudioPanel } from "@/components/panels/ScannerAudioPanel";
+import { Play } from "lucide-react";
 import { EnergyCostsPanel } from "@/components/panels/EnergyCostsPanel";
 import { FinancialStressPanel } from "@/components/panels/FinancialStressPanel";
 import { PowerOutagesPanel } from "@/components/panels/PowerOutagesPanel";
@@ -66,7 +66,6 @@ const Live = () => {
       panels: [
         <SevereRadarPanel key="radar" lat={lat} lng={lng} refreshMs={5 * 60 * 1000} />,
         <HazardousOutlookPanel key="hwo" lat={lat} lng={lng} refreshMs={30 * 60 * 1000} />,
-        <ScannerAudioPanel key="scanner" />,
       ],
     },
     {
@@ -123,6 +122,14 @@ const Live = () => {
           </span>
           <span className="text-dim">·</span>
           <span className="text-dim uppercase tracking-wider">read-only public view</span>
+          <a
+            href="https://www.broadcastify.com/listen/feed/33610"
+            target="_blank"
+            rel="noreferrer"
+            className="ml-auto inline-flex items-center gap-2 px-3 py-1.5 rounded border border-accent/60 text-accent font-mono text-[11px] uppercase tracking-wider hover:bg-accent/10 transition-colors"
+          >
+            <Play className="h-3 w-3 fill-current" /> Local Scanner · Tune In
+          </a>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:block gap-4 xl:gap-0">
