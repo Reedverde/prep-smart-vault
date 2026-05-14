@@ -55,6 +55,19 @@ export const requireUser = async (req: Request): Promise<AuthResult> => {
         }),
       };
     }
+    // Server-side email allowlist enforcement (defense-in-depth on top of
+    // disabled signups). Only these emails may access authenticated endpoints.
+    const ALLOWED_EMAILS = ['reed@everde.co'];
+    const email = (data.user.email ?? '').toLowerCase().trim();
+    if (!email || !ALLOWED_EMAILS.includes(email)) {
+      return {
+        ok: false,
+        response: new Response(JSON.stringify({ error: 'forbidden' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }),
+      };
+    }
     return { ok: true, userId: data.user.id };
   } catch (_err) {
     return {
