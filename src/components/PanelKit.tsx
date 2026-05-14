@@ -107,7 +107,21 @@ export const SemiGauge = ({
   };
 
   const needleAngle = valueToDeg(value);
-  const [nx, ny] = polar(needleAngle, radius - 2);
+  // Triangle pointer that sits in the gap just inside the colored arc and points outward toward the segment.
+  const tipR = radius - stroke / 2 - 2;       // tip — just inside the inner edge of the arc
+  const baseR = tipR - 14;                    // base — closer to center
+  const halfWidth = 6;                        // perpendicular half-width of the base
+  const [tipX, tipY] = polar(needleAngle, tipR);
+  // Perpendicular offsets for the base corners (rotate 90° from the radial direction)
+  const a = ((needleAngle - 180) * Math.PI) / 180;
+  const perpX = -Math.sin(a);
+  const perpY = Math.cos(a);
+  const [baseCX, baseCY] = polar(needleAngle, baseR);
+  const b1x = baseCX + perpX * halfWidth;
+  const b1y = baseCY + perpY * halfWidth;
+  const b2x = baseCX - perpX * halfWidth;
+  const b2y = baseCY - perpY * halfWidth;
+  const trianglePts = `${tipX},${tipY} ${b1x},${b1y} ${b2x},${b2y}`;
 
   // Build segmented arc data
   const segments: { d: string; color: string }[] = [];
