@@ -106,7 +106,8 @@ export const AirQualityPanel = ({
                       {o.AQI} <span className="text-dim">{o.Category?.Name}</span>
                     </span>
                   </div>
-                ))}
+                  );
+                })}
               </div>
 
               <ContextBox>
