@@ -179,19 +179,16 @@ export const SemiGauge = ({
           ))}
         </g>
 
-        {/* Needle with glow */}
+        {/* Triangle pointer with glow — sits in the gap inside the arc */}
         <g filter={`url(#${filterId})`}>
-          <line
-            x1={cx}
-            y1={cy}
-            x2={nx}
-            y2={ny}
+          <polygon
+            points={trianglePts}
+            fill="hsl(var(--foreground))"
             stroke="hsl(var(--foreground))"
-            strokeWidth={5}
-            strokeLinecap="round"
+            strokeWidth={1}
+            strokeLinejoin="round"
           />
         </g>
-        <circle cx={cx} cy={cy} r={7} fill="hsl(var(--background))" stroke="hsl(var(--foreground))" strokeWidth={2} />
       </svg>
       {label && <div className="font-mono text-[10px] uppercase tracking-wider text-dim -mt-2">{label}</div>}
     </div>
