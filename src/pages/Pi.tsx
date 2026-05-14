@@ -9,6 +9,7 @@ import { getMoonPhase } from "@/lib/moonPhase";
 import { getMoonTimes } from "@/lib/moonTimes";
 import piClockBg from "@/assets/pi-pipboy-bg.png";
 import { PiTile, type PiSeverity } from "@/components/PiTile";
+import { iconForForecast } from "@/components/WeatherIcon";
 import {
   PiWeatherIcon,
   PiShield,
@@ -159,6 +160,14 @@ const Pi = () => {
     if (windUnit && windUnit.includes("m_s-1")) return Math.round(windKph * 2.23694);
     return Math.round(windKph * 0.621371);
   })();
+  // NWS exposes isDaytime on the period; fall back to local hour.
+  const isDay = (() => {
+    const p = weather.data?.period?.isDaytime;
+    if (typeof p === "boolean") return p;
+    const h = new Date().getHours();
+    return h >= 6 && h < 19;
+  })();
+  const wxVariant = iconForForecast(cond, isDay);
 
   // 02 Local alerts
   const activeAlerts = localAlerts.data?.active ?? [];
@@ -387,7 +396,7 @@ const Pi = () => {
             footer={`${cond.toLowerCase()} · ${windMph != null ? `${windMph}mph w` : "—"} · feels ${tempF != null ? Math.round(tempF) : "—"}°`}
             body={
               <>
-                <PiWeatherIcon size={97} />
+                <PiWeatherIcon size={97} variant={wxVariant} />
                 <Big size={57} color="var(--green)" glow="var(--green-glow)">
                   {tempF != null ? `${Math.round(tempF)}°` : "—"}
                 </Big>
