@@ -20,26 +20,206 @@ type Sev = "green" | "yellow" | "orange" | "red" | "purple" | "blue";
 const sevVar = (s: Sev) => `var(--${s})`;
 const sevGlow = (s: Sev) => `var(--${s}-glow)`;
 
-// ============ PiWeatherIcon — sun/cloud, gradient yellow→orange ============
-export const PiWeatherIcon = ({ size = 48 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden>
-    <defs>
-      <radialGradient id="piwx-sun" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stopColor="#ffd84d" />
-        <stop offset="100%" stopColor="#ff9d3a" />
-      </radialGradient>
-    </defs>
-    <circle cx="24" cy="24" r="9" fill="url(#piwx-sun)" />
-    {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => {
-      const rad = (a * Math.PI) / 180;
-      const x1 = 24 + Math.cos(rad) * 14;
-      const y1 = 24 + Math.sin(rad) * 14;
-      const x2 = 24 + Math.cos(rad) * 19;
-      const y2 = 24 + Math.sin(rad) * 19;
-      return <line key={a} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#ffd84d" strokeWidth={2} strokeLinecap="round" />;
-    })}
-  </svg>
-);
+// ============ PiWeatherIcon — variant-driven (sun / moon / clouds / rain / snow / storm / fog / wind) ============
+import type { WeatherVariant } from "@/components/WeatherIcon";
+
+export const PiWeatherIcon = ({
+  size = 48,
+  variant = "sun",
+}: {
+  size?: number;
+  variant?: WeatherVariant;
+}) => {
+  const sunFill = "url(#piwx-sun)";
+  const moonFill = "url(#piwx-moon)";
+  const cloudColor = "#cfd8e3";
+  const cloudShadow = "#7d8a99";
+  const rainColor = "#5fb8ff";
+  const snowColor = "#e8f4ff";
+  const boltColor = "#ffe066";
+
+  // Cloud path centered roughly at (24,30), used by cloudy/rain/storm/snow/fog
+  const Cloud = ({ y = 0, opacity = 1 }: { y?: number; opacity?: number }) => (
+    <path
+      d={`M12 ${34 + y} a7 7 0 0 1 4 -13 a9 9 0 0 1 17 -1 a6 6 0 0 1 8 6 a5 5 0 0 1 -5 8 H14 a5 5 0 0 1 -2 0 z`}
+      fill={cloudColor}
+      stroke={cloudShadow}
+      strokeWidth={1.2}
+      strokeLinejoin="round"
+      opacity={opacity}
+    />
+  );
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden>
+      <defs>
+        <radialGradient id="piwx-sun" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#ffd84d" />
+          <stop offset="100%" stopColor="#ff9d3a" />
+        </radialGradient>
+        <radialGradient id="piwx-moon" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#e8eefc" />
+          <stop offset="100%" stopColor="#8aa1c9" />
+        </radialGradient>
+      </defs>
+
+      {variant === "sun" && (
+        <g>
+          <circle cx="24" cy="24" r="9" fill={sunFill} />
+          {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => {
+            const rad = (a * Math.PI) / 180;
+            return (
+              <line
+                key={a}
+                x1={24 + Math.cos(rad) * 14}
+                y1={24 + Math.sin(rad) * 14}
+                x2={24 + Math.cos(rad) * 19}
+                y2={24 + Math.sin(rad) * 19}
+                stroke="#ffd84d"
+                strokeWidth={2}
+                strokeLinecap="round"
+              />
+            );
+          })}
+        </g>
+      )}
+
+      {variant === "clear-night" && (
+        <path
+          d="M30 8 a16 16 0 1 0 10 28 a13 13 0 1 1 -10 -28 z"
+          fill={moonFill}
+          stroke="#6b80a8"
+          strokeWidth={1.2}
+          strokeLinejoin="round"
+        />
+      )}
+
+      {variant === "partly-cloudy" && (
+        <g>
+          <circle cx="16" cy="16" r="6" fill={sunFill} />
+          {[0, 60, 120, 180, 240, 300].map((a) => {
+            const rad = (a * Math.PI) / 180;
+            return (
+              <line
+                key={a}
+                x1={16 + Math.cos(rad) * 9}
+                y1={16 + Math.sin(rad) * 9}
+                x2={16 + Math.cos(rad) * 13}
+                y2={16 + Math.sin(rad) * 13}
+                stroke="#ffd84d"
+                strokeWidth={1.8}
+                strokeLinecap="round"
+              />
+            );
+          })}
+          <Cloud y={4} />
+        </g>
+      )}
+
+      {variant === "partly-cloudy-night" && (
+        <g>
+          <path
+            d="M18 8 a9 9 0 1 0 4 14 a7 7 0 1 1 -4 -14 z"
+            fill={moonFill}
+            stroke="#6b80a8"
+            strokeWidth={1.2}
+          />
+          <Cloud y={6} />
+        </g>
+      )}
+
+      {variant === "cloudy" && (
+        <g>
+          <Cloud y={-2} opacity={0.6} />
+          <Cloud y={4} />
+        </g>
+      )}
+
+      {variant === "rain" && (
+        <g>
+          <Cloud y={-4} />
+          {[16, 22, 28, 34].map((x, i) => (
+            <line
+              key={x}
+              x1={x}
+              y1={36}
+              x2={x - 3}
+              y2={44}
+              stroke={rainColor}
+              strokeWidth={2}
+              strokeLinecap="round"
+              opacity={i % 2 ? 0.7 : 1}
+            />
+          ))}
+        </g>
+      )}
+
+      {variant === "tstorm" && (
+        <g>
+          <Cloud y={-4} />
+          <path
+            d="M24 34 L20 42 L25 42 L21 50"
+            fill="none"
+            stroke={boltColor}
+            strokeWidth={2.2}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            style={{ filter: `drop-shadow(0 0 3px ${boltColor})` }}
+          />
+          <line x1={32} y1={38} x2={30} y2={45} stroke={rainColor} strokeWidth={2} strokeLinecap="round" />
+        </g>
+      )}
+
+      {variant === "snow" && (
+        <g>
+          <Cloud y={-4} />
+          {[
+            [16, 38],
+            [24, 42],
+            [32, 38],
+            [20, 46],
+            [28, 46],
+          ].map(([x, y]) => (
+            <g key={`${x}-${y}`} stroke={snowColor} strokeWidth={1.4} strokeLinecap="round">
+              <line x1={x - 2.5} y1={y} x2={x + 2.5} y2={y} />
+              <line x1={x} y1={y - 2.5} x2={x} y2={y + 2.5} />
+              <line x1={x - 1.8} y1={y - 1.8} x2={x + 1.8} y2={y + 1.8} />
+              <line x1={x - 1.8} y1={y + 1.8} x2={x + 1.8} y2={y - 1.8} />
+            </g>
+          ))}
+        </g>
+      )}
+
+      {variant === "fog" && (
+        <g>
+          <Cloud y={-8} opacity={0.85} />
+          {[36, 40, 44].map((y, i) => (
+            <line
+              key={y}
+              x1={6 + i * 2}
+              y1={y}
+              x2={42 - i * 2}
+              y2={y}
+              stroke={cloudColor}
+              strokeWidth={2}
+              strokeLinecap="round"
+              opacity={0.75 - i * 0.15}
+            />
+          ))}
+        </g>
+      )}
+
+      {variant === "wind" && (
+        <g fill="none" stroke={cloudColor} strokeWidth={2} strokeLinecap="round">
+          <path d="M6 16 H28 a5 5 0 1 0 -5 -5" />
+          <path d="M6 26 H34 a5 5 0 1 1 -5 5" />
+          <path d="M6 36 H22 a4 4 0 1 0 -4 -4" />
+        </g>
+      )}
+    </svg>
+  );
+};
+
 
 // ============ PiShield — phosphor shield ============
 export const PiShield = ({ size = 56, count, color = PI_COLORS.GREEN }: { size?: number; count?: number | string; color?: string }) => (
