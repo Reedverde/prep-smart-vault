@@ -208,11 +208,26 @@ const Pi = () => {
   const fuelMin = 2.5;
   const fuelMax = 5.0;
   const fuelPct = fuelLatest != null ? ((fuelLatest - fuelMin) / (fuelMax - fuelMin)) * 100 : null;
+  const fuelSev: PiSeverity =
+    fuelWow == null ? "green" : fuelWow > 0.1 ? "yellow" : fuelWow > 0.25 ? "red" : "green";
 
   // 07 Financial stress
   const fredData: any = stress.data;
   const stlfsi: number | null = fredData?.stlfsi?.latest ?? null;
+  const stressLevel: string | null = fredData?.stlfsi?.level ?? null;
   const stressSev: PiSeverity = stlfsi == null ? "purple" : stlfsi > 1 ? "red" : stlfsi > 0 ? "yellow" : "purple";
+  const stressLevelLabel: string =
+    stressLevel === "high" ? "HIGH"
+      : stressLevel === "elevated" ? "ELEVATED"
+      : stressLevel === "normal" ? "NORMAL"
+      : stressLevel === "below" ? "BELOW AVG"
+      : stressLevel === "low" ? "LOW"
+      : stlfsi == null ? "—"
+      : stlfsi > 2 ? "HIGH"
+      : stlfsi > 1 ? "ELEVATED"
+      : stlfsi > 0 ? "NORMAL"
+      : stlfsi > -1 ? "BELOW AVG"
+      : "LOW";
 
   // 08 National alerts
   const natFeatures = natAlerts.data || [];
@@ -239,9 +254,20 @@ const Pi = () => {
 
   // 10 Outages
   const outageData: any = outages.data;
-  const outageCust: number = outageData?.lawrence?.customers ?? 0;
+  const outageUnavail = outageData?.status === "unavailable";
+  const outageCust: number = outageData?.lawrence?.customersOut ?? 0;
   const outageSeverity = outageData?.severity;
-  const outageSev: PiSeverity = outageSeverity === "widespread" ? "red" : outageSeverity === "localized" ? "yellow" : "green";
+  const outageSev: PiSeverity = outageUnavail
+    ? "yellow"
+    : outageSeverity === "widespread"
+    ? "red"
+    : outageSeverity === "localized"
+    ? "yellow"
+    : "green";
+  const outageColorVar =
+    outageSev === "red" ? "var(--red)" : outageSev === "yellow" ? "var(--yellow)" : "var(--green)";
+  const outageGlowVar =
+    outageSev === "red" ? "var(--red-glow)" : outageSev === "yellow" ? "var(--yellow-glow)" : "var(--green-glow)";
 
   // 11 Conflict pulse
   const conflictData: any = conflict.data;
@@ -440,13 +466,13 @@ const Pi = () => {
             }
           />
           <PiTile label="SEVERE RADAR" num="04" sev="green"
-            footer="no echoes · iowa mesonet"
+            footer="iowa mesonet · live"
             body={<PiRadarSweep />}
           />
 
           {/* Row 2 */}
           <PiTile label="HAZARD OUT · 7D" num="05" sev={hwoSev}
-            footer={hwoData?.office ? `${hwoData.office.toLowerCase()}` : "tstorm thu/fri · pbz"}
+            footer={hwoData?.office ? `${hwoData.office.toLowerCase()}` : "nws · 7d outlook"}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                 <PiHazardTriangle size={108} color={hwoSev === "red" ? "var(--red)" : hwoSev === "yellow" ? "var(--yellow)" : "var(--green)"} />
@@ -456,11 +482,15 @@ const Pi = () => {
               </div>
             }
           />
-          <PiTile label="FUEL · MID-ATL" num="06" sev="green"
-            footer={`padd 1b · weekly · eia`}
+          <PiTile label="FUEL · MID-ATL" num="06" sev={fuelSev}
+            footer={`padd 1b · weekly · eia${fuelWow != null ? ` · ${fuelWow >= 0 ? "+" : "−"}$${Math.abs(fuelWow).toFixed(2)} wow` : ""}`}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, width: "100%" }}>
-                <Big size={49} color="var(--green)" glow="var(--green-glow)">
+                <Big
+                  size={49}
+                  color={fuelSev === "red" ? "var(--red)" : fuelSev === "yellow" ? "var(--yellow)" : "var(--green)"}
+                  glow={fuelSev === "red" ? "var(--red-glow)" : fuelSev === "yellow" ? "var(--yellow-glow)" : "var(--green-glow)"}
+                >
                   {fuelLatest != null ? `$${fuelLatest.toFixed(2)}` : "—"}
                 </Big>
                 <PiGradBar pct={fuelPct ?? 0} width={189} height={12} redlinePct={80} />
@@ -475,7 +505,7 @@ const Pi = () => {
             }
           />
           <PiTile label="FIN STRESS · STLFSI" num="07" sev={stressSev}
-            footer={`${stlfsi != null && stlfsi < 0 ? "below avg" : "elevated"} · vix · weekly`}
+            footer={`${stressLevelLabel.toLowerCase()} · vix · weekly`}
             body={
               <PiStressHud
                 value={stlfsi}
@@ -485,19 +515,7 @@ const Pi = () => {
                 ringSize={92}
                 barWidth={104}
                 segments={11}
-                levelLabel={
-                  stlfsi == null
-                    ? "—"
-                    : stlfsi > 2
-                    ? "HIGH"
-                    : stlfsi > 1
-                    ? "ELEVATED"
-                    : stlfsi > 0
-                    ? "NORMAL"
-                    : stlfsi > -1
-                    ? "BELOW AVG"
-                    : "LOW"
-                }
+                levelLabel={stressLevelLabel}
               />
             }
           />
@@ -536,11 +554,15 @@ const Pi = () => {
 
           {/* Row 3 */}
           <PiTile label="POWER OUTAGES · PA" num="10" sev={outageSev}
-            footer={`${outageSeverity || "all clear"} · firstenergy`}
+            footer={
+              outageUnavail
+                ? "feed unavailable · firstenergy"
+                : `${outageSeverity || "all clear"} · firstenergy`
+            }
             body={
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <Big size={57} color="var(--green)" glow="var(--green-glow)">
-                  {outageCust}
+                <Big size={57} color={outageColorVar} glow={outageGlowVar}>
+                  {outageUnavail ? "—" : outageCust.toLocaleString()}
                 </Big>
                 <div style={{ display: "flex", gap: 4 }}>
                   {[0, 1, 2].map((s) => (
@@ -548,7 +570,7 @@ const Pi = () => {
                       key={s}
                       width={24}
                       height={113}
-                      cells={Array.from({ length: 6 }, () => ({ lit: outageCust === 0 }))}
+                      cells={Array.from({ length: 6 }, () => ({ lit: !outageUnavail && outageCust === 0 }))}
                     />
                   ))}
                 </div>

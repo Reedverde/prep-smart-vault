@@ -1,59 +1,58 @@
+## What I found
 
-## Goal
+I audited every hook the `/pi` page reads against the current edge-function payloads (the same payloads `/dashboard` and `/live` panels use). The grid is **mostly correctly wired** — but Power Outages has a real bug, plus a couple of small staleness issues worth tightening.
 
-Fix two dashboard panels that look cramped/run-together and bring them up to a polished HUD aesthetic matching the reference images.
+### Confirmed bugs
 
-## 1. Financial Stress panel (`src/components/panels/FinancialStressPanel.tsx`)
+1. **Power Outages tile reads the wrong field** (`src/pages/Pi.tsx`)
+   - Pi reads `outageData?.lawrence?.customers`
+   - Edge function actually returns `lawrence: { customersOut, customersTracked }` (matches `PowerOutagesPanel`)
+   - Result: the big number on the kiosk is **always 0**, even during a real outage. Severity still works (it reads `outageData.severity`), but the headline number is dead.
 
-Reference: image 3 (HUD circular ring with big centered number + small label below).
+2. **Power Outages tile ignores upstream-unavailable state**
+   - When the scrape fails, the function returns `{ status: 'unavailable', state: null, lawrence: null, severity: 'clear' }`.
+   - Pi will silently render `0` and `all clear · firstenergy` in that case. Should show `—` and a "feed unavailable" footer like `/dashboard` does.
 
-Current problem: the number, label "STLFSI", and surrounding ring all overlap because the ring is rendered as a separate semi/full gauge while the value sits beside metadata — everything collapses together at panel width.
+### Minor staleness / nits (worth fixing while we're in there)
 
-New layout (top section):
-- Centered circular HUD ring (~150px) using SVG. Two arcs:
-  - Background track: faint purple ring (`hsl(var(--accent) / 0.15)`), 8px stroke.
-  - Active arc: bright purple (`hsl(var(--accent))`), 8px stroke, with subtle outer glow (`filter: drop-shadow(0 0 8px hsl(var(--accent) / 0.6))`). Length encodes |STLFSI| mapped to 0–3 scale (clamped), starting from top (-90deg).
-  - Small notch/cap at the active arc's leading end (decorative, like the reference's bright tip).
-- Centered text inside the ring:
-  - Big tabular number, font-mono, `text-4xl`, accent purple with text-shadow glow. Show value with sign (e.g. `-0.78`).
-  - Below it, `text-[10px] uppercase tracking-[0.2em] text-dim`: `STLFSI`.
-- Below the ring, a single horizontal level pill (`LEVEL_LABEL[level]`) — already styled, just relocated and given `mt-3`.
+3. **Severe Radar tile** footer is hardcoded `"no echoes · iowa mesonet"` — it doesn't actually reflect data, so it lies during real storms. Either drop the "no echoes" claim or wire it to `localAlerts`/HWO signal so it isn't misleading.
 
-Below the gauge keep the existing 52-week sparkline + the VIX / yield curve / mortgage rows + ContextBox + UpdatedAgo, with a clear `space-y-4` gap so nothing collides.
+4. **Hazard Out tile** footer falls back to a hardcoded `"tstorm thu/fri · pbz"` when `hwoData?.office` is missing. Should be a neutral fallback (e.g. `nws · 7d outlook`).
 
-Color: stays purple (`--accent` is already the project's purple). No palette change.
+5. **Fuel tile** footer is hardcoded `"padd 1b · weekly · eia"` and severity is hardcoded `"green"` even when the price is high. Low priority, but the dashboard panel shows WoW-driven coloring; we could mirror that.
 
-## 2. Air Quality panel (`src/components/panels/AirQualityPanel.tsx`)
+6. **Fin Stress tile** — values look correct (`stlfsi.latest`), but the footer string `"below avg" / "elevated"` is computed from a single threshold and doesn't match the new 5-band level (`low / below / normal / elevated / high`) the panel now uses. Easy to align with the same `LEVEL_LABEL` map.
 
-Reference: image 2 (semicircle gauge made of discrete colored ticks/segments transitioning green→yellow→orange→red, with a triangular pointer indicating current value, big centered number, small category label below).
+### Verified correct (no change needed)
 
-Current uses `SemiGauge` from `PanelKit` with smooth zones. Replace the gauge rendering inside this panel only (don't touch the shared `SemiGauge` so other panels are unaffected) with a custom `AqiArcGauge` subcomponent:
+- Weather, Local Alerts, Air Quality (AQI gauge), National Alerts heatmap, PJM Grid Load, Conflict Pulse, Quakes, Headlines, Internet Health (incl. `notConfigured` handling), Disasters/GDACS, Kp/Space Weather, Moon, System/Clock — all field names match the current hook payloads.
 
-- SVG semicircle, 220×130, centered.
-- ~26 radial tick segments arranged along the arc from 180° to 0°.
-- Each tick is a short rounded rect rotated to its angle; tick color picked by the AQI bucket that tick's value falls into:
-  - 0–50 green (`--severity-low`)
-  - 51–100 yellow (custom, see below)
-  - 101–150 orange (`--severity-severe` is already orange-ish; keep)
-  - 151–300 red (`--severity-critical`)
-- Inactive ticks (above current value) rendered at 25% opacity; active ticks at full opacity with subtle `drop-shadow` glow in their own color.
-- Triangular pointer: small SVG triangle positioned at the active value's angle, pointing inward, fill `hsl(var(--foreground))`.
-- Centered text inside arc: big AQI number (`text-5xl`, tabular, color = current bucket color, glow shadow), category label below in same color (`text-[10px] uppercase tracking-wider`).
+## Plan
 
-Yellow is not currently a token; add `--severity-warn: 48 96% 53%` to `:root` (and dark override if needed) in `src/index.css` so it's reusable. Use it via a Tailwind arbitrary `hsl(var(--severity-warn))` or extend `tailwind.config.ts` colors with `severity.warn`.
+Single-file edit to `src/pages/Pi.tsx`:
 
-Pollutant list, ContextBox, UpdatedAgo, refresh button, info tooltip: keep as is.
+1. **Outages — fix data field + unavailable state**
+   ```text
+   outageCust    = outageData?.lawrence?.customersOut ?? 0
+   outageUnavail = outageData?.status === 'unavailable'
+   footer        = outageUnavail ? 'feed unavailable · firstenergy'
+                                 : `${outageSeverity || 'all clear'} · firstenergy`
+   big number    = outageUnavail ? '—' : outageCust.toLocaleString()
+   ```
+   Color the number red/yellow/green from `outageSev` (currently always green).
+
+2. **Severe Radar footer** — change hardcoded "no echoes" to something honest like `iowa mesonet · live` (no claim about echoes).
+
+3. **HWO footer fallback** — replace `"tstorm thu/fri · pbz"` with `"nws · 7d outlook"` when no office.
+
+4. **Fuel footer/severity** — drive severity from `fuelWow` (e.g. `> +0.10` → yellow), keep label dynamic.
+
+5. **Fin Stress footer** — use the same 5-band label set the panel uses, derived from `data.stlfsi.level` if present, falling back to threshold.
+
+No edge-function changes, no hook changes, no styling changes beyond color tokens already in `pi.css`. Visuals (gauges, rings, bars) stay as-is.
 
 ## Out of scope
 
-- No data-source / hook changes.
-- No changes to other panels.
-- No layout/grid changes on the dashboard.
-
-## Files touched
-
-- `src/components/panels/FinancialStressPanel.tsx` — replace gauge/header block.
-- `src/components/panels/AirQualityPanel.tsx` — replace `SemiGauge` usage with new local `AqiArcGauge`.
-- `src/index.css` — add `--severity-warn` token.
-- `tailwind.config.ts` — register `severity.warn` color (optional, for class usage).
-
+- Refactoring `PiViz` components.
+- Touching `/dashboard` or `/live`.
+- Adding new data sources or new tiles.
