@@ -39,14 +39,14 @@ Deno.serve(async (req) => {
     });
   }
 
-  if (cache && Date.now() - cache.ts < CACHE_MS) {
-    return new Response(JSON.stringify(cache.payload), {
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=300, stale-while-revalidate=900',
-      },
-    });
+  const forceFresh = new URL(req.url).searchParams.get('fresh') === '1';
+  if (!forceFresh) {
+    const cached = await cacheRead(CACHE_KEY);
+    if (cached && Date.now() - new Date(cached.fetched_at).getTime() < FRESH_MS) {
+      return new Response(JSON.stringify(cached.payload), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'cache-fresh', 'X-Cache-Fetched-At': cached.fetched_at },
+      });
+    }
   }
 
   try {
@@ -77,16 +77,23 @@ Deno.serve(async (req) => {
       mortgage30: mortgage ? { value: mortgage.value, date: mortgage.date } : null,
       fetchedAt: new Date().toISOString(),
     };
-    cache = { ts: Date.now(), payload };
+    await cacheWrite(CACHE_KEY, payload);
     return new Response(JSON.stringify(payload), {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json',
+        'X-Cache': 'fresh',
         'Cache-Control': 'public, max-age=300, stale-while-revalidate=900',
       },
     });
   } catch (err) {
     console.error('fred-stress error:', err);
+    const cached = await cacheRead(CACHE_KEY);
+    if (cached && Date.now() - new Date(cached.fetched_at).getTime() < STALE_MAX_MS) {
+      return new Response(JSON.stringify(cached.payload), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'cache-stale', 'X-Cache-Fetched-At': cached.fetched_at },
+      });
+    }
     return new Response(JSON.stringify({ error: 'internal_error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
