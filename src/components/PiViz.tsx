@@ -846,3 +846,260 @@ export const PiHeatStrip = ({
     </svg>
   );
 };
+
+// ============ PiAqiArcGauge — segmented semicircle with pointer (AQI HUD) ============
+export const PiAqiArcGauge = ({
+  value,
+  max = 300,
+  width = 200,
+  height = 118,
+  ticks = 26,
+}: {
+  value: number | null | undefined;
+  max?: number;
+  width?: number;
+  height?: number;
+  ticks?: number;
+}) => {
+  const cx = width / 2;
+  const cy = height - 8;
+  const rOuter = Math.min(width / 2 - 6, height - 12);
+  const rInner = rOuter - 22;
+  const v = value == null ? 0 : Math.max(0, Math.min(max, value));
+  const activeIdx = value == null ? -1 : Math.round((v / max) * (ticks - 1));
+
+  const colorForAqi = (a: number) => {
+    if (a <= 50) return PI_COLORS.GREEN;
+    if (a <= 100) return PI_COLORS.YELLOW;
+    if (a <= 150) return PI_COLORS.ORANGE;
+    return PI_COLORS.RED;
+  };
+  const glowForAqi = (a: number) => {
+    if (a <= 50) return "var(--green-glow)";
+    if (a <= 100) return "var(--yellow-glow)";
+    if (a <= 150) return "var(--orange-glow)";
+    return "var(--red-glow)";
+  };
+
+  const cat = v <= 50 ? "GOOD" : v <= 100 ? "MODERATE" : v <= 150 ? "SENSITIVE" : v <= 200 ? "UNHEALTHY" : v <= 300 ? "VERY UNHEALTHY" : "HAZARDOUS";
+  const activeColor = colorForAqi(v);
+  const activeGlow = glowForAqi(v);
+
+  // Pointer geometry
+  const pointerAngleDeg = 180 + (v / max) * 180;
+  const pa = (pointerAngleDeg * Math.PI) / 180;
+  const ptipR = rInner - 4;
+  const pbaseR = rInner - 14;
+  const tipX = cx + Math.cos(pa) * ptipR;
+  const tipY = cy + Math.sin(pa) * ptipR;
+  const perp = pa + Math.PI / 2;
+  const half = 5;
+  const baseAx = cx + Math.cos(pa) * pbaseR + Math.cos(perp) * half;
+  const baseAy = cy + Math.sin(pa) * pbaseR + Math.sin(perp) * half;
+  const baseBx = cx + Math.cos(pa) * pbaseR - Math.cos(perp) * half;
+  const baseBy = cy + Math.sin(pa) * pbaseR - Math.sin(perp) * half;
+
+  return (
+    <div style={{ position: "relative", width, height, display: "inline-block" }}>
+      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden>
+        {Array.from({ length: ticks }).map((_, i) => {
+          const t = i / (ticks - 1);
+          const angDeg = 180 + t * 180;
+          const ang = (angDeg * Math.PI) / 180;
+          const aqiAtTick = t * max;
+          const color = colorForAqi(aqiAtTick);
+          const isActive = value != null && i <= activeIdx;
+          const x1 = cx + Math.cos(ang) * rInner;
+          const y1 = cy + Math.sin(ang) * rInner;
+          const x2 = cx + Math.cos(ang) * rOuter;
+          const y2 = cy + Math.sin(ang) * rOuter;
+          return (
+            <line
+              key={i}
+              x1={x1}
+              y1={y1}
+              x2={x2}
+              y2={y2}
+              stroke={color}
+              strokeWidth={6}
+              strokeLinecap="round"
+              opacity={isActive ? 1 : 0.18}
+              style={isActive ? { filter: `drop-shadow(0 0 3px ${color})` } : undefined}
+            />
+          );
+        })}
+        {value != null && (
+          <polygon
+            points={`${tipX},${tipY} ${baseAx},${baseAy} ${baseBx},${baseBy}`}
+            fill="var(--text)"
+            opacity={0.95}
+          />
+        )}
+      </svg>
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 6,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          pointerEvents: "none",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "Orbitron, sans-serif",
+            fontWeight: 700,
+            fontSize: 38,
+            lineHeight: 1,
+            color: activeColor,
+            textShadow: `0 0 10px ${activeGlow}`,
+          }}
+        >
+          {value != null ? Math.round(value) : "—"}
+        </div>
+        <div
+          style={{
+            fontFamily: "JetBrains Mono, monospace",
+            fontSize: 9,
+            letterSpacing: "0.18em",
+            color: activeColor,
+            marginTop: 4,
+          }}
+        >
+          {value != null ? cat : ""}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============ PiStressHud — circle (number) + segmented level bar (HUD style) ============
+export const PiStressHud = ({
+  value,
+  min = -2,
+  max = 3,
+  sev = "purple",
+  ringSize = 88,
+  barWidth = 110,
+  segments = 12,
+  levelLabel,
+}: {
+  value: number | null | undefined;
+  min?: number;
+  max?: number;
+  sev?: Sev;
+  ringSize?: number;
+  barWidth?: number;
+  segments?: number;
+  levelLabel?: string;
+}) => {
+  const stroke = 8;
+  const r = (ringSize - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  // Ring fills based on |value| over a 0..3 reference (visual only)
+  const ringPct =
+    value == null ? 0 : Math.max(0, Math.min(1, Math.abs(value) / Math.max(Math.abs(min), Math.abs(max))));
+  // Bar fills based on value mapped from min..max
+  const barPct =
+    value == null ? 0 : Math.max(0, Math.min(1, (value - min) / (max - min)));
+  const activeSegs = Math.round(barPct * segments);
+  const color = sevVar(sev);
+  const glow = sevGlow(sev);
+  const segGap = 3;
+  const segW = (barWidth - segGap * (segments - 1)) / segments;
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+      {/* Left: HUD ring with number */}
+      <div style={{ position: "relative", width: ringSize, height: ringSize }}>
+        <svg width={ringSize} height={ringSize} viewBox={`0 0 ${ringSize} ${ringSize}`} aria-hidden>
+          {/* outer faint frame */}
+          <circle cx={ringSize / 2} cy={ringSize / 2} r={r + 4} fill="none" stroke="var(--chrome-2)" strokeWidth={1} opacity={0.5} />
+          {/* track */}
+          <circle cx={ringSize / 2} cy={ringSize / 2} r={r} stroke="var(--chrome-2)" strokeWidth={stroke} fill="none" />
+          {/* arc */}
+          <circle
+            cx={ringSize / 2}
+            cy={ringSize / 2}
+            r={r}
+            stroke={color}
+            strokeWidth={stroke}
+            fill="none"
+            strokeLinecap="round"
+            strokeDasharray={`${c * ringPct} ${c}`}
+            transform={`rotate(-90 ${ringSize / 2} ${ringSize / 2})`}
+            style={{ filter: `drop-shadow(0 0 4px ${glow})` }}
+          />
+          {/* tick marks around ring */}
+          {Array.from({ length: 24 }).map((_, i) => {
+            const a = (i / 24) * 2 * Math.PI - Math.PI / 2;
+            const r1 = r - stroke / 2 - 4;
+            const r2 = r - stroke / 2 - 7;
+            const cx2 = ringSize / 2 + Math.cos(a) * r1;
+            const cy2 = ringSize / 2 + Math.sin(a) * r1;
+            const cx3 = ringSize / 2 + Math.cos(a) * r2;
+            const cy3 = ringSize / 2 + Math.sin(a) * r2;
+            return (
+              <line key={i} x1={cx2} y1={cy2} x2={cx3} y2={cy3} stroke={color} strokeWidth={1} opacity={0.45} />
+            );
+          })}
+        </svg>
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: "Orbitron, sans-serif",
+            fontWeight: 700,
+            fontSize: ringSize >= 96 ? 24 : 21,
+            color,
+            textShadow: `0 0 6px ${glow}`,
+            letterSpacing: "0.02em",
+          }}
+        >
+          {value != null ? `${value > 0 ? "+" : ""}${value.toFixed(2)}` : "—"}
+        </div>
+      </div>
+
+      {/* Right: segmented HUD bar */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <div style={{ display: "flex", gap: segGap, alignItems: "center" }}>
+          {Array.from({ length: segments }).map((_, i) => {
+            const isActive = i < activeSegs;
+            return (
+              <div
+                key={i}
+                style={{
+                  width: segW,
+                  height: 22,
+                  background: isActive ? color : "var(--chrome-2)",
+                  opacity: isActive ? 1 : 0.35,
+                  boxShadow: isActive ? `0 0 4px ${glow}` : undefined,
+                  clipPath:
+                    "polygon(15% 0, 100% 0, 100% 100%, 0 100%, 0 15%)",
+                }}
+              />
+            );
+          })}
+        </div>
+        <div
+          style={{
+            fontFamily: "JetBrains Mono, monospace",
+            fontSize: 10,
+            letterSpacing: "0.22em",
+            color,
+            textShadow: `0 0 4px ${glow}`,
+            textAlign: "right",
+          }}
+        >
+          {levelLabel ?? "LEVEL"}
+        </div>
+      </div>
+    </div>
+  );
+};
