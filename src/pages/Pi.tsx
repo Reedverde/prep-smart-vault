@@ -159,6 +159,14 @@ const Pi = () => {
     if (windUnit && windUnit.includes("m_s-1")) return Math.round(windKph * 2.23694);
     return Math.round(windKph * 0.621371);
   })();
+  // NWS exposes isDaytime on the period; fall back to local hour.
+  const isDay = (() => {
+    const p = weather.data?.period?.isDaytime;
+    if (typeof p === "boolean") return p;
+    const h = new Date().getHours();
+    return h >= 6 && h < 19;
+  })();
+  const wxVariant = iconForForecast(cond, isDay);
 
   // 02 Local alerts
   const activeAlerts = localAlerts.data?.active ?? [];
