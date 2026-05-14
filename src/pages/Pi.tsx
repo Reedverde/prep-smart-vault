@@ -26,6 +26,8 @@ import {
   PiPulseLine,
   PiGlobe,
   PiKpField,
+  PiAqiArcGauge,
+  PiStressHud,
   PI_COLORS,
 } from "@/components/PiViz";
 import {
