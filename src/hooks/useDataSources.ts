@@ -219,14 +219,21 @@ export const useKpIndex = (refreshMs: number) =>
         "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json",
       );
       if (!res.ok) throw new Error("SWPC failed");
-      const json = (await res.json()) as Array<Array<any>>;
-      const rows = json
-        .slice(1)
-        .filter((r) => r && r[1] !== null && r[1] !== undefined && r[1] !== "")
-        .map((r) => ({
-          time: r[0] as string,
-          kp: Number(r[1]),
-        }))
+      const json = await res.json();
+      const rows = (Array.isArray(json) ? json : [])
+        .map((r: any) => {
+          // New NOAA shape: array of { time_tag, Kp, a_running, station_count }
+          if (r && typeof r === "object" && !Array.isArray(r)) {
+            const kp = Number(r.Kp ?? r.kp ?? r.kp_index);
+            return { time: String(r.time_tag ?? r.time ?? ""), kp };
+          }
+          // Legacy shape: [time, kp, ...] with a string header row
+          if (Array.isArray(r)) {
+            const kp = Number(r[1]);
+            return { time: String(r[0] ?? ""), kp };
+          }
+          return { time: "", kp: NaN };
+        })
         .filter((r) => Number.isFinite(r.kp));
       return rows;
     },
