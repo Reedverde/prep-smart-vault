@@ -640,7 +640,7 @@ const Pi = () => {
               </div>
             }
           />
-          <PiTile label="DISASTERS · GLOBAL" num="15" sev={disasterSev}
+          <PiTile label="GLOBAL DIS" num="15" sev={disasterSev}
             footer={`${gdacsArr.length} active · gdacs`}
             body={
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -653,11 +653,17 @@ const Pi = () => {
             }
           />
           <PiTile label="SPACE WX · KP" num="16" sev={kpSev}
-            footer="noaa swpc"
+            footer={`kp ${latestKp != null ? latestKp.toFixed(1) : "—"} · noaa swpc · geomagnetic`}
             body={
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <PiKpField kp={latestKp} size={82} color={kpSev === "red" ? "var(--red)" : kpSev === "yellow" ? "var(--yellow)" : "var(--blue)"} />
-                <span className={`pi-pill ${kpSev === "red" ? "pi-c-red" : kpSev === "yellow" ? "pi-c-yellow" : "pi-c-blue"}`}>{kpLabel}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <PiKpField kp={null} size={64} color={kpSev === "red" ? "var(--red)" : kpSev === "yellow" ? "var(--yellow)" : "var(--blue)"} />
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
+                  <Big size={64} color={kpSev === "red" ? "var(--red)" : kpSev === "yellow" ? "var(--yellow)" : "var(--blue)"}
+                    glow={kpSev === "red" ? "var(--red-glow)" : kpSev === "yellow" ? "var(--yellow-glow)" : "var(--blue-glow)"}>
+                    {latestKp != null ? latestKp.toFixed(1) : "—"}
+                  </Big>
+                  <span className={`pi-pill ${kpSev === "red" ? "pi-c-red" : kpSev === "yellow" ? "pi-c-yellow" : "pi-c-blue"}`}>{kpLabel}</span>
+                </div>
               </div>
             }
           />
