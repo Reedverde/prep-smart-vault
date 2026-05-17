@@ -62,6 +62,9 @@ const FAST = 5 * 60 * 1000;
 const STD = 10 * 60 * 1000;
 const SLOW = 60 * 60 * 1000;
 
+// Outage count at which the Power Outages drain-bar reads fully empty. Tunable.
+const MAX_OUTAGES = 2500;
+
 const Big = ({ size, color, glow, children }: { size: number; color: string; glow?: string; children: React.ReactNode }) => (
   <span
     className="pi-big"
