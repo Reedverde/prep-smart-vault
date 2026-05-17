@@ -450,11 +450,15 @@ const Pi = () => {
           <PiTile label="MOON" num="02b" sev="blue"
             footer={`rise ${moonRiseStr} · set ${moonSetStr}`}
             body={
-              <div style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--blue)" }}>
-                <PiMoon size={78} illumination={moonInfo.phase.illumination} waxing={moonInfo.phase.waxing} />
-                <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 22, lineHeight: 1.3, letterSpacing: "0.08em" }}>
-                  <div style={{ color: "var(--fg)" }}>{moonInfo.phase.name.toUpperCase()}</div>
-                  <div style={{ color: "var(--dim)" }} className="tabular-nums">{moonInfo.phase.illumination}% LIT</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 14, color: "var(--blue)" }}>
+                <PiMoon size={86} illumination={moonInfo.phase.illumination} waxing={moonInfo.phase.waxing} />
+                <div style={{ fontFamily: "JetBrains Mono, monospace", lineHeight: 1.1, letterSpacing: "0.08em" }}>
+                  <div style={{ color: "var(--fg)", fontSize: 30, fontWeight: 600 }}>
+                    {moonInfo.phase.illumination >= 99 ? "FULL"
+                      : moonInfo.phase.illumination <= 1 ? "NEW"
+                      : moonInfo.phase.waxing ? "WAXING" : "WANING"}
+                  </div>
+                  <div style={{ color: "var(--blue)", fontSize: 36, marginTop: 4 }} className="tabular-nums">{moonInfo.phase.illumination}%</div>
                 </div>
               </div>
             }
@@ -504,7 +508,7 @@ const Pi = () => {
               </div>
             }
           />
-          <PiTile label="FIN STRESS · STLFSI" num="07" sev={stressSev}
+          <PiTile label="FIN STRESS" num="07" sev={stressSev}
             footer={`${stressLevelLabel.toLowerCase()} · vix · weekly`}
             body={
               <PiStressHud
@@ -580,10 +584,10 @@ const Pi = () => {
           <PiTile label="CONFLICT PULSE · 7D" num="11" wide sev={conflictSev}
             footer={`gdelt 7d · ${conflictCount?.toLocaleString() ?? "—"} articles · top region: ${(topRegion || "—").toLowerCase()} · theme: ${(topType || "—").toLowerCase()}`}
             body={
-              <div style={{ display: "flex", flexDirection: "column", width: "100%", gap: 4 }}>
+              <div style={{ display: "flex", flexDirection: "column", width: "100%", gap: 6 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 4px" }}>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                    <Big size={90} color="var(--red)" glow="var(--red-glow)">
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+                    <Big size={64} color="var(--red)" glow="var(--red-glow)">
                       {conflictLabelTxt}
                     </Big>
                     {conflictDelta != null && (
@@ -596,7 +600,7 @@ const Pi = () => {
                     {conflictCount?.toLocaleString() ?? "—"} ARTICLES
                   </span>
                 </div>
-                <PiAreaChart data={conflictSeries} width={392} height={50} color="var(--red)" />
+                <PiAreaChart data={conflictSeries} width={392} height={70} color="var(--red)" />
               </div>
             }
           />
@@ -636,7 +640,7 @@ const Pi = () => {
               </div>
             }
           />
-          <PiTile label="DISASTERS · GLOBAL" num="15" sev={disasterSev}
+          <PiTile label="GLOBAL DIS" num="15" sev={disasterSev}
             footer={`${gdacsArr.length} active · gdacs`}
             body={
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -649,11 +653,17 @@ const Pi = () => {
             }
           />
           <PiTile label="SPACE WX · KP" num="16" sev={kpSev}
-            footer="noaa swpc"
+            footer={`kp ${latestKp != null ? latestKp.toFixed(1) : "—"} · noaa swpc · geomagnetic`}
             body={
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <PiKpField kp={latestKp} size={82} color={kpSev === "red" ? "var(--red)" : kpSev === "yellow" ? "var(--yellow)" : "var(--blue)"} />
-                <span className={`pi-pill ${kpSev === "red" ? "pi-c-red" : kpSev === "yellow" ? "pi-c-yellow" : "pi-c-blue"}`}>{kpLabel}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <PiKpField kp={null} size={64} color={kpSev === "red" ? "var(--red)" : kpSev === "yellow" ? "var(--yellow)" : "var(--blue)"} />
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
+                  <Big size={64} color={kpSev === "red" ? "var(--red)" : kpSev === "yellow" ? "var(--yellow)" : "var(--blue)"}
+                    glow={kpSev === "red" ? "var(--red-glow)" : kpSev === "yellow" ? "var(--yellow-glow)" : "var(--blue-glow)"}>
+                    {latestKp != null ? latestKp.toFixed(1) : "—"}
+                  </Big>
+                  <span className={`pi-pill ${kpSev === "red" ? "pi-c-red" : kpSev === "yellow" ? "pi-c-yellow" : "pi-c-blue"}`}>{kpLabel}</span>
+                </div>
               </div>
             }
           />
