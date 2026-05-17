@@ -523,9 +523,18 @@ const Pi = () => {
               <PiAqiArcGauge value={maxAqi} max={300} width={180} height={110} ticks={26} />
             }
           />
-          <PiTile label="SEVERE RADAR" num="04" sev="green"
-            footer="iowa mesonet · live"
-            body={<PiRadarSweep />}
+          <PiTile status={natAlertsStatus} label="SEVERE RADAR" num="04" sev={severeSev}
+            footer={`${severeCount} active warning${severeCount === 1 ? "" : "s"} · nws`}
+            body={
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <PiRadarSweep pins={severePins} />
+                <Big size={64}
+                  color={severeSev === "red" ? "var(--red)" : severeSev === "yellow" ? "var(--yellow)" : "var(--green)"}
+                  glow={severeSev === "red" ? "var(--red-glow)" : severeSev === "yellow" ? "var(--yellow-glow)" : "var(--green-glow)"}>
+                  {severeCount === 0 ? "CLEAR" : severeCount}
+                </Big>
+              </div>
+            }
           />
 
           {/* Row 2 */}
