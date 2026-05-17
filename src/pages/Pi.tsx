@@ -20,6 +20,7 @@ import {
   PiRingMeter,
   PiUSHeatmap,
   PiCellStack,
+  PiHDrainBar,
   PiAreaChart,
   PiQuakeProfile,
   PiHistogram,
