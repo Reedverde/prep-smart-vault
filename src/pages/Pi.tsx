@@ -624,16 +624,14 @@ const Pi = () => {
                 : `${outageSeverity || "all clear"} · firstenergy`
             }
             body={
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14, width: "100%" }}>
                 <Big size={92} color={outageColorVar} glow={outageGlowVar}>
                   {outageUnavail ? "—" : outageCust.toLocaleString()}
                 </Big>
-                <PiCellStack
-                  width={32}
-                  height={96}
-                  hatched
-                  cells={outageCells}
-                  color={outagePct >= 0.8 ? "var(--green)" : outagePct >= 0.4 ? "var(--yellow)" : "var(--red)"}
+                <PiHDrainBar
+                  value={outageUnavail ? MAX_OUTAGES : outageCust}
+                  max={MAX_OUTAGES}
+                  height={36}
                 />
               </div>
             }
