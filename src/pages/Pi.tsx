@@ -427,11 +427,14 @@ const Pi = () => {
     : "—";
   const moonSetStr = moonInfo.times.set ? format(moonInfo.times.set, "HH:mm") : "—";
 
-  // ============ Ticker text — top headline only ============
+  // ============ Ticker text — top 10 headlines ============
   const ticker = useMemo(() => {
-    const top = headlinesData?.items?.[0];
-    const title: string | undefined = top?.title || top?.headline || top?.name;
-    return (title && String(title).trim()) || "AWAITING HEADLINE FEED";
+    const items: any[] = headlinesData?.items ?? [];
+    const titles = items
+      .slice(0, 10)
+      .map((it: any) => String(it?.title || it?.headline || it?.name || "").trim())
+      .filter(Boolean);
+    return titles.length ? titles.join("  ::  ") : "AWAITING HEADLINE FEED";
   }, [headlinesData]);
 
   return (
