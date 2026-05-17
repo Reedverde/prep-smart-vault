@@ -527,11 +527,13 @@ export const PiCellStack = ({
   width = 16,
   height = 70,
   color = PI_COLORS.GREEN,
+  hatched = false,
 }: {
   cells: { lit: boolean; tone?: "ok" | "warn" | "crit" }[];
   width?: number;
   height?: number;
   color?: string;
+  hatched?: boolean;
 }) => {
   const gap = 2;
   const ch = (height - gap * (cells.length - 1)) / cells.length;
@@ -539,12 +541,17 @@ export const PiCellStack = ({
     <div style={{ display: "inline-flex", flexDirection: "column", gap, width, height }}>
       {cells.map((c, i) => {
         const tone = c.tone === "crit" ? "var(--red)" : c.tone === "warn" ? "var(--yellow)" : color;
+        const bg = c.lit
+          ? hatched
+            ? `repeating-linear-gradient(135deg, ${tone} 0 2px, transparent 2px 5px), ${tone}33`
+            : tone
+          : "transparent";
         return (
           <div
             key={i}
             style={{
               width, height: ch,
-              background: c.lit ? tone : "transparent",
+              background: bg,
               border: `1px solid ${tone}`,
               opacity: c.lit ? 1 : 0.25,
               boxShadow: c.lit ? `0 0 4px ${tone}` : "none",
