@@ -584,10 +584,10 @@ const Pi = () => {
           <PiTile label="CONFLICT PULSE · 7D" num="11" wide sev={conflictSev}
             footer={`gdelt 7d · ${conflictCount?.toLocaleString() ?? "—"} articles · top region: ${(topRegion || "—").toLowerCase()} · theme: ${(topType || "—").toLowerCase()}`}
             body={
-              <div style={{ display: "flex", flexDirection: "column", width: "100%", gap: 4 }}>
+              <div style={{ display: "flex", flexDirection: "column", width: "100%", gap: 6 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 4px" }}>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                    <Big size={90} color="var(--red)" glow="var(--red-glow)">
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+                    <Big size={64} color="var(--red)" glow="var(--red-glow)">
                       {conflictLabelTxt}
                     </Big>
                     {conflictDelta != null && (
@@ -600,7 +600,7 @@ const Pi = () => {
                     {conflictCount?.toLocaleString() ?? "—"} ARTICLES
                   </span>
                 </div>
-                <PiAreaChart data={conflictSeries} width={392} height={50} color="var(--red)" />
+                <PiAreaChart data={conflictSeries} width={392} height={70} color="var(--red)" />
               </div>
             }
           />
