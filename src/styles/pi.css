@@ -405,6 +405,9 @@
   height: 100%;
   color: var(--red);
   border-right: 1px solid var(--chrome);
+  background: var(--bg);
+  position: relative;
+  z-index: 60;
 }
 .pi-root .pi-ticker-rec-dot {
   width: 8px; height: 8px;
