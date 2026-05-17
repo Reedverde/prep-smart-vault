@@ -444,7 +444,7 @@ const Pi = () => {
         {/* Tile grid — 5×4 */}
         <div className="pi-grid">
           {/* Row 1 */}
-          <PiTile label="WEATHER" num="01" sev="green"
+          <PiTile status={weatherStatus} label="WEATHER" num="01" sev="green"
             footer={`${cond.toLowerCase()} · ${windMph != null ? `${windMph}mph w` : "—"} · feels ${tempF != null ? Math.round(tempF) : "—"}°`}
             body={
               <>
@@ -455,7 +455,7 @@ const Pi = () => {
               </>
             }
           />
-          <PiTile label="ALERTS · LOCAL" num="02" sev={alertsSev}
+          <PiTile status={localAlertsStatus} label="ALERTS · LOCAL" num="02" sev={alertsSev}
             footer={alertsCount === 0 ? "no active warnings" : `${alertsCount} active · ${officeCode}`}
             body={
               <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center" }}>
@@ -487,7 +487,7 @@ const Pi = () => {
               </div>
             }
           />
-          <PiTile label="AIR QUALITY" num="03" sev={aqiSev}
+          <PiTile status={airStatus} label="AIR QUALITY" num="03" sev={aqiSev}
             footer={`aqi · pm2.5 · airnow`}
             body={
               <PiAqiArcGauge value={maxAqi} max={300} width={180} height={110} ticks={26} />
@@ -499,7 +499,7 @@ const Pi = () => {
           />
 
           {/* Row 2 */}
-          <PiTile label="HAZARD OUT · 7D" num="05" sev={hwoSev}
+          <PiTile status={hwoStatus} label="HAZARD OUT · 7D" num="05" sev={hwoSev}
             footer={hwoData?.office ? `${hwoData.office.toLowerCase()}` : "nws · 7d outlook"}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
@@ -510,7 +510,7 @@ const Pi = () => {
               </div>
             }
           />
-          <PiTile label="FUEL · MID-ATL" num="06" sev={fuelSev}
+          <PiTile status={fuelStatus} label="FUEL · MID-ATL" num="06" sev={fuelSev}
             footer={`padd 1b · weekly · eia${fuelWow != null ? ` · ${fuelWow >= 0 ? "+" : "−"}$${Math.abs(fuelWow).toFixed(2)} wow` : ""}`}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, width: "100%" }}>
@@ -532,7 +532,7 @@ const Pi = () => {
               </div>
             }
           />
-          <PiTile label="FIN STRESS" num="07" sev={stressSev}
+          <PiTile status={stressStatus} label="FIN STRESS" num="07" sev={stressSev}
             footer={`${stressLevelLabel.toLowerCase()} · vix · weekly`}
             body={
               <PiStressHud
@@ -547,7 +547,7 @@ const Pi = () => {
               />
             }
           />
-          <PiTile label="NAT'L ALERTS · US" num="08" sev={natSev}
+          <PiTile status={natAlertsStatus} label="NAT'L ALERTS · US" num="08" sev={natSev}
             footer={`${natStateCount} states · top: ${natTopStates || "—"}`}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", gap: 4 }}>
@@ -561,7 +561,7 @@ const Pi = () => {
               </div>
             }
           />
-          <PiTile label="PJM GRID LOAD" num="09" sev={gridSev}
+          <PiTile status={gridStatus} label="PJM GRID LOAD" num="09" sev={gridSev}
             footer={`pjm · ${gridSev === "red" ? "critical" : gridSev === "yellow" ? "elevated" : "normal"}`}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", gap: 4 }}>
@@ -581,7 +581,7 @@ const Pi = () => {
           />
 
           {/* Row 3 */}
-          <PiTile label="POWER OUTAGES · PA" num="10" sev={outageSev}
+          <PiTile status={outagesStatus} label="POWER OUTAGES · PA" num="10" sev={outageSev}
             footer={
               outageUnavail
                 ? "feed unavailable · firstenergy"
@@ -605,7 +605,7 @@ const Pi = () => {
               </div>
             }
           />
-          <PiTile label="CONFLICT PULSE · 7D" num="11" wide sev={conflictSev}
+          <PiTile status={conflictStatus} label="CONFLICT PULSE · 7D" num="11" wide sev={conflictSev}
             footer={`gdelt 7d · ${conflictCount?.toLocaleString() ?? "—"} articles · top region: ${(topRegion || "—").toLowerCase()} · theme: ${(topType || "—").toLowerCase()}`}
             body={
               <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%", justifyContent: "center", gap: 10 }}>
@@ -628,7 +628,7 @@ const Pi = () => {
               </div>
             }
           />
-          <PiTile label="QUAKES · 7D MAX" num="12" sev={quakeSev}
+          <PiTile status={quakesStatus} label="QUAKES · 7D MAX" num="12" sev={quakeSev}
             footer={`${largestPlace ? largestPlace.toLowerCase() : `${quakesArr.length} events`}${largestHrsAgo != null ? ` · ${largestHrsAgo}h` : ""}`}
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
@@ -641,7 +641,7 @@ const Pi = () => {
               </div>
             }
           />
-          <PiTile label="HEADLINES · 6H" num="13" sev="green"
+          <PiTile status={headlinesStatus} label="HEADLINES · 6H" num="13" sev="green"
             footer="last 6h · gdelt curated"
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
@@ -652,7 +652,7 @@ const Pi = () => {
           />
 
           {/* Row 4 */}
-          <PiTile label="INTERNET HEALTH" num="14" sev={internetSev}
+          <PiTile status={internetStatus} label="INTERNET HEALTH" num="14" sev={internetSev}
             bgImage={piClockBg} bgPosition="center center" bgFlip bgSize="cover"
             footer={`cloudflare · ${trafficDelta != null ? `${trafficDelta > 0 ? "+" : ""}${trafficDelta.toFixed(1)}%` : "no anomaly"}`}
             body={
@@ -664,7 +664,7 @@ const Pi = () => {
               </div>
             }
           />
-          <PiTile label="GLOBAL DIS" num="15" sev={disasterSev}
+          <PiTile status={gdacsStatus} label="GLOBAL DIS" num="15" sev={disasterSev}
             footer={`${gdacsArr.length} active · gdacs`}
             body={
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -676,7 +676,7 @@ const Pi = () => {
               </div>
             }
           />
-          <PiTile label="SPACE WX · KP" num="16" sev={kpSev}
+          <PiTile status={kpStatus} label="SPACE WX · KP" num="16" sev={kpSev}
             footer={`kp ${latestKp != null ? latestKp.toFixed(1) : "—"} · noaa swpc · geomagnetic`}
             body={
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
