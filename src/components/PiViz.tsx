@@ -1137,3 +1137,108 @@ export const PiStressHud = ({
     </div>
   );
 };
+
+// PiHDrainBar — horizontal "drain" gauge for the Power Outages tile.
+// fillPct = (1 - value / max) * 100, clamped 0..100.
+// value = 0 -> full bar (right edge at 100%). value >= max -> empty.
+// Track has angled-corner clip-path, dark base, red->yellow->green gradient
+// fill overlaid with 45deg hatch, bright marker at fill's right edge, and
+// two corner brackets colored by the current severity zone.
+export const PiHDrainBar = ({
+  value,
+  max,
+  height = 30,
+}: {
+  value: number;
+  max: number;
+  height?: number;
+}) => {
+  const safeMax = Math.max(1, max);
+  const fillPct = Math.max(0, Math.min(100, (1 - value / safeMax) * 100));
+  // Color the severity-zone brackets/marker by where the fill's top edge sits.
+  const zoneColor =
+    fillPct >= 67 ? "var(--green)" : fillPct >= 33 ? "var(--yellow)" : "var(--red)";
+  const markerColor =
+    fillPct >= 67 ? "#dff3cc" : fillPct >= 33 ? "#f8d28a" : "#f4a6a5";
+  return (
+    <div
+      style={{
+        position: "relative",
+        flex: 1,
+        height,
+        background: "#03100f",
+        clipPath:
+          "polygon(0 5px, 5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%)",
+        overflow: "hidden",
+      }}
+    >
+      {/* gradient fill */}
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: `${fillPct}%`,
+          background:
+            "linear-gradient(90deg, #e24b4a 0%, #ef9f27 50%, #97c459 100%)",
+          transition: "width 0.4s ease",
+        }}
+      />
+      {/* 45deg hatch overlay (only over the fill) */}
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: `${fillPct}%`,
+          backgroundImage:
+            "repeating-linear-gradient(45deg, rgba(0,0,0,0) 0 4px, rgba(0,0,0,0.28) 4px 9px)",
+          transition: "width 0.4s ease",
+          pointerEvents: "none",
+        }}
+      />
+      {/* bright marker line at the right edge of the fill */}
+      {fillPct > 0 && fillPct < 100 && (
+        <div
+          style={{
+            position: "absolute",
+            left: `${fillPct}%`,
+            top: 0,
+            bottom: 0,
+            width: 1,
+            background: markerColor,
+            transition: "left 0.4s ease",
+            pointerEvents: "none",
+          }}
+        />
+      )}
+      {/* corner brackets, colored by current severity zone */}
+      <span
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: 7,
+          height: 7,
+          borderTop: `1px solid ${zoneColor}`,
+          borderLeft: `1px solid ${zoneColor}`,
+          pointerEvents: "none",
+        }}
+      />
+      <span
+        style={{
+          position: "absolute",
+          bottom: 0,
+          right: 0,
+          width: 7,
+          height: 7,
+          borderBottom: `1px solid ${zoneColor}`,
+          borderRight: `1px solid ${zoneColor}`,
+          pointerEvents: "none",
+        }}
+      />
+    </div>
+  );
+};

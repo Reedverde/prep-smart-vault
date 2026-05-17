@@ -20,6 +20,7 @@ import {
   PiRingMeter,
   PiUSHeatmap,
   PiCellStack,
+  PiHDrainBar,
   PiAreaChart,
   PiQuakeProfile,
   PiHistogram,
@@ -60,6 +61,9 @@ const LOCATION = {
 const FAST = 5 * 60 * 1000;
 const STD = 10 * 60 * 1000;
 const SLOW = 60 * 60 * 1000;
+
+// Outage count at which the Power Outages drain-bar reads fully empty. Tunable.
+const MAX_OUTAGES = 2500;
 
 const Big = ({ size, color, glow, children }: { size: number; color: string; glow?: string; children: React.ReactNode }) => (
   <span
@@ -311,17 +315,8 @@ const Pi = () => {
     outageSev === "red" ? "var(--red)" : outageSev === "yellow" ? "var(--yellow)" : "var(--green)";
   const outageGlowVar =
     outageSev === "red" ? "var(--red-glow)" : outageSev === "yellow" ? "var(--yellow-glow)" : "var(--green-glow)";
-  // Battery-style fill: full at 0 outages, drains as outages climb toward customersTracked.
-  const outageTracked: number = outageData?.lawrence?.customersTracked ?? 10000;
-  const outagePct = outageUnavail ? 0 : Math.max(0, Math.min(1, 1 - outageCust / Math.max(outageTracked, 1)));
-  const outageCells = (() => {
-    const N = 14;
-    const litCount = Math.round(outagePct * N);
-    const tone: "ok" | "warn" | "crit" =
-      outagePct >= 0.8 ? "ok" : outagePct >= 0.4 ? "warn" : "crit";
-    // Top-down array but visual fills bottom→top: lit cells live at the BOTTOM (end of array).
-    return Array.from({ length: N }, (_, i) => ({ lit: i >= N - litCount, tone }));
-  })();
+
+
 
   // 11 Conflict pulse
   const conflictData: any = conflict.data;
@@ -629,16 +624,14 @@ const Pi = () => {
                 : `${outageSeverity || "all clear"} · firstenergy`
             }
             body={
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14, width: "100%" }}>
                 <Big size={92} color={outageColorVar} glow={outageGlowVar}>
                   {outageUnavail ? "—" : outageCust.toLocaleString()}
                 </Big>
-                <PiCellStack
-                  width={32}
-                  height={96}
-                  hatched
-                  cells={outageCells}
-                  color={outagePct >= 0.8 ? "var(--green)" : outagePct >= 0.4 ? "var(--yellow)" : "var(--red)"}
+                <PiHDrainBar
+                  value={outageUnavail ? MAX_OUTAGES : outageCust}
+                  max={MAX_OUTAGES}
+                  height={36}
                 />
               </div>
             }
