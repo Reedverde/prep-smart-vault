@@ -217,7 +217,24 @@ const Pi = () => {
   const aqiSev: PiSeverity = maxAqi == null ? "green" : maxAqi <= 50 ? "green" : maxAqi <= 100 ? "yellow" : "red";
   const aqiCat = maxAqi == null ? "—" : maxAqi <= 50 ? "good" : maxAqi <= 100 ? "moderate" : maxAqi <= 150 ? "sensitive" : "unhealthy";
 
-  // 04 Severe radar — visual only
+  // 04 Severe radar — derived from national NWS alerts (Tornado / Severe T-storm / Flash Flood Warnings)
+  const severeRe = /^(Tornado Warning|Severe Thunderstorm Warning|Flash Flood Warning)$/i;
+  const severeAlerts = (natAlerts.data || []).filter((a: any) => severeRe.test(a?.properties?.event || ""));
+  const severeCount = severeAlerts.length;
+  const hasTornado = severeAlerts.some((a: any) => /Tornado/i.test(a?.properties?.event || ""));
+  const severeSev: PiSeverity = hasTornado ? "red" : severeCount > 0 ? "yellow" : "green";
+  // Deterministic pin placement seeded by alert id so they don't jump each render.
+  const severePins = severeAlerts.slice(0, 10).map((a: any) => {
+    const id: string = String(a?.id || a?.properties?.id || a?.properties?.event || "x");
+    let h = 0;
+    for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+    const angle = (h % 360);
+    const radius = 0.25 + ((h >>> 8) % 70) / 100; // 0.25 – 0.95
+    const color = /Tornado/i.test(a?.properties?.event || "") ? "var(--red)"
+      : /Flash Flood/i.test(a?.properties?.event || "") ? "var(--blue)"
+      : "var(--yellow)";
+    return { angle, radius, color };
+  });
 
   // 05 HWO
   const hwoData: any = hwo.data;
@@ -294,6 +311,17 @@ const Pi = () => {
     outageSev === "red" ? "var(--red)" : outageSev === "yellow" ? "var(--yellow)" : "var(--green)";
   const outageGlowVar =
     outageSev === "red" ? "var(--red-glow)" : outageSev === "yellow" ? "var(--yellow-glow)" : "var(--green-glow)";
+  // Battery-style fill: full at 0 outages, drains as outages climb toward customersTracked.
+  const outageTracked: number = outageData?.lawrence?.customersTracked ?? 10000;
+  const outagePct = outageUnavail ? 0 : Math.max(0, Math.min(1, 1 - outageCust / Math.max(outageTracked, 1)));
+  const outageCells = (() => {
+    const N = 14;
+    const litCount = Math.round(outagePct * N);
+    const tone: "ok" | "warn" | "crit" =
+      outagePct >= 0.8 ? "ok" : outagePct >= 0.4 ? "warn" : "crit";
+    // Top-down array but visual fills bottom→top: lit cells live at the BOTTOM (end of array).
+    return Array.from({ length: N }, (_, i) => ({ lit: i >= N - litCount, tone }));
+  })();
 
   // 11 Conflict pulse
   const conflictData: any = conflict.data;
@@ -495,9 +523,18 @@ const Pi = () => {
               <PiAqiArcGauge value={maxAqi} max={300} width={180} height={110} ticks={26} />
             }
           />
-          <PiTile label="SEVERE RADAR" num="04" sev="green"
-            footer="iowa mesonet · live"
-            body={<PiRadarSweep />}
+          <PiTile status={natAlertsStatus} label="SEVERE RADAR" num="04" sev={severeSev}
+            footer={`${severeCount} active warning${severeCount === 1 ? "" : "s"} · nws`}
+            body={
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <PiRadarSweep pins={severePins} />
+                <Big size={64}
+                  color={severeSev === "red" ? "var(--red)" : severeSev === "yellow" ? "var(--yellow)" : "var(--green)"}
+                  glow={severeSev === "red" ? "var(--red-glow)" : severeSev === "yellow" ? "var(--yellow-glow)" : "var(--green-glow)"}>
+                  {severeCount === 0 ? "CLEAR" : severeCount}
+                </Big>
+              </div>
+            }
           />
 
           {/* Row 2 */}
@@ -594,16 +631,13 @@ const Pi = () => {
                 <Big size={92} color={outageColorVar} glow={outageGlowVar}>
                   {outageUnavail ? "—" : outageCust.toLocaleString()}
                 </Big>
-                <div style={{ display: "flex", gap: 4 }}>
-                  {[0, 1, 2].map((s) => (
-                    <PiCellStack
-                      key={s}
-                      width={18}
-                      height={82}
-                      cells={Array.from({ length: 6 }, () => ({ lit: !outageUnavail && outageCust === 0 }))}
-                    />
-                  ))}
-                </div>
+                <PiCellStack
+                  width={32}
+                  height={96}
+                  hatched
+                  cells={outageCells}
+                  color={outagePct >= 0.8 ? "var(--green)" : outagePct >= 0.4 ? "var(--yellow)" : "var(--red)"}
+                />
               </div>
             }
           />

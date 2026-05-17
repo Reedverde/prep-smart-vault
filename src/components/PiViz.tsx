@@ -318,12 +318,40 @@ export const PiHalfRing = ({
   );
 };
 
-// ============ PiRadarSweep — pure CSS conic-gradient sweep ============
-export const PiRadarSweep = () => (
-  <div className="pi-radar" aria-hidden>
+// ============ PiRadarSweep — pure CSS conic-gradient sweep + optional pins ============
+export const PiRadarSweep = ({
+  pins = [],
+}: {
+  /** Pins on the radar. angle in degrees (0 = up), radius 0–1 (fraction of radar half-width), color css var */
+  pins?: Array<{ angle: number; radius: number; color: string }>;
+} = {}) => (
+  <div className="pi-radar" aria-hidden style={{ position: "relative" }}>
     <div className="pi-radar-cross" />
     <div className="pi-radar-sweep" />
     <div className="pi-radar-center" />
+    {pins.map((p, i) => {
+      const rad = (p.angle - 90) * (Math.PI / 180);
+      const x = 50 + Math.cos(rad) * p.radius * 45;
+      const y = 50 + Math.sin(rad) * p.radius * 45;
+      return (
+        <span
+          key={i}
+          style={{
+            position: "absolute",
+            left: `${x}%`,
+            top: `${y}%`,
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            background: p.color,
+            transform: "translate(-50%, -50%)",
+            boxShadow: `0 0 6px ${p.color}, 0 0 12px ${p.color}`,
+            animation: "pi-pinpulse 2s ease-in-out infinite",
+            zIndex: 3,
+          }}
+        />
+      );
+    })}
   </div>
 );
 
@@ -499,11 +527,13 @@ export const PiCellStack = ({
   width = 16,
   height = 70,
   color = PI_COLORS.GREEN,
+  hatched = false,
 }: {
   cells: { lit: boolean; tone?: "ok" | "warn" | "crit" }[];
   width?: number;
   height?: number;
   color?: string;
+  hatched?: boolean;
 }) => {
   const gap = 2;
   const ch = (height - gap * (cells.length - 1)) / cells.length;
@@ -511,12 +541,17 @@ export const PiCellStack = ({
     <div style={{ display: "inline-flex", flexDirection: "column", gap, width, height }}>
       {cells.map((c, i) => {
         const tone = c.tone === "crit" ? "var(--red)" : c.tone === "warn" ? "var(--yellow)" : color;
+        const bg = c.lit
+          ? hatched
+            ? `repeating-linear-gradient(135deg, ${tone} 0 2px, transparent 2px 5px), ${tone}33`
+            : tone
+          : "transparent";
         return (
           <div
             key={i}
             style={{
               width, height: ch,
-              background: c.lit ? tone : "transparent",
+              background: bg,
               border: `1px solid ${tone}`,
               opacity: c.lit ? 1 : 0.25,
               boxShadow: c.lit ? `0 0 4px ${tone}` : "none",
