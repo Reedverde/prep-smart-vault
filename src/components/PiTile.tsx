@@ -4,6 +4,7 @@
 import type { ReactNode } from "react";
 
 export type PiSeverity = "green" | "yellow" | "orange" | "red" | "purple" | "blue";
+export type PiTileStatus = "ok" | "loading" | "stale" | "nodata";
 
 export type PiTileProps = {
   /** Uppercase header label, e.g. "WEATHER" */
@@ -28,9 +29,11 @@ export type PiTileProps = {
   bgSize?: React.CSSProperties["objectFit"];
   /** Horizontal pixel offset for bgImage (negative = shift left) */
   bgOffsetX?: number;
+  /** Data-feed status — drives a STALE / NO DATA pill in the header */
+  status?: PiTileStatus;
 };
 
-export const PiTile = ({ label, num, body, footer, sev = "green", wide, bgImage, bgPosition = "right center", bgFlip, bgSize = "cover", bgOffsetX = 0 }: PiTileProps) => {
+export const PiTile = ({ label, num, body, footer, sev = "green", wide, bgImage, bgPosition = "right center", bgFlip, bgSize = "cover", bgOffsetX = 0, status = "ok" }: PiTileProps) => {
   const style: React.CSSProperties = {};
   if (wide) style.gridColumn = "span 2 / span 2";
   return (
