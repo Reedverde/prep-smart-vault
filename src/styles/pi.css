@@ -396,15 +396,37 @@
   color: var(--green);
   overflow: hidden;
 }
-.pi-root .pi-ticker-rec {
+.pi-root .pi-ticker-rec,
+.pi-root .pi-ticker-uplink {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0 10px;
+  padding: 0 14px;
   height: 100%;
+  font-size: 20px;
+  letter-spacing: 0.18em;
+  /* CRT-style chassis: subtle phosphor glow + horizontal scanlines */
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(143, 255, 122, 0.05) 0 1px,
+      rgba(0, 0, 0, 0) 1px 3px
+    ),
+    radial-gradient(ellipse at center, #0d1a10 0%, #050a07 80%);
+  box-shadow:
+    inset 0 0 12px rgba(0, 0, 0, 0.6),
+    inset 0 0 0 1px rgba(143, 255, 122, 0.08);
+}
+.pi-root .pi-ticker-rec {
   color: var(--red);
   border-right: 1px solid var(--chrome);
+  text-shadow: 0 0 6px var(--red-glow);
+}
+.pi-root .pi-ticker-uplink {
+  color: var(--green);
+  border-left: 1px solid var(--chrome);
+  text-shadow: 0 0 6px var(--green-glow);
 }
 .pi-root .pi-ticker-rec-dot {
   width: 8px; height: 8px;
@@ -424,16 +446,6 @@
   white-space: nowrap;
   animation: pi-tickermove 60s linear infinite;
   padding-left: 12px;
-}
-.pi-root .pi-ticker-uplink {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 10px;
-  height: 100%;
-  color: var(--green);
-  border-left: 1px solid var(--chrome);
 }
 .pi-root .pi-bars {
   display: inline-flex;
