@@ -286,8 +286,8 @@
   justify-content: space-between;
   font-family: "Orbitron", sans-serif;
   font-weight: 600;
-  font-size: 22px;
-  letter-spacing: 0.14em;
+  font-size: 20px;
+  letter-spacing: 0.12em;
   color: var(--dim);
   text-transform: uppercase;
 }
@@ -360,7 +360,7 @@
 .pi-root .pi-big-clock {
   font-family: "Orbitron", sans-serif;
   font-weight: 900;
-  font-size: 120px;
+  font-size: 96px;
   white-space: nowrap;
   line-height: 1;
   letter-spacing: -0.02em;
