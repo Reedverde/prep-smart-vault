@@ -444,7 +444,7 @@
 .pi-root .pi-ticker-scroll {
   display: inline-flex;
   white-space: nowrap;
-  animation: pi-tickermove 35s linear infinite;
+  animation: pi-tickermove 60s linear infinite;
   padding-left: 12px;
 }
 .pi-root .pi-bars {
