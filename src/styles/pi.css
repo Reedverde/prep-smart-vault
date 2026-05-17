@@ -437,6 +437,9 @@
   height: 100%;
   color: var(--green);
   border-left: 1px solid var(--chrome);
+  background: var(--bg);
+  position: relative;
+  z-index: 60;
 }
 .pi-root .pi-bars {
   display: inline-flex;
