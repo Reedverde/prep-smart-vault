@@ -647,7 +647,7 @@ const Pi = () => {
             footer="last 6h · gdelt curated"
             body={
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <Big size={92} color="var(--green)" glow="var(--green-glow)">{headlineCount}</Big>
+                <Big size={92} color="var(--green)" glow="var(--green-glow)">{headlinesStatus === "ok" ? headlineCount : "—"}</Big>
                 <PiHistogram data={headlinesBars} width={120} height={32} color="var(--green)" />
               </div>
             }
