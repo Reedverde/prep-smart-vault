@@ -631,16 +631,13 @@ const Pi = () => {
                 <Big size={92} color={outageColorVar} glow={outageGlowVar}>
                   {outageUnavail ? "—" : outageCust.toLocaleString()}
                 </Big>
-                <div style={{ display: "flex", gap: 4 }}>
-                  {[0, 1, 2].map((s) => (
-                    <PiCellStack
-                      key={s}
-                      width={18}
-                      height={82}
-                      cells={Array.from({ length: 6 }, () => ({ lit: !outageUnavail && outageCust === 0 }))}
-                    />
-                  ))}
-                </div>
+                <PiCellStack
+                  width={32}
+                  height={96}
+                  hatched
+                  cells={outageCells}
+                  color={outagePct >= 0.8 ? "var(--green)" : outagePct >= 0.4 ? "var(--yellow)" : "var(--red)"}
+                />
               </div>
             }
           />
