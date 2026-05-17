@@ -1,20 +1,30 @@
-**Source:** Headlines come from `useGdeltHeadlines(STD)` — same feed powering the HEADLINES · 6H tile. Auto-refresh cadence is unchanged.
+**Problem:** `.pi-ticker-scroll` uses a fixed CSS animation duration (35s). The keyframe translates a fixed percentage, so longer content covers more pixels in the same time → scrolls visibly faster as headlines pile up.
 
-**Change:** In `src/pages/Pi.tsx`, replace the single-headline `ticker` memo (lines 430–435) so it joins the top 10 titles with a `::` separator:
+**Fix:** Make the duration scale linearly with content length, applied inline from `Pi.tsx`. This gives a constant ~characters-per-second rate regardless of how many headlines are loaded.
 
-```ts
-const ticker = useMemo(() => {
-  const items = headlinesData?.items ?? [];
-  const titles = items
-    .slice(0, 10)
-    .map((it: any) => (it?.title || it?.headline || it?.name || "").trim())
-    .filter(Boolean);
-  return titles.length ? titles.join("  ::  ") : "AWAITING HEADLINE FEED";
-}, [headlinesData]);
+### Edit 1 — `src/pages/Pi.tsx` (~line 760)
+
+```tsx
+<div
+  className="pi-ticker-scroll"
+  style={{ animationDuration: `${Math.max(20, ticker.length / 6)}s` }}
+>
+  <span style={{ paddingRight: 40 }}>:: {ticker}  ::  </span>
+  <span style={{ paddingRight: 40 }}>:: {ticker}  ::  </span>
+</div>
 ```
 
-The existing duplicated `<span>:: {ticker} ::</span>` marquee pair (lines 760–763) stays as-is and seamlessly loops the longer string.
+- `ticker.length / 6` → roughly 6 chars/sec (single tunable knob).
+- `Math.max(20, …)` prevents an absurdly fast loop when the feed is short/empty.
 
-**Notes:**
-- No hook, CSS, or backend changes.
-- With ~10 headlines the strip is much longer, so each headline visibly moves through faster at the current 35s loop. We can re-tune scroll speed after seeing it live if needed.
+### Edit 2 — `src/styles/pi.css` line 447
+
+Change the hardcoded `35s` default to something neutral like `60s` (overridden by the inline style anyway, but kept as a safe fallback).
+
+### Why it works
+
+Keyframe is `translateX(0) → translateX(-50%)`; the duplicated `<span>` makes the loop seamless. Distance per loop ≈ one copy's rendered width ≈ proportional to character count. Scaling duration with `ticker.length` keeps px/sec roughly constant.
+
+### Tuning knob
+
+After shipping, the only number to change is the divisor (`/ 6`). Higher = slower; lower = faster.
