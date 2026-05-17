@@ -286,14 +286,14 @@
   justify-content: space-between;
   font-family: "Orbitron", sans-serif;
   font-weight: 600;
-  font-size: 15px;
-  letter-spacing: 0.18em;
+  font-size: 20px;
+  letter-spacing: 0.12em;
   color: var(--dim);
   text-transform: uppercase;
 }
 .pi-root .pi-tile-id {
   font-family: "JetBrains Mono", monospace;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 400;
   letter-spacing: 0.15em;
   color: var(--faint);
@@ -313,7 +313,7 @@
   position: relative;
   z-index: 2;
   font-family: "JetBrains Mono", monospace;
-  font-size: 14px;
+  font-size: 18px;
   color: var(--dim);
   letter-spacing: 0.05em;
   text-transform: lowercase;
@@ -341,13 +341,14 @@
 
 .pi-root .pi-pill {
   display: inline-block;
-  padding: 1px 6px;
+  padding: 2px 8px;
   border: 1px solid currentColor;
   border-radius: 2px;
   font-family: "JetBrains Mono", monospace;
-  font-size: 12px;
+  font-size: 18px;
   letter-spacing: 0.15em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 /* ============ Big value text ============ */
@@ -360,7 +361,7 @@
 .pi-root .pi-big-clock {
   font-family: "Orbitron", sans-serif;
   font-weight: 900;
-  font-size: 84px;
+  font-size: 96px;
   white-space: nowrap;
   line-height: 1;
   letter-spacing: -0.02em;
