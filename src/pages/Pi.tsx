@@ -516,8 +516,8 @@ const Pi = () => {
                 min={-2}
                 max={3}
                 sev={stressSev === "red" ? "red" : stressSev === "yellow" ? "yellow" : "purple"}
-                ringSize={72}
-                barWidth={100}
+                ringSize={96}
+                barWidth={90}
                 segments={11}
                 levelLabel={stressLevelLabel}
               />
@@ -584,7 +584,7 @@ const Pi = () => {
           <PiTile label="CONFLICT PULSE · 7D" num="11" wide sev={conflictSev}
             footer={`gdelt 7d · ${conflictCount?.toLocaleString() ?? "—"} articles · top region: ${(topRegion || "—").toLowerCase()} · theme: ${(topType || "—").toLowerCase()}`}
             body={
-              <div style={{ display: "flex", flexDirection: "column", width: "100%", gap: 6 }}>
+              <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%", justifyContent: "center", gap: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 4px" }}>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
                     <Big size={64} color="var(--red)" glow="var(--red-glow)">
