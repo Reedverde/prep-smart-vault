@@ -335,7 +335,6 @@ const Pi = () => {
     : [];
   const topRegion = topRegions[0]?.[0] ?? null;
   const topType = topTypes[0]?.[0] ?? null;
-    : null;
   // Synthesize area-chart series (cumulative-ish from byRegion buckets)
   const conflictSeries: number[] = (() => {
     const vals: number[] = conflictData?.byRegion
