@@ -328,11 +328,13 @@ const Pi = () => {
   const conflictCount = conflictData?.count ?? null;
   const conflictLabelTxt = conflictCount == null ? "—" : conflictCount > 200 ? "HIGH" : conflictCount > 100 ? "ELEVATED" : "LOW";
   const conflictSev: PiSeverity = conflictCount == null ? "green" : conflictCount > 200 ? "red" : conflictCount > 100 ? "yellow" : "green";
-  const topRegion = conflictData?.byRegion
-    ? (Object.entries(conflictData.byRegion as Record<string, number>).sort((a, b) => b[1] - a[1])[0]?.[0]) : null;
-  const topType = conflictData?.byType
-    ? Object.entries(conflictData.byType as Record<string, number>).filter(([k]) => k.toLowerCase() !== "other").sort((a, b) => b[1] - a[1])[0]?.[0]
-    : null;
+  const topRegions: [string, number][] = conflictData?.byRegion
+    ? (Object.entries(conflictData.byRegion as Record<string, number>).sort((a, b) => b[1] - a[1]).slice(0, 3)) : [];
+  const topTypes: [string, number][] = conflictData?.byType
+    ? Object.entries(conflictData.byType as Record<string, number>).filter(([k]) => k.toLowerCase() !== "other").sort((a, b) => b[1] - a[1]).slice(0, 3)
+    : [];
+  const topRegion = topRegions[0]?.[0] ?? null;
+  const topType = topTypes[0]?.[0] ?? null;
   // Synthesize area-chart series (cumulative-ish from byRegion buckets)
   const conflictSeries: number[] = (() => {
     const vals: number[] = conflictData?.byRegion
@@ -656,9 +658,30 @@ const Pi = () => {
                       </span>
                     )}
                   </div>
-                  <span className="pi-c-red" style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 14, letterSpacing: "0.15em" }}>
-                    {conflictCount?.toLocaleString() ?? "—"} ARTICLES
-                  </span>
+                  <div style={{ display: "flex", gap: 18, fontFamily: "JetBrains Mono, monospace", fontSize: 11, letterSpacing: "0.08em" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 120 }}>
+                      <span className="pi-c-dim" style={{ fontSize: 9, letterSpacing: "0.18em" }}>TOP REGIONS</span>
+                      {topRegions.length === 0 ? (
+                        <span className="pi-c-dim">—</span>
+                      ) : topRegions.map(([name, n]) => (
+                        <span key={name} className="pi-c-red" style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                          <span style={{ textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
+                          <span className="pi-c-dim">{n}</span>
+                        </span>
+                      ))}
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 110 }}>
+                      <span className="pi-c-dim" style={{ fontSize: 9, letterSpacing: "0.18em" }}>TOP THEMES</span>
+                      {topTypes.length === 0 ? (
+                        <span className="pi-c-dim">—</span>
+                      ) : topTypes.map(([name, n]) => (
+                        <span key={name} className="pi-c-red" style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                          <span style={{ textTransform: "uppercase" }}>{name}</span>
+                          <span className="pi-c-dim">{n}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
                 <PiAreaChart data={conflictSeries} width={392} height={70} color="var(--red)" />
               </div>
