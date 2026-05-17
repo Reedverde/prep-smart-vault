@@ -743,35 +743,34 @@ export const PiKpField = ({
 }) => {
   const cx = size / 2;
   const cy = size / 2;
+  // Reactivity: higher Kp = more disturbed field (larger amplitude, brighter, thicker, more rings)
+  const k = Math.max(0, Math.min(9, kp ?? 0));
+  const intensity = k / 9; // 0..1
+  const ampMul = 0.85 + intensity * 0.9; // 0.85..1.75
+  const strokeW = 1.5 + intensity * 2.5; // 1.5..4
+  const glow = 3 + intensity * 10;
+  const baseOpacity = 0.35 + intensity * 0.5;
+  const ringScales = k >= 6 ? [1, 0.82, 0.64, 0.46, 0.28] : [1, 0.78, 0.55, 0.32];
+  const height = size * 0.7;
   return (
-    <div style={{ position: "relative", width: size, height: size * 0.7, display: "inline-block" }}>
-      <svg width={size} height={size * 0.7} viewBox={`0 0 ${size} ${size * 0.7}`} aria-hidden>
-        {[1, 0.78, 0.55, 0.32].map((s, i) => (
+    <div style={{ position: "relative", width: size, height, display: "inline-block" }}>
+      <svg width={size} height={height} viewBox={`0 0 ${size} ${height}`} aria-hidden>
+        {ringScales.map((s, i) => (
           <ellipse
             key={i}
             cx={cx}
             cy={cy * 0.8}
             rx={(size / 2 - 2) * s}
-            ry={(size * 0.28) * s}
+            ry={(size * 0.28) * s * ampMul}
             fill="none"
             stroke={color}
-            strokeWidth={2}
-            opacity={0.3 + i * 0.15}
-            style={{ filter: `drop-shadow(0 0 3px ${color})` }}
+            strokeWidth={strokeW}
+            opacity={Math.min(1, baseOpacity + i * 0.12)}
+            style={{ filter: `drop-shadow(0 0 ${glow}px ${color})` }}
           />
         ))}
-        <circle cx={cx} cy={cy * 0.8} r={5} fill={color} style={{ filter: `drop-shadow(0 0 4px ${color})` }} />
+        <circle cx={cx} cy={cy * 0.8} r={4 + intensity * 5} fill={color} style={{ filter: `drop-shadow(0 0 ${glow + 2}px ${color})` }} />
       </svg>
-      {kp != null && (
-        <div style={{
-          position: "absolute", bottom: -2, left: 0, right: 0,
-          textAlign: "center",
-          fontFamily: "Orbitron, sans-serif", fontWeight: 700, fontSize: 22,
-          color, textShadow: `0 0 6px ${color}`,
-        }}>
-          Kp {Math.round(kp)}
-        </div>
-      )}
     </div>
   );
 };
