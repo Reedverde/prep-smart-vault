@@ -278,7 +278,9 @@ const Pi = () => {
 
   // 10 Outages
   const outageData: any = outages.data;
-  const outageUnavail = outageData?.status === "unavailable";
+  // Treat fetch failure the same as an explicit "unavailable" payload so we
+  // never silently render a green "0".
+  const outageUnavail = outageData?.status === "unavailable" || outagesStatus !== "ok";
   const outageCust: number = outageData?.lawrence?.customersOut ?? 0;
   const outageSeverity = outageData?.severity;
   const outageSev: PiSeverity = outageUnavail
