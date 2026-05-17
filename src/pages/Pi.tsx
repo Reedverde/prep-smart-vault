@@ -516,8 +516,8 @@ const Pi = () => {
                 min={-2}
                 max={3}
                 sev={stressSev === "red" ? "red" : stressSev === "yellow" ? "yellow" : "purple"}
-                ringSize={72}
-                barWidth={100}
+                ringSize={96}
+                barWidth={90}
                 segments={11}
                 levelLabel={stressLevelLabel}
               />
