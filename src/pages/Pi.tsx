@@ -508,7 +508,7 @@ const Pi = () => {
               </div>
             }
           />
-          <PiTile label="FIN STRESS · STLFSI" num="07" sev={stressSev}
+          <PiTile label="FIN STRESS" num="07" sev={stressSev}
             footer={`${stressLevelLabel.toLowerCase()} · vix · weekly`}
             body={
               <PiStressHud
