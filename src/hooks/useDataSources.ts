@@ -23,7 +23,7 @@ const cToF = (c: number | null | undefined) =>
   c == null || !Number.isFinite(c) ? null : (c * 9) / 5 + 32;
 
 const tryStationObs = async (stationId: string) => {
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `https://api.weather.gov/stations/${stationId}/observations/latest`,
     { headers: nwsHeaders },
   );
@@ -57,7 +57,7 @@ export const useWeather = (lat: number, lng: number, refreshMs: number) =>
   useQuery({
     queryKey: ["weather", lat, lng],
     queryFn: async () => {
-      const pointRes = await fetch(`https://api.weather.gov/points/${lat},${lng}`, { headers: nwsHeaders });
+      const pointRes = await fetchWithTimeout(`https://api.weather.gov/points/${lat},${lng}`, { headers: nwsHeaders });
       if (!pointRes.ok) throw new Error("NWS points failed");
       const point = await pointRes.json();
 
@@ -67,12 +67,12 @@ export const useWeather = (lat: number, lng: number, refreshMs: number) =>
 
       // Fire forecast + hourly + stations list in parallel
       const [fcRes, hourlyRes, stationsRes] = await Promise.all([
-        fetch(forecastUrl, { headers: nwsHeaders }),
+        fetchWithTimeout(forecastUrl, { headers: nwsHeaders }),
         hourlyUrl
-          ? fetch(hourlyUrl, { headers: nwsHeaders }).catch(() => null)
+          ? fetchWithTimeout(hourlyUrl, { headers: nwsHeaders }).catch(() => null)
           : Promise.resolve(null),
         stationsUrl
-          ? fetch(stationsUrl, { headers: nwsHeaders }).catch(() => null)
+          ? fetchWithTimeout(stationsUrl, { headers: nwsHeaders }).catch(() => null)
           : Promise.resolve(null),
       ]);
 
@@ -133,7 +133,7 @@ export const useLocalAlerts = (lat: number, lng: number, refreshMs: number) =>
     queryKey: ["alerts-local", lat, lng],
     queryFn: async () => {
       const start = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      const res = await fetch(
+      const res = await fetchWithTimeout(
         `https://api.weather.gov/alerts?point=${lat},${lng}&start=${start}`,
         { headers: nwsHeaders },
       );
@@ -167,7 +167,7 @@ export const useNationalAlerts = (refreshMs: number) =>
   useQuery({
     queryKey: ["alerts-national"],
     queryFn: async () => {
-      const res = await fetch(`https://api.weather.gov/alerts/active`, { headers: nwsHeaders });
+      const res = await fetchWithTimeout(`https://api.weather.gov/alerts/active`, { headers: nwsHeaders });
       if (!res.ok) throw new Error("NWS national failed");
       const json = await res.json();
       return json.features as Array<any>;
@@ -181,7 +181,7 @@ export const useEarthquakes = (refreshMs: number) =>
   useQuery({
     queryKey: ["earthquakes-week"],
     queryFn: async () => {
-      const res = await fetch(
+      const res = await fetchWithTimeout(
         "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson",
       );
       if (!res.ok) throw new Error("USGS failed");
@@ -197,7 +197,7 @@ export const useKpIndex = (refreshMs: number) =>
   useQuery({
     queryKey: ["kp-index"],
     queryFn: async () => {
-      const res = await fetch(
+      const res = await fetchWithTimeout(
         "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json",
       );
       if (!res.ok) throw new Error("SWPC failed");
@@ -227,7 +227,7 @@ export const useAirQuality = (
     queryFn: async () => {
       const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
       const url = `https://${projectId}.supabase.co/functions/v1/airnow-observations?lat=${lat}&lng=${lng}&distance=25`;
-      const res = await fetch(url, { headers: await edgeHeaders() });
+      const res = await fetchWithTimeout(url, { headers: await edgeHeaders() });
       if (res.status === 503) {
         return { notConfigured: true } as any;
       }
@@ -252,7 +252,7 @@ export const useGdacs = (refreshMs: number) =>
   useQuery({
     queryKey: ["gdacs"],
     queryFn: async () => {
-      const res = await fetch("https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?fromDate=&toDate=&alertlevel=Orange;Red&eventlist=EQ;TC;FL;VO;DR;WF");
+      const res = await fetchWithTimeout("https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?fromDate=&toDate=&alertlevel=Orange;Red&eventlist=EQ;TC;FL;VO;DR;WF");
       if (!res.ok) throw new Error("GDACS failed");
       const json = await res.json();
       const features = (json?.features || []).filter(
@@ -272,7 +272,7 @@ export const useGdelt = (refreshMs: number) =>
     queryFn: async () => {
       const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
       const url = `https://${projectId}.supabase.co/functions/v1/gdelt-events`;
-      const res = await fetch(url, { headers: await edgeHeaders() });
+      const res = await fetchWithTimeout(url, { headers: await edgeHeaders() });
       if (!res.ok) throw new Error("GDELT proxy failed");
       const json = await res.json();
       return json as {
@@ -295,7 +295,7 @@ export const useNasa = (refreshMs: number) =>
     queryFn: async () => {
       const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
       const url = `https://${projectId}.supabase.co/functions/v1/nasa-space`;
-      const res = await fetch(url, { headers: await edgeHeaders() });
+      const res = await fetchWithTimeout(url, { headers: await edgeHeaders() });
       if (res.status === 503) return { notConfigured: true } as any;
       if (!res.ok) throw new Error("NASA proxy failed");
       return await res.json();
@@ -312,7 +312,7 @@ export const useEiaGrid = (refreshMs: number) =>
     queryFn: async () => {
       const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
       const url = `https://${projectId}.supabase.co/functions/v1/eia-grid`;
-      const res = await fetch(url, { headers: await edgeHeaders() });
+      const res = await fetchWithTimeout(url, { headers: await edgeHeaders() });
       if (res.status === 503) return { notConfigured: true } as any;
       if (!res.ok) throw new Error("EIA proxy failed");
       return await res.json();
@@ -331,7 +331,7 @@ export const useGdeltHeadlines = (refreshMs: number) => {
     queryFn: async () => {
       const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
       const url = `https://${projectId}.supabase.co/functions/v1/gdelt-headlines`;
-      const res = await fetch(url, { headers: await edgeHeaders() });
+      const res = await fetchWithTimeout(url, { headers: await edgeHeaders() });
       if (!res.ok) throw new Error("GDELT headlines proxy failed");
       return await res.json() as {
         items: Array<{
@@ -355,7 +355,7 @@ export const useGdeltHeadlines = (refreshMs: number) => {
 const callEdge = async (fn: string, qs = '') => {
   const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
   const url = `https://${projectId}.supabase.co/functions/v1/${fn}${qs}`;
-  const res = await fetch(url, { headers: await edgeHeaders() });
+  const res = await fetchWithTimeout(url, { headers: await edgeHeaders() });
   if (res.status === 503) return { notConfigured: true } as any;
   if (!res.ok) throw new Error(`${fn} proxy failed (${res.status})`);
   return await res.json();
@@ -432,7 +432,7 @@ export const useNewsFeed = (state: string | null, refreshMs: number) =>
       const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
       const qs = state ? `?state=${encodeURIComponent(state)}` : "";
       const url = `https://${projectId}.supabase.co/functions/v1/news-feed${qs}`;
-      const res = await fetch(url, { headers: await edgeHeaders() });
+      const res = await fetchWithTimeout(url, { headers: await edgeHeaders() });
       if (res.status === 503) return { notConfigured: true } as any;
       if (!res.ok) throw new Error("News proxy failed");
       return await res.json() as { items: Array<{ source: string; title: string; url: string; publishedAt: string; description?: string }> };
