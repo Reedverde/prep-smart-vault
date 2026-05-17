@@ -389,9 +389,9 @@
   align-items: center;
   border-top: 2px solid var(--chrome);
   font-family: "JetBrains Mono", monospace;
-  font-size: 40px;
+  font-size: 20px;
   line-height: 1;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--green);
   overflow: hidden;
