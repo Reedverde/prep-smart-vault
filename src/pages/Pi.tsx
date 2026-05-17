@@ -328,10 +328,13 @@ const Pi = () => {
   const conflictCount = conflictData?.count ?? null;
   const conflictLabelTxt = conflictCount == null ? "—" : conflictCount > 200 ? "HIGH" : conflictCount > 100 ? "ELEVATED" : "LOW";
   const conflictSev: PiSeverity = conflictCount == null ? "green" : conflictCount > 200 ? "red" : conflictCount > 100 ? "yellow" : "green";
-  const topRegion = conflictData?.byRegion
-    ? (Object.entries(conflictData.byRegion as Record<string, number>).sort((a, b) => b[1] - a[1])[0]?.[0]) : null;
-  const topType = conflictData?.byType
-    ? Object.entries(conflictData.byType as Record<string, number>).filter(([k]) => k.toLowerCase() !== "other").sort((a, b) => b[1] - a[1])[0]?.[0]
+  const topRegions: [string, number][] = conflictData?.byRegion
+    ? (Object.entries(conflictData.byRegion as Record<string, number>).sort((a, b) => b[1] - a[1]).slice(0, 3)) : [];
+  const topTypes: [string, number][] = conflictData?.byType
+    ? Object.entries(conflictData.byType as Record<string, number>).filter(([k]) => k.toLowerCase() !== "other").sort((a, b) => b[1] - a[1]).slice(0, 3)
+    : [];
+  const topRegion = topRegions[0]?.[0] ?? null;
+  const topType = topTypes[0]?.[0] ?? null;
     : null;
   // Synthesize area-chart series (cumulative-ish from byRegion buckets)
   const conflictSeries: number[] = (() => {
