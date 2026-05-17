@@ -389,9 +389,9 @@
   align-items: center;
   border-top: 2px solid var(--chrome);
   font-family: "JetBrains Mono", monospace;
-  font-size: 20px;
+  font-size: 40px;
   line-height: 1;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--green);
   overflow: hidden;
@@ -405,9 +405,6 @@
   height: 100%;
   color: var(--red);
   border-right: 1px solid var(--chrome);
-  background: var(--bg);
-  position: relative;
-  z-index: 60;
 }
 .pi-root .pi-ticker-rec-dot {
   width: 8px; height: 8px;
@@ -437,9 +434,6 @@
   height: 100%;
   color: var(--green);
   border-left: 1px solid var(--chrome);
-  background: var(--bg);
-  position: relative;
-  z-index: 60;
 }
 .pi-root .pi-bars {
   display: inline-flex;
