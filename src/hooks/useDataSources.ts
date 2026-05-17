@@ -4,6 +4,24 @@ import { supabase } from "@/integrations/supabase/client";
 const UA = "PrepPi (situational-awareness-app)";
 const nwsHeaders = { "User-Agent": UA, Accept: "application/geo+json" };
 
+// Default per-request timeout — long enough for a Raspberry Pi 3 on WiFi,
+// short enough to surface failures so tiles can flip to STALE / NO DATA
+// instead of hanging on the default browser socket timeout (~60s+).
+const FETCH_TIMEOUT_MS = 20_000;
+const fetchWithTimeout = async (
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+  ms = FETCH_TIMEOUT_MS,
+): Promise<Response> => {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try {
+    return await fetch(input, { ...init, signal: ctrl.signal });
+  } finally {
+    clearTimeout(t);
+  }
+};
+
 // ============ Edge function helper ============
 // Sends the authenticated user's session JWT so the function's requireUser() check passes.
 // Throws when the user is not signed in — protected routes guarantee auth before queries run.
