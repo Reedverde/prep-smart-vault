@@ -427,24 +427,12 @@ const Pi = () => {
     : "—";
   const moonSetStr = moonInfo.times.set ? format(moonInfo.times.set, "HH:mm") : "—";
 
-  // ============ Ticker text ============
+  // ============ Ticker text — top headline only ============
   const ticker = useMemo(() => {
-    const segs = [
-      `ALERTS ${alertsCount}`,
-      `US ${natCount} ALERTS`,
-      `OUTAGES ${outageCust}`,
-      `CONFLICT ${conflictLabelTxt}${conflictDelta != null ? ` ${conflictDelta >= 0 ? "+" : ""}${conflictDelta}%` : ""}`,
-      largestMag != null ? `QUAKE M${largestMag.toFixed(1)}` : null,
-      `${gdacsArr.length} DISASTERS GDACS`,
-      `NET ${internetLabel}`,
-      fuelLatest != null ? `FUEL $${fuelLatest.toFixed(2)}${fuelWow != null ? ` ${fuelWow >= 0 ? "+" : "−"}${Math.abs(fuelWow * 100).toFixed(0)}¢ WOW` : ""}` : null,
-      gridPct != null ? `GRID ${gridPct.toFixed(0)}% PEAK` : null,
-      latestKp != null ? `KP ${Math.round(latestKp)} ${kpLabel}` : null,
-      `HEADLINES ${headlineCount}`,
-      "SCANNER LIVE",
-    ].filter(Boolean);
-    return segs.join("  ::  ");
-  }, [alertsCount, natCount, outageCust, conflictLabelTxt, conflictDelta, largestMag, gdacsArr.length, internetLabel, fuelLatest, fuelWow, gridPct, latestKp, kpLabel, headlineCount]);
+    const top = headlinesData?.items?.[0];
+    const title: string | undefined = top?.title || top?.headline || top?.name;
+    return (title && String(title).trim()) || "AWAITING HEADLINE FEED";
+  }, [headlinesData]);
 
   return (
     <div className="pi-root">

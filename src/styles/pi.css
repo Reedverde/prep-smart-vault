@@ -384,12 +384,12 @@
 /* ============ Bottom ticker ============ */
 .pi-root .pi-ticker {
   flex-shrink: 0;
-  height: 32px;
+  height: 52px;
   display: flex;
   align-items: center;
   border-top: 2px solid var(--chrome);
   font-family: "JetBrains Mono", monospace;
-  font-size: 14px;
+  font-size: 20px;
   letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--green);
