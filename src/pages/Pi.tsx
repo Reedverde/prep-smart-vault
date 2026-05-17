@@ -760,7 +760,10 @@ const Pi = () => {
             <span>REC</span>
           </div>
           <div className="pi-ticker-scroll-wrap">
-            <div className="pi-ticker-scroll">
+            <div
+              className="pi-ticker-scroll"
+              style={{ animationDuration: `${Math.max(20, ticker.length / 6)}s` }}
+            >
               <span style={{ paddingRight: 40 }}>:: {ticker}  ::  </span>
               <span style={{ paddingRight: 40 }}>:: {ticker}  ::  </span>
             </div>
