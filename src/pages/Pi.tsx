@@ -315,17 +315,8 @@ const Pi = () => {
     outageSev === "red" ? "var(--red)" : outageSev === "yellow" ? "var(--yellow)" : "var(--green)";
   const outageGlowVar =
     outageSev === "red" ? "var(--red-glow)" : outageSev === "yellow" ? "var(--yellow-glow)" : "var(--green-glow)";
-  // Battery-style fill: full at 0 outages, drains as outages climb toward customersTracked.
-  const outageTracked: number = outageData?.lawrence?.customersTracked ?? 10000;
-  const outagePct = outageUnavail ? 0 : Math.max(0, Math.min(1, 1 - outageCust / Math.max(outageTracked, 1)));
-  const outageCells = (() => {
-    const N = 14;
-    const litCount = Math.round(outagePct * N);
-    const tone: "ok" | "warn" | "crit" =
-      outagePct >= 0.8 ? "ok" : outagePct >= 0.4 ? "warn" : "crit";
-    // Top-down array but visual fills bottom→top: lit cells live at the BOTTOM (end of array).
-    return Array.from({ length: N }, (_, i) => ({ lit: i >= N - litCount, tone }));
-  })();
+
+
 
   // 11 Conflict pulse
   const conflictData: any = conflict.data;
