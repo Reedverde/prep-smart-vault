@@ -318,12 +318,40 @@ export const PiHalfRing = ({
   );
 };
 
-// ============ PiRadarSweep — pure CSS conic-gradient sweep ============
-export const PiRadarSweep = () => (
-  <div className="pi-radar" aria-hidden>
+// ============ PiRadarSweep — pure CSS conic-gradient sweep + optional pins ============
+export const PiRadarSweep = ({
+  pins = [],
+}: {
+  /** Pins on the radar. angle in degrees (0 = up), radius 0–1 (fraction of radar half-width), color css var */
+  pins?: Array<{ angle: number; radius: number; color: string }>;
+} = {}) => (
+  <div className="pi-radar" aria-hidden style={{ position: "relative" }}>
     <div className="pi-radar-cross" />
     <div className="pi-radar-sweep" />
     <div className="pi-radar-center" />
+    {pins.map((p, i) => {
+      const rad = (p.angle - 90) * (Math.PI / 180);
+      const x = 50 + Math.cos(rad) * p.radius * 45;
+      const y = 50 + Math.sin(rad) * p.radius * 45;
+      return (
+        <span
+          key={i}
+          style={{
+            position: "absolute",
+            left: `${x}%`,
+            top: `${y}%`,
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            background: p.color,
+            transform: "translate(-50%, -50%)",
+            boxShadow: `0 0 6px ${p.color}, 0 0 12px ${p.color}`,
+            animation: "pi-pinpulse 2s ease-in-out infinite",
+            zIndex: 3,
+          }}
+        />
+      );
+    })}
   </div>
 );
 
