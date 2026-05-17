@@ -450,11 +450,15 @@ const Pi = () => {
           <PiTile label="MOON" num="02b" sev="blue"
             footer={`rise ${moonRiseStr} · set ${moonSetStr}`}
             body={
-              <div style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--blue)" }}>
-                <PiMoon size={78} illumination={moonInfo.phase.illumination} waxing={moonInfo.phase.waxing} />
-                <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 22, lineHeight: 1.3, letterSpacing: "0.08em" }}>
-                  <div style={{ color: "var(--fg)" }}>{moonInfo.phase.name.toUpperCase()}</div>
-                  <div style={{ color: "var(--dim)" }} className="tabular-nums">{moonInfo.phase.illumination}% LIT</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 14, color: "var(--blue)" }}>
+                <PiMoon size={86} illumination={moonInfo.phase.illumination} waxing={moonInfo.phase.waxing} />
+                <div style={{ fontFamily: "JetBrains Mono, monospace", lineHeight: 1.1, letterSpacing: "0.08em" }}>
+                  <div style={{ color: "var(--fg)", fontSize: 30, fontWeight: 600 }}>
+                    {moonInfo.phase.illumination >= 99 ? "FULL"
+                      : moonInfo.phase.illumination <= 1 ? "NEW"
+                      : moonInfo.phase.waxing ? "WAXING" : "WANING"}
+                  </div>
+                  <div style={{ color: "var(--blue)", fontSize: 36, marginTop: 4 }} className="tabular-nums">{moonInfo.phase.illumination}%</div>
                 </div>
               </div>
             }
