@@ -660,14 +660,14 @@ const Pi = () => {
           <PiTile label="SYSTEM :: CLOCK" num="17" wide sev="green"
             footer={`all services nominal · uptime ${errCount === 0 ? "ok" : `${errCount} feeds down`}`}
             body={
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, width: "100%" }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, width: "100%" }}>
                 <span className="pi-big-clock">{clockStr.split("").map((c, i) => (
                   <span key={i} className={c === ":" ? "s" : "d"}>{c}</span>
                 ))}</span>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <span className="pi-pill pi-c-green">● SCANNER LIVE</span>
-                  <span className="pi-pill pi-c-green">● SYSTEM OK</span>
-                  <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 14, color: "var(--dim)", letterSpacing: "0.15em" }}>
+                <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "nowrap" }}>
+                  <span className="pi-pill pi-c-green">● SCANNER</span>
+                  <span className="pi-pill pi-c-green">● SYS OK</span>
+                  <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 14, color: "var(--dim)", letterSpacing: "0.15em", whiteSpace: "nowrap" }}>
                     {dateStr} {dowStr}
                   </span>
                 </div>
