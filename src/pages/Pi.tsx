@@ -151,6 +151,30 @@ const Pi = () => {
   const internet = useCloudflareRadar(15 * 60 * 1000);
   const hwo = useNwsHwo(LOCATION.lat, LOCATION.lng, 30 * 60 * 1000);
 
+  // Derive per-tile data status so failed/timed-out feeds render a STALE / NO DATA
+  // pill instead of silently rendering 0 (which is dangerous on a prep dashboard).
+  const tileStatus = (q: { data?: unknown; isError?: boolean; isLoading?: boolean; error?: unknown }) => {
+    const errored = q.isError || !!q.error;
+    if (errored && !q.data) return "nodata" as const;
+    if (errored && q.data) return "stale" as const;
+    if (!q.data && q.isLoading) return "loading" as const;
+    return "ok" as const;
+  };
+  const weatherStatus = tileStatus(weather);
+  const localAlertsStatus = tileStatus(localAlerts);
+  const natAlertsStatus = tileStatus(natAlerts);
+  const airStatus = tileStatus(air);
+  const quakesStatus = tileStatus(quakes);
+  const kpStatus = tileStatus(kp);
+  const gdacsStatus = tileStatus(gdacs);
+  const conflictStatus = tileStatus(conflict);
+  const headlinesStatus = tileStatus(headlines);
+  const fuelStatus = tileStatus(fuel);
+  const gridStatus = tileStatus(grid);
+  const stressStatus = tileStatus(stress);
+  const outagesStatus = tileStatus(outages);
+  const internetStatus = tileStatus(internet);
+  const hwoStatus = tileStatus(hwo);
   // ============ Derived values ============
   // 01 Weather
   const tempF = weather.data?.observed?.temperatureF ?? weather.data?.period?.temperature ?? null;
