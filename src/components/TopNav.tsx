@@ -11,6 +11,7 @@ import { InstallAppButton } from "./InstallAppButton";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard" },
+  { to: "/pi", label: "Pi" },
   { to: "/snapshots", label: "Snapshots" },
   { to: "/library", label: "Library" },
   { to: "/operations", label: "Operations" },
