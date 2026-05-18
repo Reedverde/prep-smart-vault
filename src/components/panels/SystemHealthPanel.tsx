@@ -3,8 +3,7 @@ import { Panel, ContextBox } from "@/components/Panel";
 import { InfoTip } from "@/components/PanelKit";
 import { formatDistanceToNow, intervalToDuration, formatDuration } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
-import { Wifi, WifiOff, Lock, ShieldCheck } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { Wifi, WifiOff } from "lucide-react";
 
 // Each entry maps a human-readable label to one or more React-Query keys.
 // `keys` lets a single row aggregate freshness across keyed variants (e.g. lat/lng).
