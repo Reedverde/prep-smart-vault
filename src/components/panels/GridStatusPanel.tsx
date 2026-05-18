@@ -80,7 +80,7 @@ export const GridStatusPanel = ({ refreshMs }: { refreshMs: number }) => {
           </p>
         </div>
       ) : error || !data ? (
-        <PanelError message="Could not load EIA data" onRetry={() => refetch()} />
+        <NoDataReason error={error} hasData={!!data} onRetry={() => refetch()} />
       ) : (
         <div className="space-y-3">
           {warning && (
