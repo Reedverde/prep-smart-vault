@@ -30,6 +30,7 @@ export const PublicTopNav = ({ locationName, timezone }: { locationName: string;
         </div>
 
         <div className="flex items-center gap-4">
+          <InstallAppButton />
           <span className="hidden md:inline font-mono text-xs text-dim uppercase tracking-wider">
             {locationName}
           </span>
