@@ -1,0 +1,149 @@
+/* /pi3 — flat, static styles for the Raspberry Pi 3 kiosk.
+   All selectors scoped under .pi3-root. Intentionally banned in this file:
+   @keyframes, animation, transition, filter, backdrop-filter, mix-blend-mode,
+   ::before/::after overlays, large-area gradients. Severity is expressed only
+   via a static colored left border on tiles. */
+
+.pi3-root {
+  --bg: #0a0e14;
+  --tile: #161b22;
+  --chrome: #1f262e;
+  --text: #d8f5d2;
+  --dim: #6a8a70;
+  --faint: #2d4030;
+  --green: #8fff7a;
+  --yellow: #ffd84d;
+  --orange: #ff9d3a;
+  --red: #ff4d6d;
+  --purple: #b794ff;
+  --blue: #5cc8ff;
+
+  position: fixed;
+  inset: 0;
+  height: 100vh;
+  width: 100vw;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 14px;
+  overflow: hidden;
+}
+
+/* Fixed 1024×600 stage, scaled to fit viewport by JS. */
+.pi3-root .pi3-stage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1024px;
+  height: 600px;
+  transform: translate(-50%, -50%) scale(1);
+  transform-origin: center center;
+  display: flex;
+  flex-direction: column;
+}
+
+.pi3-root .pi3-topstrip {
+  height: 32px;
+  flex: 0 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  background: var(--tile);
+  border-bottom: 1px solid var(--chrome);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--dim);
+}
+.pi3-root .pi3-topstrip .pi3-brand {
+  color: var(--green);
+  font-weight: 600;
+}
+.pi3-root .pi3-topstrip .pi3-meta {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+.pi3-root .pi3-topstrip .pi3-clocknow {
+  color: var(--text);
+}
+
+.pi3-root .pi3-grid {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-auto-rows: 1fr;
+  gap: 6px;
+  padding: 6px;
+}
+
+.pi3-root .pi3-tile {
+  background: var(--tile);
+  border: 1px solid var(--chrome);
+  border-left-width: 3px;
+  border-left-color: var(--dim);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* Severity = static left border color. No glow, no animation. */
+.pi3-root .pi3-tile[data-sev="green"]  { border-left-color: var(--green); }
+.pi3-root .pi3-tile[data-sev="yellow"] { border-left-color: var(--yellow); }
+.pi3-root .pi3-tile[data-sev="orange"] { border-left-color: var(--orange); }
+.pi3-root .pi3-tile[data-sev="red"]    { border-left-color: var(--red); }
+.pi3-root .pi3-tile[data-sev="purple"] { border-left-color: var(--purple); }
+.pi3-root .pi3-tile[data-sev="blue"]   { border-left-color: var(--blue); }
+.pi3-root .pi3-tile[data-sev="dim"]    { border-left-color: var(--faint); }
+
+.pi3-root .pi3-tile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--dim);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pi3-root .pi3-tile-id {
+  color: var(--faint);
+  font-size: 10px;
+}
+
+.pi3-root .pi3-tile-value {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text);
+  letter-spacing: 0.02em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pi3-root .pi3-tile-value[data-sev="green"]  { color: var(--green); }
+.pi3-root .pi3-tile-value[data-sev="yellow"] { color: var(--yellow); }
+.pi3-root .pi3-tile-value[data-sev="orange"] { color: var(--orange); }
+.pi3-root .pi3-tile-value[data-sev="red"]    { color: var(--red); }
+.pi3-root .pi3-tile-value[data-sev="purple"] { color: var(--purple); }
+.pi3-root .pi3-tile-value[data-sev="blue"]   { color: var(--blue); }
+.pi3-root .pi3-tile-value[data-sev="dim"]    { color: var(--dim); }
+
+.pi3-root .pi3-tile-footer {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--dim);
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
