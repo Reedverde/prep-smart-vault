@@ -3,8 +3,7 @@ import { Panel, ContextBox } from "@/components/Panel";
 import { InfoTip } from "@/components/PanelKit";
 import { formatDistanceToNow, intervalToDuration, formatDuration } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
-import { Wifi, WifiOff, Lock, ShieldCheck } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { Wifi, WifiOff } from "lucide-react";
 
 // Each entry maps a human-readable label to one or more React-Query keys.
 // `keys` lets a single row aggregate freshness across keyed variants (e.g. lat/lng).
@@ -37,7 +36,6 @@ const SOURCES: { label: string; keys: string[] }[] = [
 
 export const SystemHealthPanel = ({ refreshMin }: { refreshMin: number }) => {
   const qc = useQueryClient();
-  const { user } = useAuth();
   const [online, setOnline] = useState(navigator.onLine);
   const [sessionStart] = useState(() => new Date());
   const [, tick] = useState(0);
@@ -96,26 +94,6 @@ export const SystemHealthPanel = ({ refreshMin }: { refreshMin: number }) => {
             )}
           </span>
         </div>
-
-        {/* Auth status — proxied sources (AirNow, NASA, EIA, GDELT, Cloudflare,
-            FRED, Power Outages, HWO) require a signed-in user JWT. */}
-        <div className="rounded-md bg-inset border border-border/60 p-3 flex items-center justify-between">
-          <span className="font-mono text-[10px] uppercase tracking-wider text-dim">Signed in</span>
-          <span className="flex items-center gap-2 font-mono text-xs">
-            {user ? (
-              <>
-                <ShieldCheck className="h-3.5 w-3.5 text-severity-low" />
-                <span className="text-severity-low truncate max-w-[180px]">{user.email || "Authenticated"}</span>
-              </>
-            ) : (
-              <>
-                <Lock className="h-3.5 w-3.5 text-severity-critical" />
-                <a href="/login" className="text-severity-critical underline">No — sign in to enable proxied sources</a>
-              </>
-            )}
-          </span>
-        </div>
-
         {/* Source table */}
         <div className="space-y-1">
           <div className="font-mono text-[10px] uppercase tracking-wider text-dim mb-1">Data sources</div>
