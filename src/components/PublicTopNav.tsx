@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Logo } from "./Logo";
 import { LiveIndicator } from "./LiveIndicator";
+import { InstallAppButton } from "./InstallAppButton";
 
 export const PublicTopNav = ({ locationName, timezone }: { locationName: string; timezone: string }) => {
   const [now, setNow] = useState(new Date());
