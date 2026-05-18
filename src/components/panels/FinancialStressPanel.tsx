@@ -104,7 +104,7 @@ export const FinancialStressPanel = ({ refreshMs }: { refreshMs: number }) => {
       ) : notConfigured ? (
         <ConfigureNotice keyName={(data as any).key || "FRED_API_KEY"} />
       ) : error || !data ? (
-        <PanelError message="Could not load FRED data" onRetry={() => refetch()} />
+        <NoDataReason error={error} hasData={!!data} onRetry={() => refetch()} />
       ) : (
         <div className="space-y-4">
           <div className="flex flex-col items-center gap-3 pt-1">
