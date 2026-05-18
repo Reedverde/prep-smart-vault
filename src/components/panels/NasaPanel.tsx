@@ -119,7 +119,7 @@ export const NasaPanel = ({ refreshMs }: { refreshMs: number }) => {
           </p>
         </div>
       ) : error || !data ? (
-        <PanelError message="Could not load NASA data" onRetry={() => refetch()} />
+        <NoDataReason error={error} hasData={!!data} onRetry={() => refetch()} />
       ) : (
         <div className="space-y-3">
           {/* Today's Read — verdict block */}
