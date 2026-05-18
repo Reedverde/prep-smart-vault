@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { Monitor } from "lucide-react";
 import { Logo } from "./Logo";
 import { LiveIndicator } from "./LiveIndicator";
 import { InstallAppButton } from "./InstallAppButton";
+import { Button } from "@/components/ui/button";
 
 export const PublicTopNav = ({ locationName, timezone }: { locationName: string; timezone: string }) => {
   const [now, setNow] = useState(new Date());
@@ -30,6 +33,17 @@ export const PublicTopNav = ({ locationName, timezone }: { locationName: string;
         </div>
 
         <div className="flex items-center gap-4">
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="font-mono text-xs uppercase tracking-wider border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+          >
+            <Link to="/pi">
+              <Monitor className="h-3.5 w-3.5" />
+              Pi View
+            </Link>
+          </Button>
           <InstallAppButton />
           <span className="hidden md:inline font-mono text-xs text-dim uppercase tracking-wider">
             {locationName}
