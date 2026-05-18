@@ -608,7 +608,7 @@ const Pi = () => {
           />
 
           {/* Row 3 */}
-          <PiTile status={outagesStatus} label="POWER OUTAGES · PA" num="10" sev={outageSev}
+          <PiTile status={outagesStatus} label="OUTAGES · PA" num="10" sev={outageSev}
             footer={
               outageUnavail
                 ? "feed unavailable · firstenergy"
