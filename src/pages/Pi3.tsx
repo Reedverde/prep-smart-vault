@@ -270,7 +270,21 @@ const Pi3 = () => {
           <Pi3Tile label="SYSTEM :: CLOCK" num="17" wide sev="green"
             value={clockStr}
             footer={`${dateStr} · ${errCount === 0 ? "all feeds ok" : `${errCount} feeds down`}`} />
+          </div>
+
+          <div className="pi3-ticker">
+            <div className="pi3-ticker-rec">
+              <span className="pi3-ticker-rec-dot" />
+              REC
+            </div>
+            <div className="pi3-ticker-body">{tickerLine}</div>
+            <div className="pi3-ticker-uplink">
+              <span className="pi3-bars"><span /><span /><span /><span /></span>
+              UPLINK
+            </div>
+          </div>
         </div>
+        <div className="pi3-scan" />
       </div>
     </div>
   );
