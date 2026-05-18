@@ -75,7 +75,7 @@ export const InternetHealthPanel = ({ refreshMs }: { refreshMs: number }) => {
           ) : notConfigured ? (
             <ConfigureNotice keyName={(data as any).key || "CLOUDFLARE_RADAR_API_TOKEN"} />
           ) : error || !data ? (
-            <PanelError message="Could not load Cloudflare Radar data" onRetry={() => refetch()} />
+            <NoDataReason error={error} hasData={!!data} onRetry={() => refetch()} />
           ) : (
             <div className="space-y-3">
               <div className="flex items-baseline justify-between gap-2">
