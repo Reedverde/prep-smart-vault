@@ -33,6 +33,17 @@ export const PublicTopNav = ({ locationName, timezone }: { locationName: string;
         </div>
 
         <div className="flex items-center gap-4">
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="font-mono text-xs uppercase tracking-wider border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+          >
+            <Link to="/pi">
+              <Monitor className="h-3.5 w-3.5" />
+              Pi View
+            </Link>
+          </Button>
           <InstallAppButton />
           <span className="hidden md:inline font-mono text-xs text-dim uppercase tracking-wider">
             {locationName}
