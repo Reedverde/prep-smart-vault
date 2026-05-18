@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { HelpCircle, RefreshCw, AlertTriangle, WifiOff, Lock, Clock, ServerCrash, Inbox } from "lucide-react";
+import { HelpCircle, RefreshCw, AlertTriangle, WifiOff, Clock, ServerCrash, Inbox } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
