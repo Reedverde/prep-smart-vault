@@ -36,7 +36,6 @@ const SOURCES: { label: string; keys: string[] }[] = [
 
 export const SystemHealthPanel = ({ refreshMin }: { refreshMin: number }) => {
   const qc = useQueryClient();
-  const { user } = useAuth();
   const [online, setOnline] = useState(navigator.onLine);
   const [sessionStart] = useState(() => new Date());
   const [, tick] = useState(0);
