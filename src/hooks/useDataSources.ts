@@ -1,24 +1,42 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-const UA = "PrepPi (situational-awareness-app)";
+// NWS requires a User-Agent that identifies the app + contact. Missing the
+// contact form is a known cause of intermittent 403s.
+const UA = "PrepPi situational-awareness (contact: support@everde.co)";
 const nwsHeaders = { "User-Agent": UA, Accept: "application/geo+json" };
 
-// Default per-request timeout — long enough for a Raspberry Pi 3 on WiFi,
-// short enough to surface failures so tiles can flip to STALE / NO DATA
-// instead of hanging on the default browser socket timeout (~60s+).
-const FETCH_TIMEOUT_MS = 20_000;
+// Default per-request timeout — bumped to 45s so Pi 3 b/g WiFi + cold edge
+// function starts have headroom. Tiles still surface failure (vs. hanging
+// forever) but won't false-fail under normal slow conditions.
+const FETCH_TIMEOUT_MS = 45_000;
+
+// One soft retry for transient network failures (AbortError, "Failed to fetch").
+// Does NOT retry HTTP error statuses — those are real, not noise.
 const fetchWithTimeout = async (
   input: RequestInfo | URL,
   init: RequestInit = {},
   ms = FETCH_TIMEOUT_MS,
 ): Promise<Response> => {
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), ms);
+  const once = async (): Promise<Response> => {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), ms);
+    try {
+      return await fetch(input, { ...init, signal: ctrl.signal });
+    } finally {
+      clearTimeout(t);
+    }
+  };
   try {
-    return await fetch(input, { ...init, signal: ctrl.signal });
-  } finally {
-    clearTimeout(t);
+    return await once();
+  } catch (e: any) {
+    // Retry once on network-level failures only
+    const transient =
+      e?.name === "AbortError" ||
+      (typeof e?.message === "string" && /failed to fetch|network/i.test(e.message));
+    if (!transient) throw e;
+    await new Promise((r) => setTimeout(r, 1500));
+    return await once();
   }
 };
 
