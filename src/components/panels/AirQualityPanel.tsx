@@ -150,9 +150,9 @@ export const AirQualityPanel = ({
           </p>
         </div>
       ) : error ? (
-        <PanelError message="Could not load AirNow data" onRetry={() => refetch()} />
+        <NoDataReason error={error} onRetry={() => refetch()} />
       ) : !observations || observations.length === 0 ? (
-        <PanelError message="No AQI data near your location" onRetry={() => refetch()} />
+        <NoDataReason hasData={false} onRetry={() => refetch()} />
       ) : (
         (() => {
           const maxObs = observations.reduce((m: any, o: any) => (o.AQI > (m?.AQI ?? -1) ? o : m), null);
