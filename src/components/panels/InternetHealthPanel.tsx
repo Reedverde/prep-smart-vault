@@ -1,5 +1,5 @@
 import { Panel, ContextBox } from "@/components/Panel";
-import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo } from "@/components/PanelKit";
+import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo, NoDataReason } from "@/components/PanelKit";
 import { useCloudflareRadar } from "@/hooks/useDataSources";
 import vaultboyYellow from "@/assets/vaultboy-yellow.jpg";
 import vaultboyRed from "@/assets/vaultboy-red.jpg";

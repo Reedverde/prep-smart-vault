@@ -1,5 +1,5 @@
 import { Panel, ContextBox } from "@/components/Panel";
-import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo } from "@/components/PanelKit";
+import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo, NoDataReason } from "@/components/PanelKit";
 import { useEiaGrid } from "@/hooks/useDataSources";
 import { LineChart, Line, ResponsiveContainer, YAxis } from "recharts";
 

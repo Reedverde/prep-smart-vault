@@ -1,5 +1,5 @@
 import { Panel, ContextBox } from "@/components/Panel";
-import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo } from "@/components/PanelKit";
+import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo, NoDataReason } from "@/components/PanelKit";
 import { useAirQuality } from "@/hooks/useDataSources";
 
 const AQI_MAX = 300;

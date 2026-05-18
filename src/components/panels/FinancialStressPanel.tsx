@@ -1,5 +1,5 @@
 import { Panel, ContextBox } from "@/components/Panel";
-import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo } from "@/components/PanelKit";
+import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo, NoDataReason } from "@/components/PanelKit";
 import { useFredStress } from "@/hooks/useDataSources";
 import { LineChart, Line, ResponsiveContainer, YAxis, ReferenceLine } from "recharts";
 
