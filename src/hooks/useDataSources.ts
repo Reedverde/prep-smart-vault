@@ -128,19 +128,25 @@ export const useWeather = (lat: number, lng: number, refreshMs: number) =>
         }
       }
 
-      // Resolve nearest station observation, fallback up to 4 stations
+      // Resolve nearest station observation — query up to 4 stations in
+      // parallel and take the first that returns a real temperature. Avoids
+      // the worst-case sequential 4x timeout on slow Pi WiFi.
       let observed: Awaited<ReturnType<typeof tryStationObs>> | null = null;
       if (stationsRes && (stationsRes as Response).ok) {
         try {
           const stations = await (stationsRes as Response).json();
           const features = (stations?.features || []) as Array<any>;
-          for (const f of features.slice(0, 4)) {
-            const id = f?.properties?.stationIdentifier;
-            if (!id) continue;
-            const obs = await tryStationObs(id);
-            if (obs && obs.temperatureC != null) {
-              observed = obs;
-              break;
+          const ids = features
+            .slice(0, 4)
+            .map((f: any) => f?.properties?.stationIdentifier)
+            .filter(Boolean);
+          if (ids.length) {
+            const settled = await Promise.allSettled(ids.map((id) => tryStationObs(id)));
+            for (const r of settled) {
+              if (r.status === "fulfilled" && r.value && r.value.temperatureC != null) {
+                observed = r.value;
+                break;
+              }
             }
           }
         } catch {
