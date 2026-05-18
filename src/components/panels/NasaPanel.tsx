@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Panel } from "@/components/Panel";
-import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo } from "@/components/PanelKit";
+import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo, NoDataReason } from "@/components/PanelKit";
 import { useNasa } from "@/hooks/useDataSources";
 
 const LD_KM = 384400;
@@ -119,7 +119,7 @@ export const NasaPanel = ({ refreshMs }: { refreshMs: number }) => {
           </p>
         </div>
       ) : error || !data ? (
-        <PanelError message="Could not load NASA data" onRetry={() => refetch()} />
+        <NoDataReason error={error} hasData={!!data} onRetry={() => refetch()} />
       ) : (
         <div className="space-y-3">
           {/* Today's Read — verdict block */}

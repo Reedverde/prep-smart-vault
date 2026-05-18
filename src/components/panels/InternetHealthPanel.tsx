@@ -1,5 +1,5 @@
 import { Panel, ContextBox } from "@/components/Panel";
-import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo } from "@/components/PanelKit";
+import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo, NoDataReason } from "@/components/PanelKit";
 import { useCloudflareRadar } from "@/hooks/useDataSources";
 import vaultboyYellow from "@/assets/vaultboy-yellow.jpg";
 import vaultboyRed from "@/assets/vaultboy-red.jpg";
@@ -75,7 +75,7 @@ export const InternetHealthPanel = ({ refreshMs }: { refreshMs: number }) => {
           ) : notConfigured ? (
             <ConfigureNotice keyName={(data as any).key || "CLOUDFLARE_RADAR_API_TOKEN"} />
           ) : error || !data ? (
-            <PanelError message="Could not load Cloudflare Radar data" onRetry={() => refetch()} />
+            <NoDataReason error={error} hasData={!!data} onRetry={() => refetch()} />
           ) : (
             <div className="space-y-3">
               <div className="flex items-baseline justify-between gap-2">

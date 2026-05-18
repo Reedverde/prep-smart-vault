@@ -1,5 +1,5 @@
 import { Panel, ContextBox } from "@/components/Panel";
-import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo } from "@/components/PanelKit";
+import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo, NoDataReason } from "@/components/PanelKit";
 import { useEiaGrid } from "@/hooks/useDataSources";
 import { LineChart, Line, ResponsiveContainer, YAxis } from "recharts";
 
@@ -80,7 +80,7 @@ export const GridStatusPanel = ({ refreshMs }: { refreshMs: number }) => {
           </p>
         </div>
       ) : error || !data ? (
-        <PanelError message="Could not load EIA data" onRetry={() => refetch()} />
+        <NoDataReason error={error} hasData={!!data} onRetry={() => refetch()} />
       ) : (
         <div className="space-y-3">
           {warning && (

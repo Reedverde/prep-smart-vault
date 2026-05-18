@@ -1,5 +1,5 @@
 import { Panel, ContextBox } from "@/components/Panel";
-import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo } from "@/components/PanelKit";
+import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo, NoDataReason } from "@/components/PanelKit";
 import { useFredStress } from "@/hooks/useDataSources";
 import { LineChart, Line, ResponsiveContainer, YAxis, ReferenceLine } from "recharts";
 
@@ -104,7 +104,7 @@ export const FinancialStressPanel = ({ refreshMs }: { refreshMs: number }) => {
       ) : notConfigured ? (
         <ConfigureNotice keyName={(data as any).key || "FRED_API_KEY"} />
       ) : error || !data ? (
-        <PanelError message="Could not load FRED data" onRetry={() => refetch()} />
+        <NoDataReason error={error} hasData={!!data} onRetry={() => refetch()} />
       ) : (
         <div className="space-y-4">
           <div className="flex flex-col items-center gap-3 pt-1">

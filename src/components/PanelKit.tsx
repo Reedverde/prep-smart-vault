@@ -1,8 +1,87 @@
 import { ReactNode } from "react";
-import { HelpCircle, RefreshCw, AlertTriangle } from "lucide-react";
+import { HelpCircle, RefreshCw, AlertTriangle, WifiOff, Lock, Clock, ServerCrash, Inbox } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+
+// ============ NoDataReason ============
+// Replaces generic "no data" empty states with a specific reason so it's
+// obvious whether you're seeing offline, auth, timeout, upstream error, or
+// just an empty payload. Critical for the Pi kiosk where you can't open
+// devtools.
+type ErrLike = unknown;
+const classifyError = (
+  error: ErrLike,
+  hasData: boolean,
+): { tone: "offline" | "auth" | "timeout" | "upstream" | "empty"; label: string; detail: string } => {
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    return { tone: "offline", label: "OFFLINE", detail: "No network connection" };
+  }
+  const msg = error instanceof Error ? `${error.name}: ${error.message}` : String(error || "");
+  if (/abort/i.test(msg)) {
+    return { tone: "timeout", label: "TIMEOUT", detail: "Source took too long to respond" };
+  }
+  if (/401|403|unauthor|forbidden/i.test(msg)) {
+    return { tone: "auth", label: "AUTH REQUIRED", detail: "Sign in to enable this source" };
+  }
+  if (error) {
+    return { tone: "upstream", label: "UPSTREAM ERROR", detail: "Source returned an error" };
+  }
+  if (!hasData) {
+    return { tone: "empty", label: "NO DATA", detail: "Source returned no items" };
+  }
+  return { tone: "empty", label: "NO DATA", detail: "" };
+};
+const TONE_ICON = {
+  offline: WifiOff,
+  auth: Lock,
+  timeout: Clock,
+  upstream: ServerCrash,
+  empty: Inbox,
+} as const;
+const TONE_COLOR: Record<keyof typeof TONE_ICON, string> = {
+  offline: "text-severity-critical",
+  auth: "text-severity-moderate",
+  timeout: "text-severity-moderate",
+  upstream: "text-severity-severe",
+  empty: "text-dim",
+};
+
+export const NoDataReason = ({
+  error,
+  hasData = false,
+  onRetry,
+}: {
+  error?: ErrLike;
+  hasData?: boolean;
+  onRetry?: () => void;
+}) => {
+  const { tone, label, detail } = classifyError(error, hasData);
+  const Icon = TONE_ICON[tone];
+  return (
+    <div className="flex flex-col items-center justify-center text-center gap-2 py-6">
+      <Icon className={cn("h-5 w-5", TONE_COLOR[tone])} />
+      <p className={cn("font-mono text-[10px] uppercase tracking-[0.2em]", TONE_COLOR[tone])}>{label}</p>
+      {detail && <p className="font-mono text-xs text-dim max-w-xs">{detail}</p>}
+      {onRetry && tone !== "auth" && (
+        <button
+          onClick={onRetry}
+          className="mt-1 inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-accent hover:underline"
+        >
+          <RefreshCw className="h-3 w-3" /> Retry
+        </button>
+      )}
+      {tone === "auth" && (
+        <a
+          href="/login"
+          className="mt-1 inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-accent hover:underline"
+        >
+          <Lock className="h-3 w-3" /> Sign in
+        </a>
+      )}
+    </div>
+  );
+};
 
 export const InfoTip = ({ children, className }: { children: ReactNode; className?: string }) => (
   <Tooltip>

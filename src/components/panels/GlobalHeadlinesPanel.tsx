@@ -1,5 +1,5 @@
 import { Panel, ContextBox } from "@/components/Panel";
-import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo } from "@/components/PanelKit";
+import { InfoTip, PanelSkeleton, PanelError, RefreshButton, UpdatedAgo, NoDataReason } from "@/components/PanelKit";
 import { useGdeltHeadlines } from "@/hooks/useDataSources";
 import { flagEmoji } from "@/lib/flags";
 
@@ -77,9 +77,9 @@ export const GlobalHeadlinesPanel = ({ refreshMs }: { refreshMs: number }) => {
       {isLoading ? (
         <PanelSkeleton rows={6} />
       ) : error ? (
-        <PanelError message="Could not load global headlines" onRetry={() => refetch()} />
+        <NoDataReason error={error} onRetry={() => refetch()} />
       ) : visible.length === 0 ? (
-        <div className="font-mono text-xs text-dim py-4 text-center">No recent headlines</div>
+        <NoDataReason hasData={false} onRetry={() => refetch()} />
       ) : (
         <div className="space-y-2">
           <div className="max-h-[640px] overflow-y-auto pr-1 -mr-1 scroll-thin space-y-2">
