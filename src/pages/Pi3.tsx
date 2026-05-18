@@ -181,19 +181,37 @@ const Pi3 = () => {
 
   const errCount = Object.keys(errors).length;
 
+  // Static ticker headline — first available headline title, no scroll.
+  const tickerLine: string = (() => {
+    const items = headlinesData?.items as any[] | undefined;
+    if (items && items.length > 0) {
+      return items.slice(0, 5).map((i) => i?.title || i?.name || "").filter(Boolean).join("  ::  ");
+    }
+    return `PREPPI STATIC FEED · ${errCount === 0 ? "ALL FEEDS NOMINAL" : `${errCount} FEED${errCount === 1 ? "" : "S"} DOWN`}`;
+  })();
+
   return (
     <div className="pi3-root">
       <div className="pi3-stage" ref={stageRef}>
-        <div className="pi3-topstrip">
-          <span className="pi3-brand">PREPPI :: PI3 TERMINAL</span>
-          <div className="pi3-meta">
-            <span>NODE 001</span>
-            <span>{LOCATION.name}</span>
-            <span className="pi3-clocknow">{dateStr} {clockStr} {tzAbbr}</span>
-          </div>
-        </div>
+        <div className="pi3-frame">
+          <span className="pi3-corner-bl" />
+          <span className="pi3-corner-br" />
 
-        <div className="pi3-grid">
+          <div className="pi3-topstrip">
+            <span style={{ display: "inline-flex", alignItems: "center" }}>
+              <span className="pi3-glyph"><span className="pi3-glyph-dot" /></span>
+              <span className="pi3-brand">PREPPI</span>
+              <span style={{ marginLeft: 10, color: "var(--dim)" }}>:: PI3 TERMINAL</span>
+            </span>
+            <div className="pi3-meta">
+              <span className="pi3-live"><span className="pi3-live-dot" /> LIVE</span>
+              <span>NODE 001</span>
+              <span>{LOCATION.name}</span>
+              <span className="pi3-clocknow">{dateStr} {clockStr} {tzAbbr}</span>
+            </div>
+          </div>
+
+          <div className="pi3-grid">
           {/* Row 1 */}
           <Pi3Tile label="WEATHER" num="01" sev="green" noData={nd("weather")}
             value={tempF != null ? `${Math.round(tempF)}°F` : "—"}

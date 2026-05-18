@@ -1,5 +1,5 @@
-// Pi3Tile — flat, static tile for /pi3. No animations, no transitions, no
-// pseudo-element overlays, no gradients. Severity = static colored left border.
+// Pi3Tile — STATIC mirror of PiTile chrome (inner border, 4 corner brackets,
+// header with id, severity-colored borders/value). No animations, no transitions.
 
 import type { ReactNode } from "react";
 
@@ -20,15 +20,31 @@ export const Pi3Tile = ({
 }: Pi3TileProps) => {
   const style: React.CSSProperties = {};
   if (wide) style.gridColumn = "span 2 / span 2";
+  const effectiveSev: Pi3Severity = noData ? "dim" : sev;
   return (
-    <div className="pi3-tile" data-sev={sev} style={style}>
+    <div className="pi3-tile" data-sev={effectiveSev} style={style}>
+      <div className="pi3-tile-inner" />
+      <span className="pi3-tile-corner tl" />
+      <span className="pi3-tile-corner tr" />
+      <span className="pi3-tile-corner bl" />
+      <span className="pi3-tile-corner br" />
+
       <div className="pi3-tile-header">
-        <span>{label}</span>
+        <span>
+          {label}
+          {noData && (
+            <span className="pi3-pill pi3-c-red" style={{ marginLeft: 6 }}>NO DATA</span>
+          )}
+        </span>
         {num && <span className="pi3-tile-id">{num}</span>}
       </div>
-      <div className="pi3-tile-value" data-sev={sev}>
-        {noData ? "—" : value ?? "—"}
+
+      <div className="pi3-tile-body">
+        <span className="pi3-big pi3-value-color">
+          {noData ? "—" : value ?? "—"}
+        </span>
       </div>
+
       {footer && <div className="pi3-tile-footer">{footer}</div>}
     </div>
   );
