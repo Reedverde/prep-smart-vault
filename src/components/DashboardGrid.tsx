@@ -19,6 +19,8 @@ import { FinancialStressPanel } from "@/components/panels/FinancialStressPanel";
 import { PowerOutagesPanel } from "@/components/panels/PowerOutagesPanel";
 import { InternetHealthPanel } from "@/components/panels/InternetHealthPanel";
 import { MoonPhasePanel } from "@/components/panels/MoonPhasePanel";
+import { SectionBoundary } from "@/components/errors/SectionBoundary";
+import { PanelTileBoundary } from "@/components/errors/TileBoundary";
 
 const debugRows =
   typeof window !== "undefined" &&
@@ -128,21 +130,27 @@ export const DashboardGrid = ({
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:block gap-4 xl:gap-0">
-        {groups.map((g) => (
-          <Fragment key={g.label}>
-            <div className={`${labelClass} md:col-span-2 xl:hidden mt-2 first:mt-0`}>
-              {g.label}
-            </div>
-            {debugRows && (
-              <div className={`${labelClass} hidden xl:block`}>{g.label}</div>
-            )}
-            <div className="contents xl:grid xl:grid-cols-3 xl:gap-4 xl:auto-rows-fr xl:mb-4">
-              {g.panels}
-            </div>
-          </Fragment>
-        ))}
-      </div>
+      <SectionBoundary variant="panel">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:block gap-4 xl:gap-0">
+          {groups.map((g) => (
+            <Fragment key={g.label}>
+              <div className={`${labelClass} md:col-span-2 xl:hidden mt-2 first:mt-0`}>
+                {g.label}
+              </div>
+              {debugRows && (
+                <div className={`${labelClass} hidden xl:block`}>{g.label}</div>
+              )}
+              <div className="contents xl:grid xl:grid-cols-3 xl:gap-4 xl:auto-rows-fr xl:mb-4">
+                {g.panels.map((p) => (
+                  <PanelTileBoundary key={p.key ?? Math.random()} label={String(p.key ?? "panel")}>
+                    {p}
+                  </PanelTileBoundary>
+                ))}
+              </div>
+            </Fragment>
+          ))}
+        </div>
+      </SectionBoundary>
     </>
   );
 };
