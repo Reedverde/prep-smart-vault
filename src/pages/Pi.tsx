@@ -9,6 +9,8 @@ import { getMoonPhase } from "@/lib/moonPhase";
 import { getMoonTimes } from "@/lib/moonTimes";
 import piClockBg from "@/assets/pi-pipboy-bg.png";
 import { PiTile, type PiSeverity } from "@/components/PiTile";
+import { SectionBoundary } from "@/components/errors/SectionBoundary";
+import { PiTileBoundary } from "@/components/errors/TileBoundary";
 import { iconForForecast } from "@/components/WeatherIcon";
 import {
   PiWeatherIcon,
@@ -419,8 +421,10 @@ const Pi = () => {
         </div>
 
         {/* Tile grid — 5×4 */}
+        <SectionBoundary variant="pi">
         <div className="pi-grid">
           {/* Row 1 */}
+          <PiTileBoundary label="WEATHER" num="01">
           <PiTile status={weatherStatus} label="WEATHER" num="01" sev="green"
             footer={`${cond.toLowerCase()} · ${windMph != null ? `${windMph}mph w` : "—"} · feels ${tempF != null ? Math.round(tempF) : "—"}°`}
             body={
@@ -432,6 +436,8 @@ const Pi = () => {
               </>
             }
           />
+          </PiTileBoundary>
+          <PiTileBoundary label="ALERTS · LOCAL" num="02">
           <PiTile status={localAlertsStatus} label="ALERTS · LOCAL" num="02" sev={alertsSev}
             footer={alertsCount === 0 ? "no active warnings" : `${alertsCount} active · ${officeCode}`}
             body={
@@ -448,6 +454,8 @@ const Pi = () => {
               </div>
             }
           />
+          </PiTileBoundary>
+          <PiTileBoundary label="MOON" num="02b">
           <PiTile label="MOON" num="02b" sev="blue"
             footer={`rise ${moonRiseStr} · set ${moonSetStr}`}
             body={
@@ -464,12 +472,16 @@ const Pi = () => {
               </div>
             }
           />
+          </PiTileBoundary>
+          <PiTileBoundary label="AIR QUALITY" num="03">
           <PiTile status={airStatus} label="AIR QUALITY" num="03" sev={aqiSev}
             footer={`aqi · pm2.5 · airnow`}
             body={
               <PiAqiArcGauge value={maxAqi} max={300} width={180} height={110} ticks={26} />
             }
           />
+          </PiTileBoundary>
+          <PiTileBoundary label="SEVERE RADAR" num="04">
           <PiTile status={natAlertsStatus} label="SEVERE RADAR" num="04" sev={severeSev}
             footer={`${severeCount} active warning${severeCount === 1 ? "" : "s"} · nws`}
             body={
@@ -483,8 +495,10 @@ const Pi = () => {
               </div>
             }
           />
+          </PiTileBoundary>
 
           {/* Row 2 */}
+          <PiTileBoundary label="HAZARD OUT · 7D" num="05">
           <PiTile status={hwoStatus} label="HAZARD OUT · 7D" num="05" sev={hwoSev}
             footer={hwoData?.office ? `${hwoData.office.toLowerCase()}` : "nws · 7d outlook"}
             body={
@@ -496,6 +510,8 @@ const Pi = () => {
               </div>
             }
           />
+          </PiTileBoundary>
+          <PiTileBoundary label="FUEL · MID ATL" num="06">
           <PiTile status={fuelStatus} label="FUEL · MID-ATL" num="06" sev={fuelSev}
             footer={`padd 1b · weekly · eia${fuelWow != null ? ` · ${fuelWow >= 0 ? "+" : "−"}$${Math.abs(fuelWow).toFixed(2)} wow` : ""}`}
             body={
@@ -518,6 +534,8 @@ const Pi = () => {
               </div>
             }
           />
+          </PiTileBoundary>
+          <PiTileBoundary label="FIN STRESS" num="07">
           <PiTile status={stressStatus} label="FIN STRESS" num="07" sev={stressSev}
             footer={`${stressLevelLabel.toLowerCase()} · vix · weekly`}
             body={
@@ -533,6 +551,8 @@ const Pi = () => {
               />
             }
           />
+          </PiTileBoundary>
+          <PiTileBoundary label="NAT'L ALERTS · US" num="08">
           <PiTile status={natAlertsStatus} label="NAT'L ALERTS · US" num="08" sev={natSev}
             footer={`${natStateCount} states · top: ${natTopStates || "—"}`}
             body={
@@ -547,6 +567,8 @@ const Pi = () => {
               </div>
             }
           />
+          </PiTileBoundary>
+          <PiTileBoundary label="PJM GRID LOAD" num="09">
           <PiTile status={gridStatus} label="PJM GRID LOAD" num="09" sev={gridSev}
             footer={`pjm · ${gridSev === "red" ? "critical" : gridSev === "yellow" ? "elevated" : "normal"}`}
             body={
@@ -565,8 +587,10 @@ const Pi = () => {
               </div>
             }
           />
+          </PiTileBoundary>
 
           {/* Row 3 */}
+          <PiTileBoundary label="OUTAGES · PA" num="10">
           <PiTile status={outagesStatus} label="OUTAGES · PA" num="10" sev={outageSev}
             footer={
               outageUnavail
@@ -586,6 +610,8 @@ const Pi = () => {
               </div>
             }
           />
+          </PiTileBoundary>
+          <PiTileBoundary label="CONFLICT PULSE · 7D" num="11" wide>
           <PiTile status={conflictStatus} label="CONFLICT PULSE · 7D" num="11" wide sev={conflictSev}
             footer={`gdelt 7d · ${conflictCount?.toLocaleString() ?? "—"} articles · top region: ${(topRegion || "—").toLowerCase()} · theme: ${(topType || "—").toLowerCase()}`}
             body={
@@ -630,6 +656,8 @@ const Pi = () => {
               </div>
             }
           />
+          </PiTileBoundary>
+          <PiTileBoundary label="QUAKES · 7D MAX" num="12">
           <PiTile status={quakesStatus} label="QUAKES · 7D MAX" num="12" sev={quakeSev}
             footer={`${largestPlace ? largestPlace.toLowerCase() : `${quakesArr.length} events`}${largestHrsAgo != null ? ` · ${largestHrsAgo}h` : ""}`}
             body={
@@ -643,6 +671,8 @@ const Pi = () => {
               </div>
             }
           />
+          </PiTileBoundary>
+          <PiTileBoundary label="HEADLINES · 6H" num="13">
           <PiTile status={headlinesStatus} label="HEADLINES · 6H" num="13" sev="green"
             footer="last 6h · gdelt curated"
             body={
@@ -652,8 +682,10 @@ const Pi = () => {
               </div>
             }
           />
+          </PiTileBoundary>
 
           {/* Row 4 */}
+          <PiTileBoundary label="INTERNET HEALTH" num="14">
           <PiTile status={internetStatus} label="INTERNET HEALTH" num="14" sev={internetSev}
             bgImage={piClockBg} bgPosition="center center" bgFlip bgSize="cover"
             footer={`cloudflare · ${trafficDelta != null ? `${trafficDelta > 0 ? "+" : ""}${trafficDelta.toFixed(1)}%` : "no anomaly"}`}
@@ -666,6 +698,8 @@ const Pi = () => {
               </div>
             }
           />
+          </PiTileBoundary>
+          <PiTileBoundary label="GLOBAL DIS" num="15">
           <PiTile status={gdacsStatus} label="GLOBAL DIS" num="15" sev={disasterSev}
             footer={`${gdacsArr.length} active · gdacs`}
             body={
@@ -678,6 +712,8 @@ const Pi = () => {
               </div>
             }
           />
+          </PiTileBoundary>
+          <PiTileBoundary label="SPACE WX · KP" num="16">
           <PiTile status={kpStatus} label="SPACE WX · KP" num="16" sev={kpSev}
             footer={`kp ${latestKp != null ? latestKp.toFixed(1) : "—"} · noaa swpc · geomagnetic`}
             body={
@@ -693,6 +729,8 @@ const Pi = () => {
               </div>
             }
           />
+          </PiTileBoundary>
+          <PiTileBoundary label="SYSTEM :: CLOCK" num="17" wide>
           <PiTile label="SYSTEM :: CLOCK" num="17" wide sev="green"
             footer={`all services nominal · uptime ${errCount === 0 ? "ok" : `${errCount} feeds down`}`}
             body={
@@ -710,7 +748,9 @@ const Pi = () => {
               </div>
             }
           />
+          </PiTileBoundary>
         </div>
+        </SectionBoundary>
 
         {/* Bottom ticker */}
         <div className="pi-ticker">
