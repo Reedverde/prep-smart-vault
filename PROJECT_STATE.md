@@ -1,6 +1,6 @@
 # PrepPi — PROJECT STATE
 
-Last updated: 2026-06-07
+Last updated: 2026-06-08
 
 ## Module Manifest
 
@@ -19,7 +19,7 @@ Last updated: 2026-06-07
 | 11 | Compliance & Legal | None | Intentionally skipped (personal project) |
 | 12 | Discovery & Planning | Standard | Documented in Hub card |
 | 13 | Testing | Light | Vitest configured, ~0% coverage |
-| 14 | Documentation | Standard | PROJECT_STATE.md + PROJECT_DOCS.md + Hub card |
+| 14 | Documentation | Standard | PROJECT_STATE.md + PROJECT_DOCS.md + Hub card. Repo cleaned of deprecated code 2026-06-07 |
 | 15 | Graceful Degradation | Heavy | CRITICAL GAP: dead feed renders as healthy green bar |
 | 16 | Loading/Empty/Error States | Standard | Gap: no systematic tile failure pattern |
 | 17 | Environment & Secrets | Standard | Covered: all keys in Supabase Secrets |
@@ -59,7 +59,9 @@ Last updated: 2026-06-07
 | Error boundary | Not built |
 | STALE/NO DATA tile hardening | Not built |
 | PROJECT_STATE.md | This file |
-| PROJECT_DOCS.md | Created 2026-06-07 |
+| PROJECT_DOCS.md | Current as of 2026-06-08 |
+| Codebase cleanup | Complete: deprecated news-feed removed, unused assets deleted, stale memory files cleared |
+
 
 ## Key Decisions
 
@@ -69,6 +71,7 @@ Last updated: 2026-06-07
 4. news-feed edge function deprecated, replaced by gdelt-headlines.
 5. Display EDID fix: video=HDMI-A-1:1024x600M@60D in /boot/firmware/cmdline.txt.
 6. Lovable rebuild tendency: always reuse existing components + override CSS. Never ask for a "new design."
+7. Deprecated news-feed edge function fully removed (was replaced by gdelt-headlines April 2026). Edge function count is now 11.
 
 ## Known Footguns
 
