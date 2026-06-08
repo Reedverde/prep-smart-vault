@@ -1,3 +1,11 @@
+---
+## ⚠️ MASTER OS UPDATE AVAILABLE
+**Version:** Module 24 added (Change Impact Protocol) — 2026-06-07
+**What changed:** New Module 24 (Change Impact Protocol) with four tier change classification system. Updated end of session checklist. Module count now 24.
+**Action:** Run "sync instructions" to pull the latest Claude Project Instructions template from the Hub.
+**Hub commit:** 735950ff9ee37a7bf5343bf021a324f2d10db936
+---
+
 # PrepPi — PROJECT STATE
 
 Last updated: 2026-06-08
@@ -29,6 +37,8 @@ Last updated: 2026-06-08
 | 21 | Observability | Light | Edge function console logs only |
 | 22 | Cost of Ownership | Light | Free tier only, $0 run rate |
 | 23 | Resource Guardrails | Light | 12 edge functions calling external APIs |
+| 24 | Change Impact Protocol | Standard | ❌ Not built | Tier classification, module review per change, sensitivity matrix |
+
 
 ### PrepPi Specific Modules
 
