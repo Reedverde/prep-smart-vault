@@ -99,7 +99,7 @@ Error contract: 503 + {notConfigured:true, key:'NAME'} when secret missing; 502 
 | nasa-space | NASA DONKI/NEO | NASA_API_KEY |
 | nws-hwo | NWS | None (keyless) |
 | power-outages | FirstEnergy/Penelec | None (scrape) |
-| power-outages | FirstEnergy/Penelec | None (scrape) |
+
 
 ## 7. Data Sources
 
