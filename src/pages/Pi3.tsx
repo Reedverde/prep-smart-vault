@@ -22,6 +22,8 @@ import {
   PiPulseLine, PiGlobe, PiKpField, PiAqiArcGauge, PiStressHud, PI_COLORS,
 } from "@/components/PiViz";
 import { usePi3Data } from "@/hooks/usePi3Data";
+import { SectionBoundary } from "@/components/errors/SectionBoundary";
+import { PiTileBoundary } from "@/components/errors/TileBoundary";
 
 const LOCATION = {
   name: "NEW CASTLE PA",
@@ -730,33 +732,35 @@ const Pi3 = () => {
         </div>
 
         {/* Tile grid — 5×4, identical to /pi */}
+        <SectionBoundary variant="pi">
         <div className="pi-grid">
           {/* Row 1 */}
-          {weatherTile}
-          {localAlertsTile}
-          {moonTile}
-          {airTile}
-          {severeRadarTile}
+          <PiTileBoundary label="WEATHER" num="01">{weatherTile}</PiTileBoundary>
+          <PiTileBoundary label="ALERTS · LOCAL" num="02">{localAlertsTile}</PiTileBoundary>
+          <PiTileBoundary label="MOON" num="02b">{moonTile}</PiTileBoundary>
+          <PiTileBoundary label="AIR QUALITY" num="03">{airTile}</PiTileBoundary>
+          <PiTileBoundary label="SEVERE RADAR" num="04">{severeRadarTile}</PiTileBoundary>
 
           {/* Row 2 */}
-          {hwoTile}
-          {fuelTile}
-          {stressTile}
-          {natTile}
-          {gridTile}
+          <PiTileBoundary label="HAZARD OUT · 7D" num="05">{hwoTile}</PiTileBoundary>
+          <PiTileBoundary label="FUEL · MID ATL" num="06">{fuelTile}</PiTileBoundary>
+          <PiTileBoundary label="FIN STRESS" num="07">{stressTile}</PiTileBoundary>
+          <PiTileBoundary label="NAT'L ALERTS · US" num="08">{natTile}</PiTileBoundary>
+          <PiTileBoundary label="PJM GRID LOAD" num="09">{gridTile}</PiTileBoundary>
 
           {/* Row 3 */}
-          {outagesTile}
-          {conflictTile}
-          {quakesTile}
-          {headlinesTile}
+          <PiTileBoundary label="OUTAGES · PA" num="10">{outagesTile}</PiTileBoundary>
+          <PiTileBoundary label="CONFLICT PULSE · 7D" num="11" wide>{conflictTile}</PiTileBoundary>
+          <PiTileBoundary label="QUAKES · 7D MAX" num="12">{quakesTile}</PiTileBoundary>
+          <PiTileBoundary label="HEADLINES · 6H" num="13">{headlinesTile}</PiTileBoundary>
 
           {/* Row 4 */}
-          {internetTile}
-          {disastersTile}
-          {kpTile}
-          {clockTile}
+          <PiTileBoundary label="INTERNET HEALTH" num="14">{internetTile}</PiTileBoundary>
+          <PiTileBoundary label="GLOBAL DIS" num="15">{disastersTile}</PiTileBoundary>
+          <PiTileBoundary label="SPACE WX · KP" num="16">{kpTile}</PiTileBoundary>
+          <PiTileBoundary label="SYSTEM :: CLOCK" num="17" wide>{clockTile}</PiTileBoundary>
         </div>
+        </SectionBoundary>
 
         {/* Bottom ticker */}
         <div className="pi-ticker">
