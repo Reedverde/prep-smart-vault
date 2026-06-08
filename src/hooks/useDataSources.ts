@@ -22,7 +22,6 @@ import {
   fetchFredStress,
   fetchPowerOutages,
   fetchCloudflareRadar,
-  fetchNewsFeed,
 } from "@/lib/dataSources";
 
 // ============ NWS WEATHER ============
@@ -204,14 +203,3 @@ export const useCloudflareRadar = (refreshMs: number) =>
     retry: 1,
   });
 
-// ============ News Feed (via edge proxy) ============
-// DEPRECATED: replaced by useGdeltHeadlines as of 2026-04-20.
-// Kept temporarily; remove in follow-up after Global Headlines verifies.
-export const useNewsFeed = (state: string | null, refreshMs: number) =>
-  useQuery({
-    queryKey: ["news-feed", state],
-    queryFn: () => fetchNewsFeed(state),
-    refetchInterval: refreshMs,
-    staleTime: refreshMs * 0.8,
-    retry: 1,
-  });

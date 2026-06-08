@@ -326,13 +326,3 @@ export const fetchFredStress = () => callEdge("fred-stress");
 export const fetchPowerOutages = () => callEdge("power-outages");
 export const fetchCloudflareRadar = () => callEdge("cloudflare-radar");
 
-// ============ News Feed (DEPRECATED, kept for parity) ============
-export const fetchNewsFeed = async (state: string | null) => {
-  const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
-  const qs = state ? `?state=${encodeURIComponent(state)}` : "";
-  const url = `https://${projectId}.supabase.co/functions/v1/news-feed${qs}`;
-  const res = await fetchWithTimeout(url, { headers: await edgeHeaders() });
-  if (res.status === 503) return { notConfigured: true } as any;
-  if (!res.ok) throw new Error("News proxy failed");
-  return await res.json() as { items: Array<{ source: string; title: string; url: string; publishedAt: string; description?: string }> };
-};

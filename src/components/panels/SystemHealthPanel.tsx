@@ -23,7 +23,6 @@ const SOURCES: { label: string; keys: string[] }[] = [
   // Geopolitics + news
   { label: "GDELT (Conflict Pulse)", keys: ["gdelt"] },
   { label: "GDELT Headlines", keys: ["gdelt-headlines"] },
-  { label: "News Feed", keys: ["news-feed"] },
   // Energy + grid
   { label: "EIA Grid (PJM)", keys: ["eia-grid"] },
   { label: "EIA Fuel Prices", keys: ["eia-fuel"] },
