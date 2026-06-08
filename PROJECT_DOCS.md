@@ -97,8 +97,8 @@ Error contract: 503 + {notConfigured:true, key:'NAME'} when secret missing; 502 
 | gdelt-events | GDELT 2.0 | None (keyless) |
 | gdelt-headlines | GDELT 2.0 | None (keyless) |
 | nasa-space | NASA DONKI/NEO | NASA_API_KEY |
-
 | nws-hwo | NWS | None (keyless) |
+| power-outages | FirstEnergy/Penelec | None (scrape) |
 | power-outages | FirstEnergy/Penelec | None (scrape) |
 
 ## 7. Data Sources
