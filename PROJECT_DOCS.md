@@ -2,7 +2,7 @@
 
 Comprehensive reference for the PrepPi codebase. Give this to a stranger and they understand the whole project.
 
-Last updated: 2026-06-07
+Last updated: 2026-06-08
 
 ## 1. Project Overview
 
@@ -81,7 +81,7 @@ tailwind.config.ts — maps tokens to utility classes
 src/styles/pi.css — kiosk tokens (.pi-big-clock 72px, kiosk spacing)
 src/styles/pi3.css — .pi3-static override (animation: none !important)
 
-## 6. Edge Functions (12)
+## 6. Edge Functions (11)
 
 All GET only. Auth gate: _shared/auth.ts::requireUser. CORS: shared headers.
 Error contract: 503 + {notConfigured:true, key:'NAME'} when secret missing; 502 with last upstream status on retry exhaustion.
@@ -97,9 +97,9 @@ Error contract: 503 + {notConfigured:true, key:'NAME'} when secret missing; 502 
 | gdelt-events | GDELT 2.0 | None (keyless) |
 | gdelt-headlines | GDELT 2.0 | None (keyless) |
 | nasa-space | NASA DONKI/NEO | NASA_API_KEY |
-| news-feed | DEPRECATED | NEWS_API (legacy) |
 | nws-hwo | NWS | None (keyless) |
 | power-outages | FirstEnergy/Penelec | None (scrape) |
+
 
 ## 7. Data Sources
 
@@ -116,7 +116,7 @@ NASA SDO — sun imagery
 AirNow, EIA (grid + fuel), NASA DONKI/NEO, FRED, Cloudflare Radar, GDELT (events + headlines), FirstEnergy/Penelec power outages, NWS HWO
 
 ### Not Yet Wired
-ACLED — credentials provisioned (ACLED_EMAIL, ACLED_PASSWORD). Uses OAuth2 password grant flow, not traditional API key.
+
 
 ### Link Only
 Broadcastify — Lawrence County scanner feed 33610
@@ -124,7 +124,7 @@ Broadcastify — Lawrence County scanner feed 33610
 ## 8. Environment Variables
 
 ### Supabase Secrets (server only)
-NASA_API_KEY, AIRNOW_API_KEY, EIA_APP_KEY, FRED_API_KEY, CLOUDFLARE_RADAR_API_TOKEN, ACLED_EMAIL, ACLED_PASSWORD, NEWS_API (legacy), LOVABLE_API_KEY (managed)
+NASA_API_KEY, AIRNOW_API_KEY, EIA_APP_KEY, FRED_API_KEY, CLOUDFLARE_RADAR_API_TOKEN, LOVABLE_API_KEY (managed)
 
 ### Frontend .env (publishable only)
 VITE_SUPABASE_PROJECT_ID, VITE_SUPABASE_PUBLISHABLE_KEY, VITE_SUPABASE_URL
