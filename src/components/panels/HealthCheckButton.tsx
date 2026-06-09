@@ -42,7 +42,7 @@ export const HealthCheckButton = ({ sources }: { sources: Source[] }) => {
         const queries = s.keys.flatMap((k) =>
           qc.getQueryCache().findAll({ queryKey: [k], exact: false }),
         );
-        if (queries.length === 0 || queries.every((q) => !q.options.enabled && q.options.enabled !== undefined)) {
+        if (queries.length === 0) {
           return { label: s.label, status: "skipped", ms: null, error: "no active query" };
         }
         try {
