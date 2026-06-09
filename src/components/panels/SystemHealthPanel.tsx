@@ -4,6 +4,7 @@ import { InfoTip } from "@/components/PanelKit";
 import { formatDistanceToNow, intervalToDuration, formatDuration } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { Wifi, WifiOff } from "lucide-react";
+import { HealthCheckButton } from "@/components/panels/HealthCheckButton";
 
 // Each entry maps a human-readable label to one or more React-Query keys.
 // `keys` lets a single row aggregate freshness across keyed variants (e.g. lat/lng).
