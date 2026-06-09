@@ -94,6 +94,9 @@ export const SystemHealthPanel = ({ refreshMin }: { refreshMin: number }) => {
             )}
           </span>
         </div>
+        {/* Force refresh + stability check */}
+        <HealthCheckButton sources={SOURCES} />
+
         {/* Source table */}
         <div className="space-y-1">
           <div className="font-mono text-[10px] uppercase tracking-wider text-dim mb-1">Data sources</div>
