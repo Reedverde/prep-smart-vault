@@ -43,12 +43,19 @@ function natByByCount(obj: Record<string, number>): Record<string, number> {
 }
 
 // Status from usePi3Data's {data, errors} shape — mirrors /pi's tileStatus().
+// Also inspects edge-function degradation flags (stale/degraded/partial) so
+// rate-limited or partial responses surface visibly instead of looking healthy.
 const statusFor = (k: string, data: any, errors: any): PiTileStatus => {
-  const has = data[k] !== undefined;
+  const payload = data[k];
+  const has = payload !== undefined;
   const errored = errors[k] === true;
   if (errored && !has) return "nodata";
   if (errored && has) return "stale";
   if (!has) return "loading";
+  if (payload && typeof payload === "object") {
+    if (payload.stale === true || payload.degraded === true) return "stale";
+    if (payload.partial === true) return "stale";
+  }
   return "ok";
 };
 
