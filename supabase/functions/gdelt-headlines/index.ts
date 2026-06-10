@@ -151,7 +151,14 @@ Deno.serve(async (req) => {
       fetcher: fetchGdelt,
     });
 
-    return new Response(JSON.stringify(result.payload), {
+    // Mark stale-cache responses so the Stability Check can label them.
+    const body: Payload & { stale?: boolean; cacheSource?: string } = {
+      ...result.payload,
+      cacheSource: result.source,
+      stale: result.source === 'cache-stale',
+    };
+
+    return new Response(JSON.stringify(body), {
       status: 200,
       headers: {
         ...corsHeaders,
@@ -162,15 +169,19 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     // Upstream failed AND no usable cache. Do NOT poison cache with [].
-    console.warn('gdelt-headlines: degraded (no cache):', err instanceof Error ? err.message : err);
-    return new Response(JSON.stringify({ items: [], fetchedAt: new Date().toISOString(), degraded: true }), {
-      status: 200,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json',
-        'X-Cache': 'degraded',
-        'Cache-Control': 'no-store',
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn('gdelt-headlines: degraded (no cache):', message);
+    return new Response(
+      JSON.stringify({ items: [], fetchedAt: new Date().toISOString(), degraded: true, error: message.slice(0, 200) }),
+      {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'X-Cache': 'degraded',
+          'Cache-Control': 'no-store',
+        },
       },
-    });
+    );
   }
 });
