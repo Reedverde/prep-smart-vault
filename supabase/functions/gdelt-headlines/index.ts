@@ -2,7 +2,7 @@ import { corsHeaders, requireUser } from '../_shared/auth.ts';
 import { serveCached, cacheHeaders } from '../_shared/cache.ts';
 
 const CACHE_KEY = 'gdelt-headlines:v1';
-const FRESH_MS = 5 * 60 * 1000;          // serve cache instantly if newer than 5 min
+const FRESH_MS = 10 * 60 * 1000;         // serve cache instantly if newer than 10 min
 const STALE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // fall back up to 24 h on upstream failure
 
 type Tag =
@@ -151,7 +151,14 @@ Deno.serve(async (req) => {
       fetcher: fetchGdelt,
     });
 
-    return new Response(JSON.stringify(result.payload), {
+    // Mark stale-cache responses so the Stability Check can label them.
+    const body: Payload & { stale?: boolean; cacheSource?: string } = {
+      ...result.payload,
+      cacheSource: result.source,
+      stale: result.source === 'cache-stale',
+    };
+
+    return new Response(JSON.stringify(body), {
       status: 200,
       headers: {
         ...corsHeaders,
@@ -162,15 +169,19 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     // Upstream failed AND no usable cache. Do NOT poison cache with [].
-    console.warn('gdelt-headlines: degraded (no cache):', err instanceof Error ? err.message : err);
-    return new Response(JSON.stringify({ items: [], fetchedAt: new Date().toISOString(), degraded: true }), {
-      status: 200,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json',
-        'X-Cache': 'degraded',
-        'Cache-Control': 'no-store',
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn('gdelt-headlines: degraded (no cache):', message);
+    return new Response(
+      JSON.stringify({ items: [], fetchedAt: new Date().toISOString(), degraded: true, error: message.slice(0, 200) }),
+      {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'X-Cache': 'degraded',
+          'Cache-Control': 'no-store',
+        },
       },
-    });
+    );
   }
 });
