@@ -2,7 +2,7 @@ import { corsHeaders, requireUser } from '../_shared/auth.ts';
 import { serveCached, cacheHeaders } from '../_shared/cache.ts';
 
 const CACHE_KEY = 'gdelt-headlines:v1';
-const FRESH_MS = 5 * 60 * 1000;          // serve cache instantly if newer than 5 min
+const FRESH_MS = 10 * 60 * 1000;         // serve cache instantly if newer than 10 min
 const STALE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // fall back up to 24 h on upstream failure
 
 type Tag =
