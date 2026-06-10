@@ -1,9 +1,9 @@
 import { corsHeaders, requireUser } from '../_shared/auth.ts';
 
 // In-memory cache to respect GDELT's 1-request-per-5-seconds rate limit.
-// GDELT data updates every 15 min; 5-min cache is plenty fresh and prevents
-// 429s from concurrent clients / dashboard auto-refreshes hitting the function.
-const CACHE_TTL_MS = 5 * 60 * 1000;
+// GDELT data updates every 15 min; a 10-min TTL keeps fresh data while
+// drastically reducing the cold-start collisions that produce 429s.
+const CACHE_TTL_MS = 10 * 60 * 1000;
 let cached: { at: number; payload: unknown } | null = null;
 
 const STOPWORDS = new Set([
