@@ -29,7 +29,7 @@ export const fetchWithTimeout = async (
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), ms);
     try {
-      return await fetch(input, { ...init, signal: ctrl.signal });
+      return await fetch(input, { ...init, signal: ctrl.signal, cache: 'no-store' });
     } finally {
       clearTimeout(t);
     }
