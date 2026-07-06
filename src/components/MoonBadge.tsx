@@ -46,7 +46,7 @@ export const MoonBadge = ({
     // Outer arc: full circle going around lit side.
     // sweep: outer half on lit side then ellipse arc on the dark side.
     const sweepOuter = waxing ? 0 : 1;
-    const sweepInner = waxing ? 0 : 1;
+    const sweepInner = waxing ? 1 : 0;
     litPath = `
       M ${cx} ${cy - r}
       A ${r} ${r} 0 0 ${litSide > 0 ? 1 : 0} ${cx} ${cy + r}
