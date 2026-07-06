@@ -1,59 +1,55 @@
-## Goal
-Restore the five NO DATA tiles on /pi and make the Stability Check button report *why* a source failed, not just that it did.
-
-## Root causes (from edge function logs)
-
-| Source | Real cause |
-|---|---|
-| GDELT events + headlines | Public API rate limit: "one request every 5 seconds." Both hooks fire in parallel on cold cache → second one 429s. |
-| Cloudflare Radar | `/radar/attacks/layer7/summary` returns 400 "No route for that URI". `Promise.all` fails the entire response. |
-| Power Outages (PA) | Edge function fetched 282KB successfully. Failure is downstream parsing/shape, not the fetch. |
-| Hazard Outlook 7d | No errors logged. NWS office likely hasn't posted a current HWO; tile conflates "empty" with "error". |
+## Scope
+Edge functions only. Four files. No frontend changes.
 
 ## Changes
 
-### 1. GDELT rate limit hardening
-**`supabase/functions/_shared/cache.ts`** (or inline if shared file is thin): bump GDELT TTL to 10 min, and make `serveCached` return stale-cache on 429 instead of throwing. Add a `stale: true` flag on the payload so the panel can label it.
+### 1. `supabase/functions/gdelt-events/index.ts`
+Replace the `Promise.all([statsRes, articlesRes])` block with sequential fetches:
+- `await fetch(statsUrl, ...)` first (wrapped in try/catch that returns `null` on throw, matching current behavior).
+- `await new Promise(r => setTimeout(r, 6000))`.
+- `await fetch(articlesUrl, ...)`.
+- Rest of the handler (stats parse, degraded fallback, articles parse, cache write) stays identical.
 
-**`supabase/functions/gdelt-events/index.ts`** and **`gdelt-headlines/index.ts`**:
-- On 429, return last-known-good with `{ stale: true, reason: "rate_limited" }` and HTTP 200 (so the React Query call resolves).
-- Keep 10 min cache so cold-start is the only collision window.
+### 2. `supabase/functions/gdelt-headlines/index.ts`
+At the top of `fetchGdelt`, before the `fetch(url, ...)` call, add:
+```ts
+await new Promise((r) => setTimeout(r, 6000));
+```
+Nothing else changes. `serveCached` will still short-circuit when a fresh cache exists, so the delay only pays on real upstream fetches.
 
-### 2. Cloudflare Radar endpoint fix
-**`supabase/functions/cloudflare-radar/index.ts`**:
-- Replace broken `/radar/attacks/layer7/summary` with current endpoint (verify via web search before patching — likely `/radar/attacks/layer7/timeseries_groups` or drop attacks subcall entirely if no working replacement).
-- Wrap each sub-call in its own `try/catch` and return partial results: `{ traffic, attacks: null, ...errors: ["attacks: 400"] }` instead of failing the whole response.
+### 3. `supabase/functions/nws-hwo/index.ts`
+Rewrite the outer `catch (err)` block to return HTTP 200 with a degraded payload instead of `{ error: 'internal_error' }` at 500:
+```ts
+const message = err instanceof Error ? err.message : String(err);
+console.error('nws-hwo error:', err);
+return new Response(JSON.stringify({
+  office: null,
+  issuedAt: null,
+  dayOne: { risk: 'clear', text: '' },
+  extended: '',
+  spotter: '',
+  spotterActivated: false,
+  productUrl: '',
+  fetchedAt: new Date().toISOString(),
+  degraded: true,
+  error: message.slice(0, 200),
+}), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'degraded' } });
+```
+Existing 400 `bad_coords` response is untouched.
 
-### 3. Power Outages parser
-**`supabase/functions/power-outages/index.ts`**:
-- Add a debug log of the top-level JSON keys when parsing produces zero outages, so we can see the actual shape.
-- If shape mismatch detected, return `{ outages: null, parseError: "..." }` with 200, not silent empty.
-
-**`src/hooks/useDataSources.ts`** consumer: surface `parseError` as a thrown error so React Query state goes to `error` (which Stability Check can then report).
-
-### 4. Hazard Outlook empty vs error distinction
-**`src/components/panels/HazardousOutlookPanel.tsx`** + the matching PiTile renderer:
-- If fetch succeeds but `dayOne.text` and `extended` are both empty → render "no outlook posted" (neutral, no NO DATA badge).
-- If fetch errors → keep current error rendering. This removes a false NO DATA.
-
-### 5. Stability Check failure detail
-**`src/components/panels/HealthCheckButton.tsx`**:
-- Already captures `error.message`; expand the display:
-  - Show HTTP status when present in error message
-  - Show "stale (rate limited)" badge when `data.stale === true`
-  - Show "partial" badge when `data` has an `errors[]` array (Cloudflare partial response)
-  - Add a small expand/collapse for the full error text per row
-- Extend the diagnostics JSON copy to include `data.stale`, `data.errors`, and the React Query `errorUpdateCount`.
+### 4. `supabase/functions/power-outages/index.ts`
+Insert a single diagnostic line immediately before the `parsePage(html)` call:
+```ts
+console.log('power-outages: html preview', html.slice(0, 500));
+```
+No other logic changes.
 
 ## Verification
-- After each edge function edit, call it via `supabase--curl_edge_functions` to confirm 200 + sane payload.
-- Reload /pi, click Force Refresh, confirm:
-  - GDELT tiles populate (may say "stale" on cold start, that's expected and labeled)
-  - Internet Health renders even if attacks subcall is null
-  - Outages tile either shows real outages or a specific parse error (not silent NO DATA)
-  - Hazard Outlook shows neutral "no outlook posted" instead of NO DATA when NWS hasn't issued one
+After edits, call each function via `supabase--curl_edge_functions` and confirm:
+- `gdelt-events` returns 200 with non-empty `byRegion` (takes ~6s on cold miss).
+- `gdelt-headlines` returns 200 with `items` populated (also ~6s on cold miss, instant on cache hit).
+- `nws-hwo` with bad upstream conditions returns 200 with `degraded: true`.
+- `power-outages` logs the HTML preview line (checked via `edge_function_logs`).
 
 ## Out of scope
-- No frontend styling changes beyond the empty-state copy on HWO + the new badges in Stability Check.
-- No changes to other working tiles.
-- No hyphens in any new copy.
+No frontend, hook, CSS, or panel changes. No response field renames. No new dependencies. Field shape on `nws-hwo` degraded payload matches existing success payload so `HazardousOutlookPanel` renders it as a stale/empty state naturally.
