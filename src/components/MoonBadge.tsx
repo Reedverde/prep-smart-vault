@@ -24,7 +24,7 @@ export const MoonBadge = ({
   const f = illumination / 100;
   // angle through the cycle: 0..2π
   const t = phase * 2 * Math.PI;
-  const ellipseRx = Math.abs(Math.cos(t)) * r; // 0 at full, r at new
+  const ellipseRx = Math.abs(2 * f - 1) * r;
 
   // Which side is lit
   // waxing: lit on right; waning: lit on left
