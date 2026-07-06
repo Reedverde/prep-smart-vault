@@ -112,10 +112,22 @@ Deno.serve(async (req) => {
       },
     });
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
     console.error('nws-hwo error:', err);
     return new Response(
-      JSON.stringify({ error: 'internal_error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      JSON.stringify({
+        office: null,
+        issuedAt: null,
+        dayOne: { risk: 'clear', text: '' },
+        extended: '',
+        spotter: '',
+        spotterActivated: false,
+        productUrl: '',
+        fetchedAt: new Date().toISOString(),
+        degraded: true,
+        error: message.slice(0, 200),
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'degraded' } },
     );
   }
 });
