@@ -1,7 +1,7 @@
 // Shared helpers used by /pi and /pi3 so both routes render identical visuals.
 // Pure presentational primitives — no data, no timers, no animation.
 
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 
 export const Big = ({
   size, color, glow, children,
@@ -24,28 +24,44 @@ export const PiMoon = ({
 }: { size?: number; illumination: number; waxing: boolean }) => {
   const r = 22, cx = 32, cy = 32;
   const f = illumination / 100;
-  const t = (illumination / 100) * Math.PI; // for ellipseRx use cycle angle approx
-  // Recompute via phase fraction would need phase; approximate using illumination only:
   const ellipseRx = Math.abs(1 - 2 * f) * r;
-  const litSide = waxing ? 1 : -1;
-  let d = "";
+  const uid = useId().replace(/:/g, "");
+  const clipId = `pimoonclip${uid}`;
+  const maskId = `pimoonmask${uid}`;
+  const sideX = waxing ? cx : cx - r;
+  let litShape = null;
+
   if (f >= 0.99) {
-    d = `M ${cx - r} ${cy} A ${r} ${r} 0 1 1 ${cx + r} ${cy} A ${r} ${r} 0 1 1 ${cx - r} ${cy} Z`;
-  } else if (f <= 0.01) {
-    d = "";
+    litShape = <circle cx={cx} cy={cy} r={r} fill="currentColor" fillOpacity="0.9" stroke="none" />;
   } else if (f > 0.5) {
-    const sweepInner = waxing ? 0 : 1;
-    d = `M ${cx} ${cy - r} A ${r} ${r} 0 0 ${litSide > 0 ? 1 : 0} ${cx} ${cy + r} A ${ellipseRx} ${r} 0 0 ${sweepInner} ${cx} ${cy - r} Z`;
-  } else {
-    const sweepOuter = waxing ? 1 : 0;
-    const sweepInner = waxing ? 0 : 1;
-    d = `M ${cx} ${cy - r} A ${r} ${r} 0 0 ${sweepOuter} ${cx} ${cy + r} A ${ellipseRx} ${r} 0 0 ${sweepInner} ${cx} ${cy - r} Z`;
+    litShape = (
+      <g clipPath={`url(#${clipId})`}>
+        <rect x={sideX} y={cy - r} width={r} height={r * 2} fill="currentColor" fillOpacity="0.9" />
+        <ellipse cx={cx} cy={cy} rx={ellipseRx} ry={r} fill="currentColor" fillOpacity="0.9" />
+      </g>
+    );
+  } else if (f > 0.01) {
+    litShape = (
+      <g clipPath={`url(#${clipId})`} mask={`url(#${maskId})`}>
+        <rect x={sideX} y={cy - r} width={r} height={r * 2} fill="currentColor" fillOpacity="0.9" />
+      </g>
+    );
   }
+
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" stroke="currentColor" fill="none" aria-hidden
       style={{ filter: "drop-shadow(0 0 6px currentColor)" }}>
+      <defs>
+        <clipPath id={clipId}>
+          <circle cx={cx} cy={cy} r={r} />
+        </clipPath>
+        <mask id={maskId} maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
+          <rect x="0" y="0" width="64" height="64" fill="white" />
+          <ellipse cx={cx} cy={cy} rx={ellipseRx} ry={r} fill="black" />
+        </mask>
+      </defs>
       <circle cx={cx} cy={cy} r={r} stroke="currentColor" strokeOpacity="0.5" strokeWidth="3" />
-      {d && <path d={d} fill="currentColor" fillOpacity="0.9" stroke="none" />}
+      {litShape}
     </svg>
   );
 };
