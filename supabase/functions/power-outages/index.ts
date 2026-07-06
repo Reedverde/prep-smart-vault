@@ -165,6 +165,7 @@ const fetchOutages = async () => {
   if (!html) throw new Error(`upstream fetch failed code=${code}`);
   console.log(`power-outages: fetched via ${via} (${html.length} bytes)`);
 
+  console.log('power-outages: html preview', html.slice(0, 500));
   const parsed = parsePage(html);
   if (parsed.stateOut == null || parsed.stateTracked == null) {
     throw new Error('upstream parse failed: state totals missing');

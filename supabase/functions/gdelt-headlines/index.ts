@@ -71,6 +71,9 @@ type Headline = {
 type Payload = { items: Headline[]; fetchedAt: string };
 
 const fetchGdelt = async (): Promise<Payload> => {
+  // Stagger behind gdelt-events to avoid GDELT's 1-req-per-5s rate limit.
+  await new Promise((r) => setTimeout(r, 6000));
+
   const query = '(war OR conflict OR cyberattack OR terrorism OR sanctions OR protest OR coup) sourcelang:english';
   const url =
     'https://api.gdeltproject.org/api/v2/doc/doc?query=' +

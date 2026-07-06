@@ -117,14 +117,13 @@ Deno.serve(async (req) => {
 
     const ua = { 'User-Agent': 'PrepPi/1.0 (situational-awareness)' };
 
-    // Run both in parallel; neither failure should throw out of the handler.
-    const [statsRes, articlesRes] = await Promise.all([
-      fetch(statsUrl, { headers: ua }).catch((e) => {
-        console.log('gdelt-events stats fetch threw', String(e));
-        return null;
-      }),
-      fetch(articlesUrl, { headers: ua }).catch(() => null),
-    ]);
+    // Sequential to respect GDELT's 1-request-per-5-seconds limit.
+    const statsRes = await fetch(statsUrl, { headers: ua }).catch((e) => {
+      console.log('gdelt-events stats fetch threw', String(e));
+      return null;
+    });
+    await new Promise((r) => setTimeout(r, 6000));
+    const articlesRes = await fetch(articlesUrl, { headers: ua }).catch(() => null);
 
     if (!statsRes || !statsRes.ok) {
       const body = statsRes ? await statsRes.text().catch(() => '') : '';
