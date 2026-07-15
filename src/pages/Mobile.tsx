@@ -389,6 +389,15 @@ const Mobile = () => {
         <i className="pi-corner-bl" />
         <i className="pi-corner-br" />
 
+        {/* Mobile hero header */}
+        <img
+          src={mobileHeaderAsset.url}
+          alt="PrepPi — Prepare · Monitor · Protect"
+          className="pi-mobile-hero"
+        />
+
+
+
         {/* Top strip */}
         <div className="pi-topstrip">
           <div style={{ display: "flex", alignItems: "center" }}>
