@@ -9,6 +9,7 @@ import "@/styles/mobile.css";
 import { getMoonPhase } from "@/lib/moonPhase";
 import { getMoonTimes } from "@/lib/moonTimes";
 import piClockBg from "@/assets/pi-pipboy-bg.png";
+import mobileHeaderAsset from "@/assets/preppi-mobile-header.png.asset.json";
 import { PiTile, type PiSeverity } from "@/components/PiTile";
 import { SectionBoundary } from "@/components/errors/SectionBoundary";
 import { PiTileBoundary } from "@/components/errors/TileBoundary";
