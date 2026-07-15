@@ -37,6 +37,26 @@ export const requireUser = async (req: Request): Promise<AuthResult> => {
     return { ok: true, userId: 'anonymous' };
   }
 
+  // Decode the JWT payload without verifying the signature — we only use the
+  // claim to distinguish anon vs authenticated. Supabase Auth still verifies
+  // real user tokens below via getUser(). Anon JWTs are safe to accept here
+  // because these endpoints proxy public data only.
+  try {
+    const parts = token.split('.');
+    if (parts.length === 3) {
+      const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const pad = b64.length % 4 === 0 ? b64 : b64 + '='.repeat(4 - (b64.length % 4));
+      const payload = JSON.parse(atob(pad));
+      if (payload?.role === 'anon') {
+        return { ok: true, userId: 'anonymous' };
+      }
+    }
+  } catch (_) {
+    // fall through to full verification
+  }
+
+
+
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
