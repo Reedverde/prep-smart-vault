@@ -1,10 +1,11 @@
-// /pi — HUD console for the 1024×600 Raspberry Pi kiosk.
-// Pure inline SVG + CSS animations. All tokens scoped under .pi-root via src/styles/pi.css.
-// No new edge functions — reuses every existing data hook at current intervals.
+// /mobile — mobile-optimized HUD console.
+// Same tiles as /pi, rendered in a 2-wide grid that stacks down the page.
+// All tokens scoped under .pi-root via src/styles/pi.css, mobile overrides via mobile.css.
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { format } from "date-fns";
 import "@/styles/pi.css";
+import "@/styles/mobile.css";
 import { getMoonPhase } from "@/lib/moonPhase";
 import { getMoonTimes } from "@/lib/moonTimes";
 import piClockBg from "@/assets/pi-pipboy-bg.png";
