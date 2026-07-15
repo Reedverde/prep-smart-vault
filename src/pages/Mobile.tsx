@@ -381,9 +381,10 @@ const Mobile = () => {
   }, [headlinesData]);
 
   return (
-    <div className="pi-root">
-      <div className="pi-stage" ref={stageRef}>
+    <div className="pi-root pi-mobile">
+      <div className="pi-stage">
       <div className="pi-frame">
+
         <i className="pi-corner-bl" />
         <i className="pi-corner-br" />
 
