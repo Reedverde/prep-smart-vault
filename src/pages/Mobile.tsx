@@ -677,7 +677,73 @@ const Mobile = () => {
             }
           />
           </PiTileBoundary>
+          <PiTileBoundary label="CONFLICT PULSE · 7D" num="11" wide>
+          <PiTile status={conflictStatus} label="CONFLICT PULSE · 7D" num="11" wide sev={conflictSev}
+            footer={`gdelt 7d · ${conflictCount?.toLocaleString() ?? "—"} articles · top region: ${(topRegion || "—").toLowerCase()} · theme: ${(topType || "—").toLowerCase()}`}
+            body={
+              <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%", justifyContent: "center", gap: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 4px" }}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+                    <Big size={64} color="var(--red)" glow="var(--red-glow)">
+                      {conflictLabelTxt}
+                    </Big>
+                    {conflictDelta != null && (
+                      <span className="pi-c-red" style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 16 }}>
+                        ↑ {Math.abs(conflictDelta)}%
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", gap: 18, fontFamily: "JetBrains Mono, monospace", fontSize: 11, letterSpacing: "0.08em" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 120 }}>
+                      <span className="pi-c-dim" style={{ fontSize: 9, letterSpacing: "0.18em" }}>TOP REGIONS</span>
+                      {topRegions.length === 0 ? (
+                        <span className="pi-c-dim">—</span>
+                      ) : topRegions.map(([name, n]) => (
+                        <span key={name} className="pi-c-red" style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                          <span style={{ textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
+                          <span className="pi-c-dim">{n}</span>
+                        </span>
+                      ))}
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 110 }}>
+                      <span className="pi-c-dim" style={{ fontSize: 9, letterSpacing: "0.18em" }}>TOP THEMES</span>
+                      {topTypes.length === 0 ? (
+                        <span className="pi-c-dim">—</span>
+                      ) : topTypes.map(([name, n]) => (
+                        <span key={name} className="pi-c-red" style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                          <span style={{ textTransform: "uppercase" }}>{name}</span>
+                          <span className="pi-c-dim">{n}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <PiAreaChart data={conflictSeries} width={392} height={70} color="var(--red)" />
+              </div>
+            }
+          />
+          </PiTileBoundary>
+          <PiTileBoundary label="SYSTEM :: CLOCK" num="17" wide>
+          <PiTile label="SYSTEM :: CLOCK" num="17" wide sev="green"
+            footer={`all services nominal · uptime ${errCount === 0 ? "ok" : `${errCount} feeds down`}`}
+            body={
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, width: "100%" }}>
+                <span className="pi-big-clock">{clockStr.split("").map((c, i) => (
+                  <span key={i} className={c === ":" ? "s" : "d"}>{c}</span>
+                ))}</span>
+                <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "nowrap" }}>
+                  <span className="pi-pill pi-c-green">● SCANNER</span>
+                  <span className="pi-pill pi-c-green">● SYS OK</span>
+                  <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 14, color: "var(--dim)", letterSpacing: "0.15em", whiteSpace: "nowrap" }}>
+                    {dateStr} {dowStr}
+                  </span>
+                </div>
+              </div>
+            }
+          />
+          </PiTileBoundary>
         </div>
+
         </SectionBoundary>
 
         {/* Bottom ticker */}
