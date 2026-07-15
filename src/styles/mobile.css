@@ -26,6 +26,15 @@
   min-height: 0;
 }
 
+/* Mobile hero header — sits flush at the top of the frame. */
+.pi-root.pi-mobile .pi-mobile-hero {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-bottom: 1px solid var(--chrome-2, rgba(126, 231, 135, 0.25));
+}
+
 /* Top strip — allow wrap on narrow screens. */
 .pi-root.pi-mobile .pi-topstrip {
   flex-wrap: wrap;
