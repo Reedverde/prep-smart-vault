@@ -15,6 +15,7 @@ import Dashboard from "./pages/Dashboard";
 import Live from "./pages/Live";
 import Pi from "./pages/Pi";
 import Pi3 from "./pages/Pi3";
+import Mobile from "./pages/Mobile";
 import Snapshots from "./pages/Snapshots";
 import Library from "./pages/Library";
 import Operations from "./pages/Operations";
