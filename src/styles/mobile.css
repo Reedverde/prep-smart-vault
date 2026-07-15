@@ -1,0 +1,102 @@
+/* /mobile — overrides for the shared .pi-root design system.
+   Turns the fixed 1600×900 kiosk stage into a fluid, mobile-first,
+   2-wide grid that stacks down the page. */
+
+.pi-root.pi-mobile {
+  position: static;
+  min-height: 100vh;
+  height: auto;
+  overflow: visible;
+  overflow-x: hidden;
+}
+
+/* Ditch the absolute-centered scale-to-fit stage. */
+.pi-root.pi-mobile .pi-stage {
+  position: static;
+  transform: none !important;
+  width: 100%;
+  height: auto;
+  min-height: 100vh;
+}
+
+/* Frame becomes a normal-flow container. */
+.pi-root.pi-mobile .pi-frame {
+  margin: 6px;
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
+/* Top strip — allow wrap on narrow screens. */
+.pi-root.pi-mobile .pi-topstrip {
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 10px;
+}
+.pi-root.pi-mobile .pi-brand {
+  font-size: 13px;
+}
+.pi-root.pi-mobile .pi-meta {
+  font-size: 10px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.pi-root.pi-mobile .pi-meta .pi-clocknow {
+  font-size: 11px;
+}
+
+/* Grid: 2 columns, auto-flow rows, stack down the page. */
+.pi-root.pi-mobile .pi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: none;
+  grid-auto-rows: minmax(180px, auto);
+  gap: 6px;
+  padding: 6px;
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
+/* Wide tiles span both columns. */
+.pi-root.pi-mobile .pi-tile[style*="span 2"] {
+  grid-column: span 2 / span 2 !important;
+}
+
+/* Slightly tighter tile padding so content breathes on small screens. */
+.pi-root.pi-mobile .pi-tile {
+  padding: 6px 8px;
+  min-height: 180px;
+}
+.pi-root.pi-mobile .pi-tile-body {
+  overflow: hidden;
+}
+
+/* Big numeric values are calibrated for a 1600px stage — scale them down
+   on mobile so they don't overflow tiles. */
+.pi-root.pi-mobile .pi-big {
+  font-size: clamp(28px, 9vw, 64px) !important;
+}
+.pi-root.pi-mobile .pi-big-clock {
+  font-size: clamp(40px, 14vw, 96px);
+}
+
+/* Ticker sticks to the bottom of content, not the viewport. */
+.pi-root.pi-mobile .pi-ticker {
+  margin: 0 6px 6px;
+}
+
+/* Scanline overlay: cover full document, not just the viewport. */
+.pi-root.pi-mobile .pi-scan {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Ultra-narrow phones: single column. */
+@media (max-width: 380px) {
+  .pi-root.pi-mobile .pi-grid {
+    grid-template-columns: 1fr;
+  }
+  .pi-root.pi-mobile .pi-tile[style*="span 2"] {
+    grid-column: span 1 / span 1 !important;
+  }
+}
