@@ -70,35 +70,16 @@ const MAX_OUTAGES = 2500;
 
 import { Big, PiMoon } from "@/components/PiHelpers";
 
-const Pi = () => {
+const Mobile = () => {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
   useEffect(() => {
-    document.title = "PrepPi · Glance Terminal";
+    document.title = "PrepPi · Mobile Terminal";
   }, []);
 
-  // Scale-to-fit: scale the fixed 1600x900 stage to fit any viewport.
-  const stageRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const DESIGN_W = 1600;
-    const DESIGN_H = 900;
-    const apply = () => {
-      const el = stageRef.current;
-      if (!el) return;
-      const s = Math.min(window.innerWidth / DESIGN_W, window.innerHeight / DESIGN_H);
-      el.style.transform = `translate(-50%, -50%) scale(${s})`;
-    };
-    apply();
-    window.addEventListener("resize", apply);
-    window.addEventListener("orientationchange", apply);
-    return () => {
-      window.removeEventListener("resize", apply);
-      window.removeEventListener("orientationchange", apply);
-    };
-  }, []);
 
   // ============ Data hooks ============
   const weather = useWeather(LOCATION.lat, LOCATION.lng, STD);
