@@ -67,6 +67,7 @@ const App = () => (
               <Route path="/live" element={<Live />} />
               <Route path="/pi" element={<Pi />} />
               <Route path="/pi3" element={<Pi3 />} />
+              <Route path="/mobile" element={<Mobile />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/snapshots" element={<ProtectedRoute><Snapshots /></ProtectedRoute>} />
