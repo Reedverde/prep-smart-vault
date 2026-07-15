@@ -15,6 +15,7 @@ import Dashboard from "./pages/Dashboard";
 import Live from "./pages/Live";
 import Pi from "./pages/Pi";
 import Pi3 from "./pages/Pi3";
+import Mobile from "./pages/Mobile";
 import Snapshots from "./pages/Snapshots";
 import Library from "./pages/Library";
 import Operations from "./pages/Operations";
@@ -66,6 +67,7 @@ const App = () => (
               <Route path="/live" element={<Live />} />
               <Route path="/pi" element={<Pi />} />
               <Route path="/pi3" element={<Pi3 />} />
+              <Route path="/mobile" element={<Mobile />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/snapshots" element={<ProtectedRoute><Snapshots /></ProtectedRoute>} />
