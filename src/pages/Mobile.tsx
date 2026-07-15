@@ -9,6 +9,7 @@ import "@/styles/mobile.css";
 import { getMoonPhase } from "@/lib/moonPhase";
 import { getMoonTimes } from "@/lib/moonTimes";
 import piClockBg from "@/assets/pi-pipboy-bg.png";
+import mobileHeaderAsset from "@/assets/preppi-mobile-header.png.asset.json";
 import { PiTile, type PiSeverity } from "@/components/PiTile";
 import { SectionBoundary } from "@/components/errors/SectionBoundary";
 import { PiTileBoundary } from "@/components/errors/TileBoundary";
@@ -387,6 +388,15 @@ const Mobile = () => {
 
         <i className="pi-corner-bl" />
         <i className="pi-corner-br" />
+
+        {/* Mobile hero header */}
+        <img
+          src={mobileHeaderAsset.url}
+          alt="PrepPi — Prepare · Monitor · Protect"
+          className="pi-mobile-hero"
+        />
+
+
 
         {/* Top strip */}
         <div className="pi-topstrip">
