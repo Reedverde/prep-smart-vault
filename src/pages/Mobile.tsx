@@ -392,7 +392,7 @@ const Mobile = () => {
         <div className="pi-topstrip">
           <div style={{ display: "flex", alignItems: "center" }}>
             <span className="pi-glyph" />
-            <span className="pi-brand">PREPPI :: GLANCE TERMINAL</span>
+            <span className="pi-brand">PREPPI :: MOBILE</span>
             <span className="pi-cursor" />
           </div>
           <div className="pi-meta">
